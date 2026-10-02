@@ -191,16 +191,26 @@ Pinned tool versions:
   - Model wording differs in about 20 of 99 answers.
   - Use a fresh `VERITY_HOME` for each compared run. A full re-index into an existing data folder keeps stale rows
     (section 8).
+- **Before/after evidence for a change** (the tools used to prove the rename changed nothing):
+  1. Before the change, record two baselines. Each run indexes from scratch in its own temporary data folder:
+     - `python scripts/regress/capture.py --out ../caps/before-1`
+     - `python scripts/regress/capture.py --out ../caps/before-2`
+
+     Add `--mode llm-embed --suites ...` for model runs.
+  2. Make the change, then capture `../caps/after` the same way.
+  3. `python scripts/regress/compare.py ../caps/after ../caps/before-1 ../caps/before-2` (add `--text-only` for
+     model runs). It reports pass/fail changes, index differences, and answers that differ beyond the normal
+     run-to-run variation.
 - **UI end-to-end:**
   1. Start the engine: `.venv/bin/python -m verity.engine.server --port 8765 --token testtoken`.
   2. Start Chrome: `--headless=new --remote-debugging-port=9222 --user-data-dir=<tmp>`.
   3. Run `node ui/scripts/e2e-cdp.mjs [--shots docs/screenshots]`. Expect **30/30**; it also writes screenshots
      01-15.
 
-  Screenshots 16-18 came from small ad-hoc CDP scripts that are not in the repo:
+  Screenshots 16-18 come from `ui/scripts/extra-shots.mjs`; its header shows how to run it:
   - 16: the engine is stopped while the page is open ("Reconnecting...");
-  - 17 and 18: a copy of navgps-c, with a line appended to `nav/navigation.c` after indexing, then a window focus
-    event ("1 file changed", and the source-viewer warning).
+  - 17 and 18: a copy of navgps-c, with a line appended to `nav/navigation.c` after indexing ("1 file changed", and
+    the source-viewer warning).
 - **Desktop self-test (macOS):**
   - Basic run: `VERITY_DESKTOP_SELFTEST=quit VERITY_DESKTOP_SNAPSHOT_DIR=<dir> desktop/target/release/bundle/macos/Verity.app/Contents/MacOS/Verity`.
   - Add `VERITY_DESKTOP_SELFTEST_PROJECT=<abs path to samples/navgps-c>` for the answer screenshot.

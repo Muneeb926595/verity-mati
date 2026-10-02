@@ -37,4 +37,7 @@ if [ ! -x "$T/cppcheck/bin/cppcheck" ]; then
   rm -f cppcheck.tgz
   fi
 fi
+# cppcheck has its install folder compiled in, so moving this folder breaks it ("Failed to load std.cfg"). It also
+# looks for cfg/ next to its binary: a relative link there keeps it working wherever the folder goes.
+if [ -d "$T/cppcheck/share/Cppcheck/cfg" ] && [ ! -e "$T/cppcheck/bin/cfg" ]; then ln -s ../share/Cppcheck/cfg "$T/cppcheck/bin/cfg"; fi
 echo "[tools] done"

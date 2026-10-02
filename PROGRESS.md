@@ -355,3 +355,19 @@ Spec (one page, start here): `docs/development/VERITY_LEARNING_FROM_CORRECTIONS_
     244 symbols where a fresh index has 111. Answers were unaffected in the benchmark.
   - For nm-wait-negative, the verification notes contain a Python traceback (an exception in `recipes.py`
     `Ctx.D`).
+
+## Moved to Git (2026-10-02)
+- [x] The project now lives in the Git repository `verity-mati` (folder `~/Desktop/verity-mati` on the Mac), so work can
+      continue on a Windows PC:
+  - `.gitignore` leaves out what setup recreates (models, tools, `.venv`, vendor wheels, the C# worker build, `data/`,
+    new setup logs);
+  - `.gitattributes` turns off line-ending conversion (`.cmd` files are CRLF), so a Windows checkout is
+    byte-identical;
+  - the design documents moved into `docs/development/`.
+- [x] A fresh clone from GitHub, with the C# worker built from source, gave pytest 163 passed + 1 skipped (pwsh
+      absent), suite 31/31 and NModbus 10/12, the same as before.
+- [x] Fixed: cppcheck built by `scripts/setup_toolchains.sh` has its install folder compiled in, so moving the folder
+      broke it ("Failed to load std.cfg", and the cross-check silently returned nothing). Setup now adds a relative
+      `bin/cfg` link, which cppcheck also searches.
+- [x] Added the before/after evidence tools `scripts/regress/capture.py` and `compare.py`, and
+      `ui/scripts/extra-shots.mjs` (screenshots 16-18).
