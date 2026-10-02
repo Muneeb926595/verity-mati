@@ -168,3 +168,68 @@ def test_worker_crash_is_contained(tmp_path, monkeypatch):
     st = Indexer(repo).store
     assert st.one("SELECT fidelity FROM file WHERE path='crash_me.c'")["fidelity"] == "F4"
     assert st.one("SELECT count(*) n FROM symbol WHERE name='ProcessGpsData'")["n"] == 1
+
+
+def _tree_state(root):
+    """Every file under root with its bytes, to prove a folder was not touched."""
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+@pytest.mark.skipif(not shutil.which("cmake"), reason="needs cmake")
+def test_cmake_configure_never_writes_into_the_project(tmp_path):
+    """Configure scripts may write into their source tree (lwIP writes doc/doxygen/lwip.Doxyfile); Verity runs the
+    CMake capture on a private copy, so the user's folder stays byte-identical."""
+    repo = tmp_path / "cmk"
+    repo.mkdir()
+    (repo / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.10)\nproject(cmk NONE)\n"
+        'file(WRITE "${CMAKE_SOURCE_DIR}/written-by-configure.txt" "x")\n'
+        'configure_file("${CMAKE_SOURCE_DIR}/doc.in" "${CMAKE_SOURCE_DIR}/doc.txt")\n')
+    (repo / "doc.in").write_text("generated\n")
+    (repo / "doc.txt").write_text("the user's own text\n")
+    (repo / "main.c").write_text("int main(void) { return 0; }\n")
+    before = _tree_state(repo)
+    s = Indexer(repo).run(full=True)
+    assert s["state"] == "complete"
+    assert _tree_state(repo) == before
+
+
+def test_cmake_capture_maps_the_private_copy_back_to_the_project(tmp_path, monkeypatch):
+    """The compile database of the private copy is read as the project's own files; headers the configure generated
+    stay reachable through the copy, after the project's own folders."""
+    import json
+    import subprocess
+    from pathlib import Path
+    from verity.extract import recon
+    repo = tmp_path / "proj"
+    (repo / "include").mkdir(parents=True)
+    (repo / "src").mkdir()
+    (repo / "CMakeLists.txt").write_text("project(p C)\n")
+    (repo / "include" / "api.h").write_text("int api(void);\n")
+    (repo / "src" / "main.c").write_text('#include "api.h"\n#include "config.h"\nint main(void) { return api(); }\n')
+    before = _tree_state(repo)
+    seen = {}
+
+    def fake_cmake(argv, **kw):                   # what a Makefile/Ninja generator writes, run on the copy
+        src, out = Path(argv[argv.index("-S") + 1]), Path(argv[argv.index("-B") + 1])
+        seen["src"] = src
+        (src / "src" / "config.h").write_text("#define GENERATED 1\n")
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "compile_commands.json").write_text(json.dumps([{
+            "directory": str(out), "file": str(src / "src" / "main.c"),
+            "arguments": ["cc", "-I", str(src / "include"), f"-I{src / 'src'}", "-DMODE=2", "-c",
+                          str(src / "src" / "main.c")]}]))
+        return subprocess.CompletedProcess(argv, 0, b"", b"")
+
+    monkeypatch.setattr(recon.shutil, "which", lambda name: "cmake" if name == "cmake" else None)
+    monkeypatch.setattr(recon.subprocess, "run", fake_cmake)
+    work = tmp_path / "work"
+    db, capture = recon._compile_db(repo.resolve(), recon.scan_repo(repo), work)
+    assert capture == "compile_commands" and list(db) == ["src/main.c"], db
+    args = db["src/main.c"]
+    real = repo.resolve()
+    assert args[:2] == ["-I", str(real / "include")] and args[2] == "-I" + str(real / "src"), args
+    assert "-DMODE=2" in args
+    assert args[-1] == "-I" + str(seen["src"].resolve() / "src")          # the generated config.h, last
+    assert seen["src"].resolve().is_relative_to(work.resolve())
+    assert _tree_state(repo) == before

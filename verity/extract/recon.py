@@ -287,13 +287,18 @@ def find_config_knobs(root: Path, files: list[str]) -> dict[str, dict]:
     return out
 
 
-SHIM_PACKS = ("win32",)          # header shims that stand in for a platform SDK (libc shims are separate)
+SHIM_PACKS = ("win32", "posix")  # header shims that stand in for a platform SDK (libc shims are separate)
 
 
 def find_shim(name: str) -> str | None:
-    """A knowledge-pack header for a missing system header (e.g. windows.h), or None."""
+    """The include folder of a knowledge-pack header for a missing system header (windows.h, sys/time.h), or None.
+    A header with a folder part (sys/time.h) is found under that path in the pack, which is then the include folder;
+    otherwise by its file name."""
+    name = name.replace("\\", "/").lower()
     for pack in SHIM_PACKS:
-        cand = config.SHIMS / pack / name.replace("\\", "/").lower()
+        if "/" in name and (config.SHIMS / pack / name).is_file():
+            return str(config.SHIMS / pack)
+        cand = config.SHIMS / pack / os.path.basename(name)
         if cand.is_file():
             return str(cand.parent)
     return None
@@ -394,20 +399,92 @@ def _system_header_exists(name: str, sysroot_args: list[str]) -> bool:
     return any(os.path.isfile(os.path.join(r, name)) for r in roots)
 
 
+CMAKE_COPY_LIMIT = 1 << 30          # bytes: larger trees are reconstructed instead of copied for a CMake configure
+_VCS_DIRS = (".git", ".svn", ".hg")
+
+
+def _private_source_copy(root: Path, dest: Path) -> bool:
+    """Copy the project for a CMake configure: configure scripts may write into their source tree (lwIP writes
+    doc/doxygen/lwip.Doxyfile), and the user's folder is never modified. False when it is too large or cannot be
+    copied."""
+    dest_abs = os.path.normcase(os.path.abspath(dest))
+
+    def skipped(dirpath: str, names: list[str]) -> set[str]:
+        # version-control folders, and the folder holding the copy itself (Verity's data folder inside the project)
+        return {n for n in names if n in _VCS_DIRS or
+                (dest_abs + os.sep).startswith(os.path.normcase(os.path.abspath(os.path.join(dirpath, n))) + os.sep)}
+
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in skipped(dirpath, dirnames)]
+        for name in filenames:
+            try:
+                total += os.path.getsize(os.path.join(dirpath, name))
+            except OSError:
+                pass
+        if total > CMAKE_COPY_LIMIT:
+            return False
+    shutil.rmtree(dest, ignore_errors=True)
+    try:
+        shutil.copytree(root, dest, ignore=skipped, ignore_dangling_symlinks=True)
+    except (OSError, shutil.Error):
+        shutil.rmtree(dest, ignore_errors=True)
+        return False
+    return True
+
+
 def _compile_db(root: Path, scan: RepoScan, work: Path) -> tuple[dict[str, list[str]] | None, str]:
     """F1 capture: an existing compile_commands.json, or a CMake configure (no build) that emits one."""
     dbs = [root / p for p in scan.build.get("compile_commands", [])]
+    copy: Path | None = None                      # the private source copy a CMake configure ran in
     if not dbs and scan.build.get("cmake") and shutil.which("cmake") and (root / "CMakeLists.txt").is_file():
         out = work / "cmake-capture"
+        src = work / "cmake-src" / root.name      # one level down: "../x" writes from the scripts stay in work/
         try:
-            subprocess.run(["cmake", "-S", str(root), "-B", str(out), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
-                           capture_output=True, timeout=180)
-            if (out / "compile_commands.json").is_file():
-                dbs = [out / "compile_commands.json"]
+            if _private_source_copy(root, src):
+                cache = out / "CMakeCache.txt"    # a cache made for another source folder makes cmake refuse
+                if cache.is_file() and f"CMAKE_HOME_DIRECTORY:INTERNAL={src.as_posix()}" not in \
+                        cache.read_text(errors="replace"):
+                    shutil.rmtree(out, ignore_errors=True)
+                subprocess.run(["cmake", "-S", str(src), "-B", str(out), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
+                               capture_output=True, timeout=180)
+                if (out / "compile_commands.json").is_file():
+                    dbs = [out / "compile_commands.json"]
+                    copy = src.resolve()
+                else:                             # e.g. a Visual Studio generator, which exports nothing
+                    shutil.rmtree(src, ignore_errors=True)
         except Exception:
             pass
     if not dbs:
         return None, "reconstructed"
+    real_root = root.resolve()
+    generated: set[str] = set()                   # folders of the copy where the configure wrote new files
+    if copy is not None:
+        for dirpath, _dirs, filenames in os.walk(copy):
+            rel_dir = Path(dirpath).relative_to(copy)
+            if any(not (real_root / rel_dir / n).exists() for n in filenames):
+                generated.add(rel_dir.as_posix())
+
+    def real(p: Path) -> Path:
+        """A path in the private copy, as the same path in the project; files only the configure generated stay in
+        the copy."""
+        if copy is None:
+            return p
+        try:
+            q = real_root / p.resolve().relative_to(copy)
+        except (ValueError, OSError):
+            return p
+        return q if q.exists() else p
+
+    def generated_twin(d: Path) -> list[str]:
+        """-I for the copy of a project folder the configure generated headers into (after the real folder, so
+        the project's own files win)."""
+        try:
+            rel_dir = d.resolve().relative_to(real_root).as_posix()
+        except (ValueError, OSError):
+            return []
+        return ["-I" + str(copy / rel_dir)] if copy is not None and rel_dir in generated else []
+
     per_file: dict[str, list[str]] = {}
     for db in dbs:
         try:
@@ -415,7 +492,7 @@ def _compile_db(root: Path, scan: RepoScan, work: Path) -> tuple[dict[str, list[
         except Exception:
             continue
         for e in entries:
-            f = Path(e.get("directory", ".")) / e["file"]
+            f = real(Path(e.get("directory", ".")) / e["file"])
             try:
                 rel = f.resolve().relative_to(root).as_posix()
             except ValueError:
@@ -432,14 +509,26 @@ def _compile_db(root: Path, scan: RepoScan, work: Path) -> tuple[dict[str, list[
                 if a in ("-I", "-D", "-U", "-include", "-isystem", "-std"):
                     if k + 1 < len(argv):
                         val = argv[k + 1]
-                        if a in ("-I", "-isystem", "-include") and not os.path.isabs(val):
-                            val = str(Path(e.get("directory", ".")) / val)
+                        if a in ("-I", "-isystem", "-include"):
+                            if not os.path.isabs(val):
+                                val = str(Path(e.get("directory", ".")) / val)
+                            if copy is not None:
+                                val = str(real(Path(val)))
                         keep += [a, val]
                     skip_next = True
                 elif a.startswith(("-I", "-D", "-U", "-std=", "-include", "-isystem", "-f", "-m", "--target", "-target")):
-                    if a.startswith("-I") and len(a) > 2 and not os.path.isabs(a[2:]):
-                        a = "-I" + str(Path(e.get("directory", ".")) / a[2:])
+                    if a.startswith("-I") and len(a) > 2:
+                        d = a[2:] if os.path.isabs(a[2:]) else str(Path(e.get("directory", ".")) / a[2:])
+                        a = "-I" + (str(real(Path(d))) if copy is not None else d)
                     keep.append(a)
+            if generated:
+                twins: list[str] = []
+                for d in [f.parent] + [Path(keep[i + 1]) for i, a in enumerate(keep[:-1]) if a == "-I"] + \
+                        [Path(a[2:]) for a in keep if a.startswith("-I") and len(a) > 2]:
+                    for t in generated_twin(d):
+                        if t not in twins:
+                            twins.append(t)
+                keep += twins
             per_file[rel] = keep
     return (per_file or None), "compile_commands"
 
@@ -530,9 +619,11 @@ def plan_c_profile(root: str | os.PathLike, scan: RepoScan, work: Path, hints: d
     shim_dirs: list[str] = []
     for inc, users in unresolved.items():
         name = inc.strip("<>")
-        if inc.startswith("<") and _system_header_exists(inc, sysroot):
+        # like a compiler, a "quoted" include missing from the project falls back to the system headers; an empty
+        # stand-in would hide the real one (libmodbus: #include "stdint.h" under _MSC_VER)
+        if _system_header_exists(inc, sysroot):
             continue
-        shim = find_shim(os.path.basename(name))
+        shim = find_shim(name)
         if shim:                                  # a knowledge-pack header stands in for the missing SDK header
             if shim not in shim_dirs:
                 shim_dirs.append(shim)
