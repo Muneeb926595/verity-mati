@@ -4,7 +4,9 @@ The engine is a local process: `.venv/bin/python -m verity.engine.server --port 
 With `--print-ready` it prints ONE JSON line on stdout once listening:
 `{"ready": true, "port": 53211, "token": "…", "url": "http://127.0.0.1:53211/?token=…", "pid": 123}`
 It also writes the same JSON to `data/engine.json`. It listens on 127.0.0.1 only. Set env `VERITY_EXIT_WITH_PARENT=1`
-so it exits when the parent (the desktop app) dies.
+so it exits when the parent (the desktop app) dies. With `VERITY_STOP_ON_STDIN_EOF=1` it also shuts down cleanly once
+its stdin pipe is closed, checked every 2 s without reading it: the Windows desktop app stops the engine this way,
+and the pipe also closes when the app is killed (Windows has no SIGTERM, and `os.getppid()` never changes there).
 
 Every request needs the token: header `Authorization: Bearer <token>` (or `?token=` for EventSource).
 Cross-origin requests are rejected unless the Origin is `http://127.0.0.1…`, `http://localhost…`, `tauri://…`, or

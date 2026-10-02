@@ -20,7 +20,7 @@ from pathlib import Path
 
 from aiohttp import web
 
-from .. import config
+from .. import config, osutil
 from .core import EngineCore, EngineError
 
 UI_DIR = config.ROOT / "ui" / "dist"
@@ -161,11 +161,16 @@ def main(argv: list[str] | None = None) -> int:
                 pass
         # exit when the parent (desktop app) goes away
         ppid = os.getppid()
+        # the desktop app on Windows holds our stdin pipe and closes it to stop us, also when it is killed: Windows has
+        # no SIGTERM, and os.getppid() there never changes when the parent dies (the venv launcher sits between)
+        stop_on_stdin_eof = os.environ.get("VERITY_STOP_ON_STDIN_EOF") == "1"
 
         async def watch_parent():
             while not stop.is_set():
                 await asyncio.sleep(2)
                 if os.getppid() != ppid and os.environ.get("VERITY_EXIT_WITH_PARENT") == "1":
+                    stop.set()
+                if stop_on_stdin_eof and osutil.stdin_closed():
                     stop.set()
         asyncio.create_task(watch_parent())
         await stop.wait()
