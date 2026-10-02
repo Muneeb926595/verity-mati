@@ -1,0 +1,134 @@
+[
+ {
+  "type": "ask.progress",
+  "job": "aef2c7f97e0f",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 1,
+  "steps": 4,
+  "label": "Understanding your question",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.029504
+ },
+ {
+  "type": "ask.progress",
+  "job": "aef2c7f97e0f",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 2,
+  "steps": 4,
+  "label": "Looking through the code",
+  "detail": "Plan: flow",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.043135
+ },
+ {
+  "type": "ask.progress",
+  "job": "aef2c7f97e0f",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 3,
+  "steps": 4,
+  "label": "Checking the answer against the code",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.046933
+ },
+ {
+  "type": "ask.progress",
+  "job": "aef2c7f97e0f",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 4,
+  "steps": 4,
+  "label": "Writing the answer",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.048037
+ },
+ {
+  "type": "ask.progress",
+  "job": "74ae88f22b4e",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 1,
+  "steps": 4,
+  "label": "Understanding your question",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.080988
+ },
+ {
+  "type": "ask.progress",
+  "job": "74ae88f22b4e",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 2,
+  "steps": 4,
+  "label": "Looking through the code",
+  "detail": "Plan: scenario",
+  "elapsed_s": 0.0,
+  "ts": 1790796240.081669
+ },
+ {
+  "type": "ask.progress",
+  "job": "74ae88f22b4e",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 3,
+  "steps": 4,
+  "label": "Checking the answer against the code",
+  "detail": "",
+  "elapsed_s": 2.2,
+  "ts": 1790796242.255632
+ },
+ {
+  "type": "ask.progress",
+  "job": "74ae88f22b4e",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 4,
+  "steps": 4,
+  "label": "Writing the answer",
+  "detail": "",
+  "elapsed_s": 2.2,
+  "ts": 1790796242.256168
+ },
+ {
+  "type": "ask.progress",
+  "job": "c073e9446e94",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 1,
+  "steps": 4,
+  "label": "Understanding your question",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796242.2838001
+ },
+ {
+  "type": "ask.progress",
+  "job": "c073e9446e94",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 2,
+  "steps": 4,
+  "label": "Looking through the code",
+  "detail": "Plan: explain",
+  "elapsed_s": 0.0,
+  "ts": 1790796242.284147
+ },
+ {
+  "type": "ask.progress",
+  "job": "c073e9446e94",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 3,
+  "steps": 4,
+  "label": "Checking the answer against the code",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796242.284706
+ },
+ {
+  "type": "ask.progress",
+  "job": "c073e9446e94",
+  "project": "/Users/emumba/Desktop/mati/samples/navgps-c",
+  "step": 4,
+  "steps": 4,
+  "label": "Writing the answer",
+  "detail": "",
+  "elapsed_s": 0.0,
+  "ts": 1790796242.285609
+ }
+]

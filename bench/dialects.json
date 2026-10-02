@@ -1,0 +1,23 @@
+{
+  "_doc": "Uncompiled MSVC/Win32-style and TI C2000-style code analysed WITHOUT their SDK/device headers. Expected answers in samples/*/EXPECTED.md. These questions WERE used while fixing the dialect support (not held out).",
+  "projects": {"msvc": "samples/msvc-telemetry", "ti": "samples/ti-motor-c2000"},
+  "cases": [
+    {"id": "msvc-origin-temp", "project": "msvc", "category": "dataflow", "q": "Where does the temperature value come from?", "must_mention": ["ReadFile", "ReadSerial", "ParseFrame", "OnTemperature", "GetPrivateProfileIntA"]},
+    {"id": "msvc-threads", "project": "msvc", "category": "symbol", "q": "Which threads does the program start?", "intent": "entries", "must_mention": ["ReaderThread", "WatchdogThread", "CreateThread"], "must_cite": ["src/main.c:14", "src/main.c:15"]},
+    {"id": "msvc-silent", "project": "msvc", "category": "scenario", "q": "What happens if the serial link goes silent?", "intent": "failure_missing", "must_mention": ["WatchdogThread", "FRAME_TIMEOUT_MS", "LINK_LOST"]},
+    {"id": "msvc-crc", "project": "msvc", "category": "scenario", "q": "What happens when a frame has a bad CRC?", "must_mention": ["ParseFrame", "crcErrors"], "must_cite": ["src/frame_parser.c:27"]},
+    {"id": "msvc-callers-ontemp", "project": "msvc", "category": "callpath", "q": "Who calls OnTemperature?", "must_mention": ["DispatchFrame"], "must_cite": ["src/dispatcher.c:14"]},
+    {"id": "msvc-scenario-85", "project": "msvc", "category": "scenario", "q": "What happens when the temperature is 85.5 degrees?", "run_state": {"g_temperatureC": "85.5000", "g_alarmActive": "1"}, "hw_calls": ["WriteFile(4096, \"ALARM over-temperature 85.5 C\", 29"]},
+    {"id": "msvc-scenario-20", "project": "msvc", "category": "scenario", "q": "What happens when the temperature is 20 degrees?", "run_state": {"g_temperatureC": "20.0000"}, "run_state_absent": ["g_alarmActive"]},
+    {"id": "msvc-export", "project": "msvc", "category": "symbol", "q": "What does Telemetry_GetTemperature do?", "must_mention": ["LINK_UP", "g_temperatureC", "dllexport"]},
+    {"id": "msvc-alarm-flag", "project": "msvc", "category": "symbol", "q": "What is g_alarmActive for?", "must_mention": ["RaiseAlarm", "ClearAlarm", "OnTemperature"]},
+    {"id": "msvc-legacy", "project": "msvc", "category": "symbol", "q": "What changes when USE_LEGACY_PROTOCOL is defined?", "must_mention": ["temperatureCenti", "* 10"]},
+    {"id": "ti-interrupts", "project": "ti", "category": "symbol", "q": "Which interrupts does the code use?", "intent": "entries", "must_mention": ["adc_isr", "epwm1_isr"], "must_cite": ["src/main.c:18", "src/main.c:19"]},
+    {"id": "ti-origin-current", "project": "ti", "category": "dataflow", "q": "Where does the phase current come from?", "must_mention": ["ADCRESULT0", "adc_isr", "CURRENT_SCALE"]},
+    {"id": "ti-callers-loop", "project": "ti", "category": "callpath", "q": "Who calls CurrentLoop?", "must_mention": ["epwm1_isr", "g_pwmEnabled"]},
+    {"id": "ti-overcurrent", "project": "ti", "category": "scenario", "q": "What happens on overcurrent?", "must_mention": ["CheckFaults", "TripPWM", "GPIO31", "no longer calls CurrentLoop"], "run_state_any": {"g_pwmEnabled": "0"}},
+    {"id": "ti-scenario-13", "project": "ti", "category": "scenario", "q": "What happens when the phase current is 13 A?", "run_state": {"g_faultFlags": "1", "g_pwmEnabled": "0", "GpioDataRegs.GPASET.bit.GPIO31": "1"}},
+    {"id": "ti-scenario-5", "project": "ti", "category": "scenario", "q": "What happens when the phase current is 5 A?", "run_state_absent": ["g_faultFlags", "g_pwmEnabled"]},
+    {"id": "ti-explain-loop", "project": "ti", "category": "symbol", "q": "What does CurrentLoop do?", "must_mention": ["g_currentRef", "KP", "CMPA"]}
+  ]
+}

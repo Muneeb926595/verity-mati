@@ -1,0 +1,16 @@
+pytest exit=0 144 passed in 50.98s
+direct suite exit=0 31/31
+direct heldout exit=0 15/15
+direct dialects exit=0 17/17
+direct realworld exit=0 14/14
+direct realworld_heldout exit=0 14/14
+direct realworld_heldout2 exit=1 11/12
+direct realworld_heldout3 exit=0 13/13
+direct realworld_heldout4 exit=0 12/12
+direct realworld_heldout5 exit=0 14/14
+direct realworld_heldout6 exit=1 12/14
+direct realworld_heldout7 exit=1 11/12
+direct realworld_heldout8 exit=1 9/12
+direct realworld_heldout9 exit=1 10/12
+direct realworld_lwip exit=0 15/15
+DONE

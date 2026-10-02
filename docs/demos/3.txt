@@ -1,0 +1,48 @@
+Your question
+  What is the purpose of currentHeading?
+
+Answer
+  `currentHeading` holds the vehicle’s filtered heading in degrees true. It is initialized to 0.0 by
+  `navigation_init()` and updated by `ProcessGpsData()` using `CalculateHeading()`. The value is
+  then read by `CalculateHeading()` and `NavigationTick()`, which ultimately passes it to
+  `VehicleController_SetDirection()` and `motor_set_steering()` to control the steering hardware.
+
+  currentHeading is a global variable of type `double`, defined in nav/navigation.c:7 — the code
+  describes it as: "filtered vehicle heading, degrees true [0, 360)".
+
+  It is set by navigation_init() (`currentHeading = 0.0`, line 18); ProcessGpsData()
+  (`currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)`, line 59).
+
+  It is read by CalculateHeading() (line 38), NavigationTick() (line 81).
+
+  Following where its value goes: currentHeading → NavigationTick() →
+  VehicleController_SetDirection() (uses wrap180(), clamp()) → motor_set_steering() — so it
+  ultimately influences motor_set_steering(), which is an output (hardware/OS output (by name)).
+
+  In short: currentHeading carries a value produced by ProcessGpsData(), navigation_init() and
+  consumed by CalculateHeading(), NavigationTick(), feeding motor_set_steering().
+
+Evidence
+  [E7] control/vehicle_controller.c:12  double error = wrap180(target_heading - current_heading);
+  [E16] control/vehicle_controller.c:13  double command = clamp(error,
+  [E12] nav/geo_math.c:9  double r = fmod(deg, 360.0);
+  [E14] nav/geo_math.c:14  return r;
+  [E11] nav/geo_math.c:20  return wrap360(deg + 180.0) - 180.0;
+  [E17] nav/geo_math.c:27  return value;
+  [E1] nav/navigation.c:7  double currentHeading = 0.0;    /* filtered vehicle heading, degrees true [0, 360) */
+  [E2] nav/navigation.c:18  currentHeading = 0.0;
+  [E4] nav/navigation.c:38  return currentHeading;
+  [E3] nav/navigation.c:59  currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);
+  [E5] nav/navigation.c:81  VehicleController_SetDirection(currentHeading, target_heading);
+
+Certainty: Confirmed in the code  confirmed: 6
+
+Verification
+  6 of 6 statements re-checked against the code
+  ✓ [CONFIRMED] currentHeading is a global variable of type double defined in nav/navigation.c:7.
+  ✓ [CONFIRMED] navigation_init() writes currentHeading at nav/navigation.c:18.
+  ✓ [CONFIRMED] ProcessGpsData() writes currentHeading at nav/navigation.c:59.
+  ✓ [CONFIRMED] CalculateHeading() reads currentHeading at nav/navigation.c:38.
+  ✓ [CONFIRMED] NavigationTick() reads currentHeading at nav/navigation.c:81.
+  ✓ [CONFIRMED] The value of currentHeading reaches motor_set_steering() (hardware/OS output (by name)).
+12.6 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts

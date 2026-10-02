@@ -1,0 +1,37 @@
+# Verity benchmark — llm mode (20261001-172715)
+
+Cases: 17 · passed: 17 · mean score: 1.0 · mean time per question: 6.43 s
+
+| metric | result |
+|---|---|
+| symbol identification | 13/13 passed · accuracy 1.000 |
+| file line references | 4/4 passed · accuracy 1.000 |
+| scenario results | 5/5 passed · accuracy 1.000 |
+| scenario outputs | 1/1 passed · accuracy 1.000 |
+| intent routing | 3/3 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 72 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 72/72 (100.00%) |
+| answer paragraphs without any evidence | 0 of 68 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| msvc-origin-temp | dataflow | origin | ✓ | 1.0 |  |
+| msvc-threads | symbol | entries | ✓ | 1.0 |  |
+| msvc-silent | scenario | failure_missing | ✓ | 1.0 |  |
+| msvc-crc | scenario | failure_invalid | ✓ | 1.0 |  |
+| msvc-callers-ontemp | callpath | callers | ✓ | 1.0 |  |
+| msvc-scenario-85 | scenario | scenario | ✓ | 1.0 |  |
+| msvc-scenario-20 | scenario | scenario | ✓ | 1.0 |  |
+| msvc-export | symbol | explain | ✓ | 1.0 |  |
+| msvc-alarm-flag | symbol | purpose | ✓ | 1.0 |  |
+| msvc-legacy | symbol | explain | ✓ | 1.0 |  |
+| ti-interrupts | symbol | entries | ✓ | 1.0 |  |
+| ti-origin-current | dataflow | origin | ✓ | 1.0 |  |
+| ti-callers-loop | callpath | callers | ✓ | 1.0 |  |
+| ti-overcurrent | scenario | failure_invalid | ✓ | 1.0 |  |
+| ti-scenario-13 | scenario | scenario | ✓ | 1.0 |  |
+| ti-scenario-5 | scenario | scenario | ✓ | 1.0 |  |
+| ti-explain-loop | symbol | explain | ✓ | 1.0 |  |

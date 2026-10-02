@@ -1,0 +1,49 @@
+[bench] indexed modbus: done 13.1
+[bench] FAIL mb-bad-crc                 score=0.50 0.1s
+[bench] PASS mb-crc-fn                  score=1.00 0.0s
+[bench] PASS mb-crc-callers             score=1.00 0.0s
+[bench] PASS mb-integrity-callers       score=1.00 0.0s
+[bench] FAIL mb-timeout                 score=0.00 0.0s
+[bench] FAIL mb-bad-baud                score=0.50 0.0s
+[bench] FAIL mb-slave-set               score=0.00 0.0s
+[bench] FAIL mb-illegal-address         score=0.50 0.0s
+[bench] FAIL mb-read-registers          score=0.50 0.0s
+[bench] FAIL mb-too-many-registers      score=0.00 0.0s
+[bench] FAIL mb-timeout-set             score=0.00 0.0s
+[bench] FAIL mb-serial-write            score=0.00 0.0s
+[bench] PASS mb-backend-select          score=1.00 0.0s
+[bench] PASS mb-invented                score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-031731)
+
+Cases: 14 · passed: 5 · mean score: 0.5 · mean time per question: 0.02 s
+
+| metric | result |
+|---|---|
+| symbol identification | 4/13 passed · accuracy 0.462 |
+| file line references | 0/1 passed · accuracy 0.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 11 of 122 (9.02%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 111/122 (90.98%) |
+| answer paragraphs without any evidence | 0 of 41 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| mb-bad-crc | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["EMBBADCRC"]} |
+| mb-crc-fn | symbol | where_computed | ✓ | 1.0 |  |
+| mb-crc-callers | callpath | callers | ✓ | 1.0 |  |
+| mb-integrity-callers | callpath | callers | ✓ | 1.0 |  |
+| mb-timeout | scenario | failure_missing | ✗ | 0.0 | symbols: {"missing": ["ETIMEDOUT"]} |
+| mb-bad-baud | scenario | explain | ✗ | 0.5 | symbols: {"missing": ["EINVAL"]} |
+| mb-slave-set | symbol | where_computed | ✗ | 0.0 | symbols: {"missing": ["_modbus_set_slave"]}; citations: {"missing": ["src/modbus-rtu.c:84"]} |
+| mb-illegal-address | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS"]} |
+| mb-read-registers | symbol | explain | ✗ | 0.5 | symbols: {"missing": ["EMBXILVAL"]} |
+| mb-too-many-registers | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["EMBXILVAL"]} |
+| mb-timeout-set | symbol | failure_missing | ✗ | 0.0 | symbols: {"missing": ["modbus_set_response_timeout"]} |
+| mb-serial-write | symbol | which_fn | ✗ | 0.0 | symbols: {"missing": ["_modbus_rtu_send"]} |
+| mb-backend-select | callpath | explain | ✓ | 1.0 |  |
+| mb-invented | honesty | explain | ✓ | 1.0 |  |
+
+exit=1

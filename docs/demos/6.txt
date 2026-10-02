@@ -1,0 +1,64 @@
+Your question
+  What could be affected if I change CalculateHeading()?
+
+Answer
+  Changing `CalculateHeading()` can alter the code that calls it, the data that depends on its
+  result, and the outputs that data reaches. It is called directly by `ProcessGpsData()` and
+  indirectly through `handle_rmc()`, `gps_receiver_process_line()`, `gps_receiver_poll()`, and
+  `main()`. The result is stored in `currentHeading`, and functions such as `NavigationTick()`,
+  `VehicleController_SetDirection()`, `clamp()`, `wrap180()`, and `wrap360()` use values derived
+  from it, ultimately affecting what is sent to `motor_set_steering()`.
+
+  Changing CalculateHeading() (nav/navigation.c:33) can affect three kinds of things: the code that
+  calls it, the data that depends on its result, and the outputs that data reaches.
+
+  Called directly by: ProcessGpsData(). Indirectly (through the call chain): handle_rmc(),
+  gps_receiver_process_line(), gps_receiver_poll(), main().
+
+  Its result is stored in currentHeading (nav/navigation.c:59).
+
+  Functions that use values derived from it: NavigationTick(), VehicleController_SetDirection(),
+  clamp(), wrap180(), wrap360().
+
+  Through that data it can ultimately change what is sent to motor_set_steering() (hardware/OS
+  output (by name)) — a change in CalculateHeading() can change the physical output.
+
+  It depends on currentHeading, MIN_SPEED_FOR_HEADING, HEADING_FILTER_ALPHA — changes to those also
+  change its behaviour.
+
+  It runs on this path from the program start: main() → gps_receiver_poll() →
+  gps_receiver_process_line() → handle_rmc() → ProcessGpsData() → CalculateHeading().
+
+Evidence
+  [E5] control/vehicle_controller.c:12  double error = wrap180(target_heading - current_heading);
+  [E9] control/vehicle_controller.c:19  motor_set_steering((int16_t)(command * 10.0));
+  [E8] nav/geo_math.c:9  double r = fmod(deg, 360.0);
+  [E7] nav/geo_math.c:20  return wrap360(deg + 180.0) - 180.0;
+  [E6] nav/geo_math.c:25  if (value < lo) return lo;
+  [E1] nav/navigation.c:33  double CalculateHeading(double gps_heading, double speed_knots)
+  [E2] nav/navigation.c:59  currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);
+  [E4] nav/navigation.c:81  VehicleController_SetDirection(currentHeading, target_heading);
+
+Certainty: Inferred (likely, not certain)  confirmed: 3, inference: 6
+
+Execution path
+  → main()  (app/main.c:10)
+  → gps_receiver_poll()  (app/main.c:22)
+  → gps_receiver_process_line()  (gps/gps_receiver.c:112)
+  → handle_rmc()  (gps/gps_receiver.c:97)
+  → ProcessGpsData()  (gps/gps_receiver.c:76)
+  → CalculateHeading()  (nav/navigation.c:59)
+
+Verification
+  9 of 9 statements re-checked against the code
+  ✓ [CONFIRMED] CalculateHeading() is defined in nav/navigation.c:33.
+  ✓ [CONFIRMED] ProcessGpsData() calls CalculateHeading() at nav/navigation.c:59.
+  ✓ [CONFIRMED] The result of CalculateHeading() is stored in currentHeading at nav/navigation.c:59.
+  ✓ [INFERENCE] NavigationTick() uses data derived from CalculateHeading() (nav/navigation.c:81).  — follows the data forward; whether a change matters depends on what the change is
+  ✓ [INFERENCE] VehicleController_SetDirection() uses data derived from CalculateHeading() (control/vehicle_controller.c:12).  — follows the data forward; whether a change matters depends on what the change is
+  ✓ [INFERENCE] clamp() uses data derived from CalculateHeading() (nav/geo_math.c:25).  — follows the data forward; whether a change matters depends on what the change is
+  ✓ [INFERENCE] wrap180() uses data derived from CalculateHeading() (nav/geo_math.c:20).  — follows the data forward; whether a change matters depends on what the change is
+  ✓ [INFERENCE] wrap360() uses data derived from CalculateHeading() (nav/geo_math.c:9).  — follows the data forward; whether a change matters depends on what the change is
+  ✓ [INFERENCE] Data derived from CalculateHeading() reaches motor_set_steering().  — found by following the data forward
+  • No tests in this project call CalculateHeading(), so a change would not be caught automatically.
+17.9 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts

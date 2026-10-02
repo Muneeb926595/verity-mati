@@ -1,0 +1,51 @@
+{
+  "_doc": "Pinned downloads for the Windows setup and system analysis. Every file is verified against its SHA256 after download. Versions match the macOS build (llama.cpp b11293, .NET 10, cppcheck 2.22.0, Python 3.12). Verified 2 Oct 2026.",
+  "version": 1,
+  "python": "3.12",
+  "uv": {
+    "version": "0.12.22",
+    "x64":   { "url": "https://github.com/astral-sh/uv/releases/download/0.12.22/uv-x86_64-pc-windows-msvc.zip",  "sha256": "ea1397797a0ca15f63516dd0f49c2dde9776db9be5861cab152ebe8ad199894d" },
+    "arm64": { "url": "https://github.com/astral-sh/uv/releases/download/0.12.22/uv-aarch64-pc-windows-msvc.zip", "sha256": "6a42b919c2bb7135f07b4d1bb8e489f0eaab0bae039020573cc522d831e2d32e" }
+  },
+  "llama_cpp": {
+    "tag": "b11293",
+    "base_url": "https://github.com/ggml-org/llama.cpp/releases/download/b11293/",
+    "builds": {
+      "cpu-x64":       { "zip": "llama-b11293-bin-win-cpu-x64.zip",       "sha256": "a17e1a24a576fed96c07215a7b7261894a911e619283f600866f116f18ff6a46", "mb": 19 },
+      "cpu-arm64":     { "zip": "llama-b11293-bin-win-cpu-arm64.zip",     "sha256": "67635de3f0877a2fc5af3919cd8bca9bc174ee281a5141928e55e7dd41d22377", "mb": 12 },
+      "vulkan-x64":    { "zip": "llama-b11293-bin-win-vulkan-x64.zip",    "sha256": "5d058b42334cf4b29c3490fb407a058bfdb775028142011476f75c9cd9570ea7", "mb": 33 },
+      "cuda-12.4-x64": { "zip": "llama-b11293-bin-win-cuda-12.4-x64.zip", "sha256": "a0b53222b154614aa19f7e44f45088b7c731a7d84d4f97be3c13f19eaa577c6c", "mb": 263, "min_cuda": "12.4",
+                         "runtime": { "zip": "cudart-llama-bin-win-cuda-12.4-x64.zip", "sha256": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6", "mb": 391 } },
+      "cuda-13.4-x64": { "zip": "llama-b11293-bin-win-cuda-13.4-x64.zip", "sha256": "b862957974308f78e2d7e82dc7ef5e0c6fdb50e4081aa45514fe65461849b6af", "mb": 153, "min_cuda": "13.4",
+                         "runtime": { "zip": "cudart-llama-bin-win-cuda-13.4-x64.zip", "sha256": "738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668", "mb": 424 } }
+    }
+  },
+  "dotnet": { "channel": "10.0", "install_script": "https://dot.net/v1/dotnet-install.ps1" },
+  "cppcheck": { "version": "2.22.0", "url": "https://github.com/danmar/cppcheck/releases/download/2.22.0/cppcheck-2.22.0-x64-Setup.msi", "sha256": "3929162bab7e71d1b9b18708ec054fb0188bfc8ea1660979ed95837f5a9f547b" },
+  "node": { "index": "https://nodejs.org/dist/index.json", "major": 22, "note": "only needed when ui/dist is missing" },
+  "models": [
+    { "id": "embed-qwen3-0.6b", "role": "embed", "label": "Qwen3-Embedding-0.6B (Q8_0)", "file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
+      "url": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf",
+      "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439", "bytes": 639150592,
+      "resident_gb": 1.0, "ctx": 8192, "moe": false, "tested": "meaning search used in every benchmark" },
+    { "id": "c1-qwen3-4b", "rung": "C1", "role": "fast", "label": "Qwen3-4B-Instruct-2507 (Q4_K_M)", "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597", "bytes": 2497281120,
+      "resident_gb": 5.0, "resident_gb_8k": 3.9, "ctx": 16384, "reasoning": false, "moe": false, "layers": 36,
+      "tested": "Verity's small/fast rung; weaker re-ranking than C2" },
+    { "id": "c2-gpt-oss-20b", "rung": "C2", "role": "main", "label": "gpt-oss-20b (MXFP4)", "file": "gpt-oss-20b-MXFP4.gguf",
+      "url": "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-MXFP4.gguf",
+      "sha256": "27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901", "bytes": 12109566624,
+      "resident_gb": 14.0, "ctx": 16384, "reasoning": true, "moe": true, "layers": 24,
+      "tested": "Verity's default model; full benchmark on a 24 GB Mac (median 12 s per answer)" },
+    { "id": "c3-gpt-oss-120b", "rung": "C3", "role": "main", "label": "gpt-oss-120b (MXFP4)", "file": "gpt-oss-120b-MXFP4.gguf",
+      "url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/resolve/main/gpt-oss-120b-MXFP4.gguf",
+      "sha256": "582bd40f6886200101f4c4ed9f25f3fe80cc14c86e9e2b37746cd8904a0c622d", "bytes": 63387346208,
+      "resident_gb": 66.0, "ctx": 16384, "reasoning": true, "moe": true, "layers": 36,
+      "tested": "same family and prompt format as C2, not yet benchmarked with Verity: run the quality check" }
+  ],
+  "targets": {
+    "_doc": "What 'good' and 'usable' mean in the stress test. One test answer = a re-rank call plus a summary, each with a ~1k-token prompt. Calibrated on the 24 GB M3 Mac: the test gives 15 s for gpt-oss-20b where real Verity answers have a median of 12 s, so these limits are slightly conservative.",
+    "good_answer_s": 20, "max_answer_s": 45, "min_gen_tps": 8, "memory_headroom": 0.15
+  }
+}

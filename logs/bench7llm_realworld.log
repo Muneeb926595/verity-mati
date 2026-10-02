@@ -1,0 +1,5 @@
+[bench] FAIL rw-minmea-lat              score=1.00 7.3s
+[bench] PASS rw-minmea-checksum         score=1.00 17.8s
+[bench] PASS rw-minmea-callers-check    score=1.00 9.8s
+[bench] PASS rw-minmea-invalid          score=1.00 13.7s
+[bench] PASS rw-minmea-rmc              score=1.00 7.5s

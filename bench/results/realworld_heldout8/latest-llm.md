@@ -1,0 +1,29 @@
+# Verity benchmark — llm mode (20261001-183208)
+
+Cases: 12 · passed: 10 · mean score: 0.875 · mean time per question: 17.42 s
+
+| metric | result |
+|---|---|
+| symbol identification | 9/11 passed · accuracy 0.864 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 114 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 114/114 (100.00%) |
+| answer paragraphs without any evidence | 0 of 57 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| np-stream-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-end-of-stream | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-missing-required | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-varint-overflow | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-wrong-wire-type | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-max-depth | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["PB_MESSAGE_NESTING_MAX"]} |
+| np-array-max | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-zero-tag | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-read-callers | callpath | callers | ✓ | 1.0 |  |
+| np-bytes-written | symbol | where_computed | ✓ | 1.0 |  |
+| np-errmsg | symbol | where_computed | ✗ | 0.0 | symbols: {"missing": ["PB_SET_ERROR"]} |
+| np-invented | honesty | explain | ✓ | 1.0 |  |

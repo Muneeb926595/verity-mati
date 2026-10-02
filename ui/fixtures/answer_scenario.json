@@ -1,0 +1,671 @@
+{
+ "question": "What happens when GPS sends heading 270, speed 80, valid true?",
+ "answer": [
+  "I ran the real code in a sandbox with heading = 270, speed = 80, valid = 1.",
+  "Functions that ran, in order: ProcessGpsData() \u2192 gps_validate_fix() \u2192 CalculateHeading() \u2192 wrap180() \u2192 wrap360() \u2192 NavigationTick() \u2192 bearing_deg() \u2192 wrap360() \u2192 VehicleController_SetDirection() \u2192 wrap180() \u2192 wrap360() \u2192 clamp().",
+  "Decisions, in the order they ran: in ProcessGpsData(): `status != GPS_OK` was false (line 49); in gps_validate_fix(): `fix == 0 || !fix->valid` was false (line 7), `fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (line 10), `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (line 14); in CalculateHeading(): `speed_knots < MIN_SPEED_FOR_HEADING` was false (line 37); in NavigationTick(): `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (line 68), `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (line 77).",
+  "Resulting values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 80.0000.",
+  "Outputs it produced: motor_set_steering(50)."
+ ],
+ "flow": [],
+ "evidence": [
+  {
+   "id": "E3",
+   "kind": "branch",
+   "file": "gps/gps_validation.c",
+   "line": 7,
+   "end_line": null,
+   "text": "if (fix == 0 || !fix->valid) {",
+   "sym": "c:@F@gps_validate_fix",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E4",
+   "kind": "branch",
+   "file": "gps/gps_validation.c",
+   "line": 10,
+   "end_line": null,
+   "text": "if (fix->latitude < -90.0 || fix->latitude > 90.0 ||",
+   "sym": "c:@F@gps_validate_fix",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E5",
+   "kind": "branch",
+   "file": "gps/gps_validation.c",
+   "line": 14,
+   "end_line": null,
+   "text": "if (fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES) {",
+   "sym": "c:@F@gps_validate_fix",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E7",
+   "kind": "branch",
+   "file": "nav/geo_math.c",
+   "line": 11,
+   "end_line": null,
+   "text": "if (r < 0.0) {",
+   "sym": "c:@F@wrap360",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E6",
+   "kind": "branch",
+   "file": "nav/navigation.c",
+   "line": 37,
+   "end_line": null,
+   "text": "if (speed_knots < MIN_SPEED_FOR_HEADING) {",
+   "sym": "c:@F@CalculateHeading",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E2",
+   "kind": "branch",
+   "file": "nav/navigation.c",
+   "line": 49,
+   "end_line": null,
+   "text": "if (status != GPS_OK) {",
+   "sym": "c:@F@ProcessGpsData",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E8",
+   "kind": "branch",
+   "file": "nav/navigation.c",
+   "line": 68,
+   "end_line": null,
+   "text": "if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) {",
+   "sym": "c:@F@NavigationTick",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E9",
+   "kind": "branch",
+   "file": "nav/navigation.c",
+   "line": 77,
+   "end_line": null,
+   "text": "if (g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING) {",
+   "sym": "c:@F@NavigationTick",
+   "note": "",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  },
+  {
+   "id": "E1",
+   "kind": "run",
+   "file": null,
+   "line": null,
+   "end_line": null,
+   "text": "__VR_ENTER 0x100cecc00\n__VR_BASE 0x100cecd68\n__VR_ENTER 0x100cedd6c\n__VR_ENTER 0x100cecea4\n__VR_ENTER 0x100ced4c8\n__VR_ENTER 0x100cedddc\n__VR_HW led_set_status(1)\n__VR_PHASE before\n__VR_STATE g_nav.mode=0\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=0\n__VR_STATE currentHeading=0.0000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=0.0000\n__VR_CALL_TARGET\n__VR_ENTER 0x100ced64c\n__VR_ENTER 0x100ced10c\n__VR_ENTER 0x100ced560\n__VR_ENTER 0x100ceda68\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100ced9a4\n__VR_PHASE after_input\n__VR_STATE g_nav.mode=1\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=1\n__VR_STATE currentHeading=337.5000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=80.0000\n__VR_ENTER 0x100ced808\n__VR_ENTER 0x100cedbe4\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100ced384\n__VR_ENTER 0x100ceda68\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100cedaec\n__VR_ENTER 0x100cedaec\n__VR_HW motor_set_steering(50)\n__VR_PHASE after_NavigationTick\n__VR_STATE g_nav.mode=1\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=1\n__VR_STATE currentHeading=337.5000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=80.0000\n",
+   "sym": null,
+   "note": "sandboxed run",
+   "status": "OBSERVED",
+   "status_label": "Observed by running the code"
+  }
+ ],
+ "status": "OBSERVED",
+ "status_label": "Observed by running the code",
+ "status_counts": {
+  "OBSERVED": 11
+ },
+ "sections": {
+  "reasoning": [
+   {
+    "text": "`status != GPS_OK` was false (nav/navigation.c:49).",
+    "pred": "branch_taken",
+    "args": [
+     "nav/navigation.c",
+     49,
+     false
+    ],
+    "ev": [
+     "E2",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`fix == 0 || !fix->valid` was false (gps/gps_validation.c:7).",
+    "pred": "branch_taken",
+    "args": [
+     "gps/gps_validation.c",
+     7,
+     false
+    ],
+    "ev": [
+     "E3",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (gps/gps_validation.c:10).",
+    "pred": "branch_taken",
+    "args": [
+     "gps/gps_validation.c",
+     10,
+     false
+    ],
+    "ev": [
+     "E4",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (gps/gps_validation.c:14).",
+    "pred": "branch_taken",
+    "args": [
+     "gps/gps_validation.c",
+     14,
+     false
+    ],
+    "ev": [
+     "E5",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`speed_knots < MIN_SPEED_FOR_HEADING` was false (nav/navigation.c:37).",
+    "pred": "branch_taken",
+    "args": [
+     "nav/navigation.c",
+     37,
+     false
+    ],
+    "ev": [
+     "E6",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`r < 0.0` was true (nav/geo_math.c:11).",
+    "pred": "branch_taken",
+    "args": [
+     "nav/geo_math.c",
+     11,
+     true
+    ],
+    "ev": [
+     "E7",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (nav/navigation.c:68).",
+    "pred": "branch_taken",
+    "args": [
+     "nav/navigation.c",
+     68,
+     false
+    ],
+    "ev": [
+     "E8",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "`g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (nav/navigation.c:77).",
+    "pred": "branch_taken",
+    "args": [
+     "nav/navigation.c",
+     77,
+     false
+    ],
+    "ev": [
+     "E9",
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "seen in a sandboxed run of the real code",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "Call sequence observed: ProcessGpsData \u2192 gps_validate_fix \u2192 CalculateHeading \u2192 wrap180 \u2192 wrap360 \u2192 NavigationTick \u2192 bearing_deg \u2192 wrap360 \u2192 VehicleController_SetDirection \u2192 wrap180 \u2192 wrap360 \u2192 clamp",
+    "pred": "run_trace",
+    "args": [
+     [
+      "ProcessGpsData",
+      "gps_validate_fix",
+      "CalculateHeading",
+      "wrap180",
+      "wrap360",
+      "wrap360",
+      "NavigationTick",
+      "bearing_deg",
+      "wrap360",
+      "VehicleController_SetDirection",
+      "wrap180",
+      "wrap360",
+      "clamp",
+      "clamp"
+     ]
+    ],
+    "ev": [
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "recorded by instrumentation during the run",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "Final values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 80.0000",
+    "pred": "run_state",
+    "args": [
+     {
+      "g_nav.mode": "1 (NAV_MODE_TRACKING)",
+      "g_nav.has_fix": "1",
+      "currentHeading": "337.5000",
+      "g_nav.speed_knots": "80.0000"
+     }
+    ],
+    "ev": [
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "printed by the harness after the run",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   },
+   {
+    "text": "Hardware/OS calls: motor_set_steering(50)",
+    "pred": "run_hw",
+    "args": [
+     [
+      "motor_set_steering(50)"
+     ]
+    ],
+    "ev": [
+     "E1"
+    ],
+    "status": "OBSERVED",
+    "why": "recorded by the stand-in (stub) functions during the run",
+    "verified": true,
+    "check": "backed by the recorded run",
+    "status_label": "Observed by running the code"
+   }
+  ],
+  "execution_path": [
+   {
+    "label": "ProcessGpsData()",
+    "file": "nav/navigation.c",
+    "line": 45,
+    "ev": "E10",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "gps_validate_fix()",
+    "file": "gps/gps_validation.c",
+    "line": 5,
+    "ev": "E11",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "CalculateHeading()",
+    "file": "nav/navigation.c",
+    "line": 33,
+    "ev": "E12",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "wrap180()",
+    "file": "nav/geo_math.c",
+    "line": 18,
+    "ev": "E13",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "wrap360()",
+    "file": "nav/geo_math.c",
+    "line": 7,
+    "ev": "E14",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "NavigationTick()",
+    "file": "nav/navigation.c",
+    "line": 64,
+    "ev": "E15",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "bearing_deg()",
+    "file": "nav/geo_math.c",
+    "line": 31,
+    "ev": "E16",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "wrap360()",
+    "file": "nav/geo_math.c",
+    "line": 7,
+    "ev": "E14",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "VehicleController_SetDirection()",
+    "file": "control/vehicle_controller.c",
+    "line": 10,
+    "ev": "E17",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "wrap180()",
+    "file": "nav/geo_math.c",
+    "line": 18,
+    "ev": "E13",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "wrap360()",
+    "file": "nav/geo_math.c",
+    "line": 7,
+    "ev": "E14",
+    "status": "OBSERVED",
+    "note": "ran"
+   },
+   {
+    "label": "clamp()",
+    "file": "nav/geo_math.c",
+    "line": 23,
+    "ev": "E18",
+    "status": "OBSERVED",
+    "note": "ran"
+   }
+  ],
+  "related": [],
+  "assumptions": [
+   "The values in the question are delivered to ProcessGpsData() (nav/navigation.c:45); mapped as: heading \u2192 fix->heading_deg, speed \u2192 fix->speed_knots, valid \u2192 fix->valid.",
+   "latitude was not given; used 0.0 so it passes the code's own check (rejects latitude < -90; rejects latitude > 90)",
+   "longitude was not given; used 0.0 so it passes the code's own check (rejects longitude < -180; rejects longitude > 180)",
+   "hdop was not given; used 1.25 so it passes the code's own check (rejects hdop > 2.5)",
+   "satellites was not given; used 8 so it passes the code's own check (rejects satellites < 4)",
+   "After the input is processed, the main loop's next step runs once: NavigationTick().",
+   "drivers/uart_isr.c could not be compiled on this machine (missing headers); the functions and data it defines were replaced by stand-ins."
+  ],
+  "verification": {
+   "report": {
+    "claims": 11,
+    "verified": 11,
+    "rejected": 0,
+    "stale_files": [],
+    "evidence": 18,
+    "evidence_ok": 18
+   },
+   "unknowns": [],
+   "notes": [],
+   "rejected": []
+  }
+ },
+ "run": {
+  "ok": true,
+  "runs": [
+   {
+    "calls": [
+     "ProcessGpsData",
+     "gps_validate_fix",
+     "CalculateHeading",
+     "wrap180",
+     "wrap360",
+     "wrap360",
+     "NavigationTick",
+     "bearing_deg",
+     "wrap360",
+     "VehicleController_SetDirection",
+     "wrap180",
+     "wrap360",
+     "clamp",
+     "clamp"
+    ],
+    "hw_calls": [
+     "motor_set_steering(50)"
+    ],
+    "state": {
+     "g_nav.mode": "1 (NAV_MODE_TRACKING)",
+     "g_nav.has_fix": "1",
+     "currentHeading": "337.5000",
+     "g_nav.speed_knots": "80.0000"
+    },
+    "state_by_phase": {
+     "before": {
+      "g_nav.mode": "0",
+      "g_nav.last_fix_ms": "0",
+      "g_nav.consecutive_invalid": "0",
+      "g_nav.has_fix": "0",
+      "currentHeading": "0.0000",
+      "g_nav.latitude": "0.0000",
+      "g_nav.longitude": "0.0000",
+      "g_nav.speed_knots": "0.0000"
+     },
+     "after_input": {
+      "g_nav.mode": "1",
+      "g_nav.last_fix_ms": "0",
+      "g_nav.consecutive_invalid": "0",
+      "g_nav.has_fix": "1",
+      "currentHeading": "337.5000",
+      "g_nav.latitude": "0.0000",
+      "g_nav.longitude": "0.0000",
+      "g_nav.speed_knots": "80.0000"
+     },
+     "after_NavigationTick": {
+      "g_nav.mode": "1",
+      "g_nav.last_fix_ms": "0",
+      "g_nav.consecutive_invalid": "0",
+      "g_nav.has_fix": "1",
+      "currentHeading": "337.5000",
+      "g_nav.latitude": "0.0000",
+      "g_nav.longitude": "0.0000",
+      "g_nav.speed_knots": "80.0000"
+     }
+    },
+    "stubs_note": "hardware functions were replaced by stand-ins that record their calls",
+    "branches": [
+     {
+      "fn": "c:@F@gps_validate_fix",
+      "file": "gps/gps_validation.c",
+      "line": 7,
+      "cond": "fix == 0 || !fix->valid",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@gps_validate_fix",
+      "file": "gps/gps_validation.c",
+      "line": 10,
+      "cond": "fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@gps_validate_fix",
+      "file": "gps/gps_validation.c",
+      "line": 14,
+      "cond": "fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@wrap360",
+      "file": "nav/geo_math.c",
+      "line": 11,
+      "cond": "r < 0.0",
+      "taken": true,
+      "evaluated": 4,
+      "then_count": 2
+     },
+     {
+      "fn": "c:@F@CalculateHeading",
+      "file": "nav/navigation.c",
+      "line": 37,
+      "cond": "speed_knots < MIN_SPEED_FOR_HEADING",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@ProcessGpsData",
+      "file": "nav/navigation.c",
+      "line": 49,
+      "cond": "status != GPS_OK",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@NavigationTick",
+      "file": "nav/navigation.c",
+      "line": 68,
+      "cond": "g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     },
+     {
+      "fn": "c:@F@NavigationTick",
+      "file": "nav/navigation.c",
+      "line": 77,
+      "cond": "g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING",
+      "taken": false,
+      "evaluated": 1,
+      "then_count": 0
+     }
+    ],
+    "coverage_files": 11,
+    "ok": true,
+    "exit": 0,
+    "seconds": 1.208,
+    "label": "",
+    "inputs": {
+     "heading": 270,
+     "speed": 80,
+     "valid": 1
+    },
+    "run_dir": "/Users/emumba/Desktop/mati/data/repos/navgps-c-6a23171a71/runs/b8df470f92",
+    "excluded": [
+     "drivers/uart_isr.c"
+    ],
+    "assumptions": [
+     "latitude was not given; used 0.0 so it passes the code's own check (rejects latitude < -90; rejects latitude > 90)",
+     "longitude was not given; used 0.0 so it passes the code's own check (rejects longitude < -180; rejects longitude > 180)",
+     "hdop was not given; used 1.25 so it passes the code's own check (rejects hdop > 2.5)",
+     "satellites was not given; used 8 so it passes the code's own check (rejects satellites < 4)",
+     "After the input is processed, the main loop's next step runs once: NavigationTick().",
+     "drivers/uart_isr.c could not be compiled on this machine (missing headers); the functions and data it defines were replaced by stand-ins."
+    ],
+    "stdout_tail": "__VR_ENTER 0x100cecc00\n__VR_BASE 0x100cecd68\n__VR_ENTER 0x100cedd6c\n__VR_ENTER 0x100cecea4\n__VR_ENTER 0x100ced4c8\n__VR_ENTER 0x100cedddc\n__VR_HW led_set_status(1)\n__VR_PHASE before\n__VR_STATE g_nav.mode=0\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=0\n__VR_STATE currentHeading=0.0000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=0.0000\n__VR_CALL_TARGET\n__VR_ENTER 0x100ced64c\n__VR_ENTER 0x100ced10c\n__VR_ENTER 0x100ced560\n__VR_ENTER 0x100ceda68\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100ced9a4\n__VR_PHASE after_input\n__VR_STATE g_nav.mode=1\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=1\n__VR_STATE currentHeading=337.5000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=80.0000\n__VR_ENTER 0x100ced808\n__VR_ENTER 0x100cedbe4\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100ced384\n__VR_ENTER 0x100ceda68\n__VR_ENTER 0x100ced9a4\n__VR_ENTER 0x100cedaec\n__VR_ENTER 0x100cedaec\n__VR_HW motor_set_steering(50)\n__VR_PHASE after_NavigationTick\n__VR_STATE g_nav.mode=1\n__VR_STATE g_nav.last_fix_ms=0\n__VR_STATE g_nav.consecutive_invalid=0\n__VR_STATE g_nav.has_fix=1\n__VR_STATE currentHeading=337.5000\n__VR_STATE g_nav.latitude=0.0000\n__VR_STATE g_nav.longitude=0.0000\n__VR_STATE g_nav.speed_knots=80.0000\n",
+    "hw_expected": [
+     "hal_get_tick_ms()",
+     "led_set_status()",
+     "motor_set_steering()"
+    ]
+   }
+  ],
+  "target": "c:@F@ProcessGpsData",
+  "explain": ""
+ },
+ "route": {
+  "intent": "scenario",
+  "mentions": [
+   {
+    "text": "valid",
+    "candidates": [
+     "c:@SA@gps_fix_t@FI@valid"
+    ],
+    "explicit": false
+   }
+  ],
+  "topic": [
+   "gps",
+   "heading",
+   "speed",
+   "valid"
+  ],
+  "inputs": {
+   "heading": 270,
+   "speed": 80,
+   "valid": true
+  },
+  "by": "rules"
+ },
+ "meta": {
+  "seconds": 2.18,
+  "prose": {
+   "mode": "direct"
+  },
+  "template": [
+   "I ran the real code in a sandbox with heading = 270, speed = 80, valid = 1.",
+   "Functions that ran, in order: ProcessGpsData() \u2192 gps_validate_fix() \u2192 CalculateHeading() \u2192 wrap180() \u2192 wrap360() \u2192 NavigationTick() \u2192 bearing_deg() \u2192 wrap360() \u2192 VehicleController_SetDirection() \u2192 wrap180() \u2192 wrap360() \u2192 clamp().",
+   "Decisions, in the order they ran: in ProcessGpsData(): `status != GPS_OK` was false (line 49); in gps_validate_fix(): `fix == 0 || !fix->valid` was false (line 7), `fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (line 10), `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (line 14); in CalculateHeading(): `speed_knots < MIN_SPEED_FOR_HEADING` was false (line 37); in NavigationTick(): `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (line 68), `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (line 77).",
+   "Resulting values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 80.0000.",
+   "Outputs it produced: motor_set_steering(50)."
+  ],
+  "intent": "scenario",
+  "model": null
+ },
+ "id": "8fb6a91334bf"
+}

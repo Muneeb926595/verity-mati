@@ -1,0 +1,260 @@
+{
+ "_doc": "Dialect packs: detected per repository from source signals. Data, not code: add a pack to support a new compiler.",
+ "neutral": {
+  "label": "neutral C17",
+  "signals": [],
+  "args": [
+   "-std=gnu17"
+  ],
+  "defines": {},
+  "prelude": "",
+  "rewrite": []
+ },
+ "msvc": {
+  "label": "MSVC",
+  "signals": [
+   [
+    "__declspec",
+    3
+   ],
+   [
+    "\\b__int64\\b",
+    2
+   ],
+   [
+    "#\\s*include\\s*<windows\\.h>",
+    4
+   ],
+   [
+    "\\b_MSC_VER\\b",
+    2
+   ],
+   [
+    "\\b_In_\\b|\\b_Out_\\b|\\b_Inout_\\b",
+    1
+   ],
+   [
+    "#\\s*pragma\\s+comment",
+    2
+   ],
+   [
+    "\\bWINAPI\\b|\\bDWORD\\b|\\bHANDLE\\b",
+    1
+   ]
+  ],
+  "args": [
+   "-fms-extensions",
+   "-fms-compatibility",
+   "-fdeclspec"
+  ],
+  "defines": {
+   "_MSC_VER": "1938",
+   "_WIN32": "1",
+   "_WIN64": "1",
+   "_M_X64": "100"
+  },
+  "prelude": "",
+  "rewrite": [],
+  "data_model": "LLP64"
+ },
+ "gcc": {
+  "label": "GCC / Clang",
+  "signals": [
+   [
+    "__attribute__",
+    2
+   ],
+   [
+    "\\b__GNUC__\\b",
+    2
+   ],
+   [
+    "\\btypeof\\s*\\(",
+    1
+   ],
+   [
+    "__asm__",
+    1
+   ],
+   [
+    "__builtin_",
+    1
+   ]
+  ],
+  "args": [],
+  "defines": {},
+  "prelude": "",
+  "rewrite": [],
+  "data_model": "LP64"
+ },
+ "ti": {
+  "label": "TI C2000/MSP430",
+  "signals": [
+   [
+    "#\\s*pragma\\s+CODE_SECTION",
+    4
+   ],
+   [
+    "#\\s*pragma\\s+DATA_SECTION",
+    4
+   ],
+   [
+    "\\binterrupt\\s+void\\b",
+    3
+   ],
+   [
+    "\\bcregister\\b",
+    3
+   ],
+   [
+    "__TI_COMPILER_VERSION__",
+    3
+   ],
+   [
+    "DSP28x_Project\\.h|F28x_Project\\.h|driverlib\\.h|msp430\\.h",
+    4
+   ],
+   [
+    "\\bEALLOW\\b|\\bEDIS\\b",
+    3
+   ]
+  ],
+  "args": [],
+  "defines": {},
+  "prelude": "#define interrupt\n#define __interrupt\n#define cregister\n#define EALLOW\n#define EDIS\n#define __asm(x)\n",
+  "rewrite": [],
+  "data_model": "W16"
+ },
+ "iar": {
+  "label": "IAR",
+  "signals": [
+   [
+    "\\b__no_init\\b",
+    4
+   ],
+   [
+    "\\b__ramfunc\\b",
+    4
+   ],
+   [
+    "__ICCARM__",
+    3
+   ],
+   [
+    "\\s@\\s*0x[0-9A-Fa-f]+",
+    3
+   ],
+   [
+    "#\\s*pragma\\s+location",
+    3
+   ],
+   [
+    "\\b__root\\b",
+    2
+   ]
+  ],
+  "args": [],
+  "defines": {},
+  "prelude": "#define __no_init\n#define __ramfunc\n#define __root\n#define __interrupt\n#define __task\n",
+  "rewrite": [
+   [
+    "\\s@\\s*0x[0-9A-Fa-f]+",
+    " "
+   ]
+  ],
+  "data_model": "ILP32"
+ },
+ "keil": {
+  "label": "Keil / Arm Compiler 5",
+  "signals": [
+   [
+    "\\b__irq\\b",
+    4
+   ],
+   [
+    "__CC_ARM",
+    3
+   ],
+   [
+    "__ARMCC_VERSION",
+    2
+   ],
+   [
+    "\\b__packed\\b",
+    2
+   ],
+   [
+    "\\b__svc\\b",
+    2
+   ]
+  ],
+  "args": [],
+  "defines": {},
+  "prelude": "#define __irq\n#define __packed\n#define __svc(x)\n#define __value_in_regs\n",
+  "rewrite": [],
+  "data_model": "ILP32"
+ },
+ "cmsis": {
+  "label": "CMSIS / vendor HAL",
+  "signals": [
+   [
+    "\\b__IO\\b",
+    2
+   ],
+   [
+    "core_cm\\d",
+    3
+   ],
+   [
+    "\\w+_IRQHandler\\b",
+    2
+   ],
+   [
+    "__NVIC_|NVIC_EnableIRQ",
+    2
+   ],
+   [
+    "stm32\\w*\\.h|nrf\\w*\\.h|samd\\w*\\.h",
+    3
+   ]
+  ],
+  "args": [],
+  "defines": {},
+  "prelude": "#ifndef __IO\n#define __IO volatile\n#endif\n#ifndef __I\n#define __I volatile const\n#endif\n#ifndef __O\n#define __O volatile\n#endif\n",
+  "rewrite": [],
+  "data_model": "ILP32"
+ },
+ "_entry_patterns": {
+  "_doc": "source patterns that mark interrupt handlers (checked in every C file; the preprocessor removes the keywords)",
+  "patterns": [
+   [
+    "\\binterrupt\\s+void\\s+([A-Za-z_]\\w*)\\s*\\(",
+    "interrupt handler (TI 'interrupt' keyword)"
+   ],
+   [
+    "\\b__interrupt\\s+void\\s+([A-Za-z_]\\w*)\\s*\\(",
+    "interrupt handler (__interrupt)"
+   ],
+   [
+    "#\\s*pragma\\s+INTERRUPT\\s*\\(\\s*([A-Za-z_]\\w*)",
+    "interrupt handler (#pragma INTERRUPT)"
+   ],
+   [
+    "#\\s*pragma\\s+vector\\s*=\\s*\\w+\\s*\\n\\s*__interrupt\\s+void\\s+([A-Za-z_]\\w*)",
+    "interrupt handler (#pragma vector)"
+   ],
+   [
+    "\\bISR\\s*\\(\\s*([A-Za-z_]\\w*)\\s*\\)",
+    "interrupt handler (ISR() macro)"
+   ],
+   [
+    "__attribute__\\s*\\(\\(\\s*(?:interrupt|isr|signal)[^)]*\\)\\)\\s*void\\s+([A-Za-z_]\\w*)",
+    "interrupt handler (attribute)"
+   ],
+   [
+    "\\b__irq\\s+void\\s+([A-Za-z_]\\w*)\\s*\\(",
+    "interrupt handler (__irq)"
+   ]
+  ]
+ }
+}

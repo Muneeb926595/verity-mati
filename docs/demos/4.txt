@@ -1,0 +1,79 @@
+Your question
+  What happens when GPS sends heading 270?
+
+Answer
+  When GPS sends heading 270, the code processes it through `ProcessGpsData()` and validates the
+  fix. The heading is used to calculate a new `currentHeading` of 337.5000, which leads to
+  `motor_set_steering(50)` being called.
+
+  I ran the real code in a sandbox with heading = 270.
+
+  Functions that ran, in order: ProcessGpsData() → gps_validate_fix() → CalculateHeading() →
+  wrap180() → wrap360() → NavigationTick() → bearing_deg() → wrap360() →
+  VehicleController_SetDirection() → wrap180() → wrap360() → clamp().
+
+  Decisions, in the order they ran: in ProcessGpsData(): `status != GPS_OK` was false (line 49); in
+  gps_validate_fix(): `fix == 0 || !fix->valid` was false (line 7), `fix->latitude < -90.0 ||
+  fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (line 10),
+  `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (line 14); in
+  CalculateHeading(): `speed_knots < MIN_SPEED_FOR_HEADING` was false (line 37); in
+  NavigationTick(): `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (line
+  68), `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (line
+  77).
+
+  Resulting values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading =
+  337.5000, g_nav.speed_knots = 4.0000.
+
+  Outputs it produced: motor_set_steering(50).
+
+Evidence
+  [E3] gps/gps_validation.c:7  if (fix == 0 || !fix->valid) {
+  [E4] gps/gps_validation.c:10  if (fix->latitude < -90.0 || fix->latitude > 90.0 ||
+  [E5] gps/gps_validation.c:14  if (fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES) {
+  [E7] nav/geo_math.c:11  if (r < 0.0) {
+  [E6] nav/navigation.c:37  if (speed_knots < MIN_SPEED_FOR_HEADING) {
+  [E2] nav/navigation.c:49  if (status != GPS_OK) {
+  [E8] nav/navigation.c:68  if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) {
+  [E9] nav/navigation.c:77  if (g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING) {
+  [E1] sandboxed run
+
+Certainty: Observed by running the code  observed: 11
+
+Execution path
+  → ProcessGpsData()  (nav/navigation.c:45)
+  → gps_validate_fix()  (gps/gps_validation.c:5)
+  → CalculateHeading()  (nav/navigation.c:33)
+  → wrap180()  (nav/geo_math.c:18)
+  → wrap360()  (nav/geo_math.c:7)
+  → NavigationTick()  (nav/navigation.c:64)
+  → bearing_deg()  (nav/geo_math.c:31)
+  → wrap360()  (nav/geo_math.c:7)
+  → VehicleController_SetDirection()  (control/vehicle_controller.c:10)
+  → wrap180()  (nav/geo_math.c:18)
+  → wrap360()  (nav/geo_math.c:7)
+  → clamp()  (nav/geo_math.c:23)
+
+Assumptions
+  • The values in the question are delivered to ProcessGpsData() (nav/navigation.c:45); mapped as: heading → fix->heading_deg.
+  • latitude was not given; used 0.0 so it passes the code's own check (rejects latitude < -90; rejects latitude > 90)
+  • longitude was not given; used 0.0 so it passes the code's own check (rejects longitude < -180; rejects longitude > 180)
+  • speed_knots was not given; used 4 so it passes the code's own check (rejects speed_knots < 2)
+  • hdop was not given; used 1.25 so it passes the code's own check (rejects hdop > 2.5)
+  • satellites was not given; used 8 so it passes the code's own check (rejects satellites < 4)
+  • valid was not given; used 1 so it passes the code's own check (rejects valid = 0)
+  • After the input is processed, the main loop's next step runs once: NavigationTick().
+
+Verification
+  11 of 11 statements re-checked against the code
+  ✓ [OBSERVED] `status != GPS_OK` was false (nav/navigation.c:49).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix == 0 || !fix->valid` was false (gps/gps_validation.c:7).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (gps/gps_validation.c:10).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (gps/gps_validation.c:14).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `speed_knots < MIN_SPEED_FOR_HEADING` was false (nav/navigation.c:37).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `r < 0.0` was true (nav/geo_math.c:11).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (nav/navigation.c:68).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (nav/navigation.c:77).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] Call sequence observed: ProcessGpsData → gps_validate_fix → CalculateHeading → wrap180 → wrap360 → NavigationTick → bearing_deg → wrap360 → VehicleController_SetDirection → wrap180 → wrap360 → clamp  — recorded by instrumentation during the run
+  ✓ [OBSERVED] Final values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 4.0000  — printed by the harness after the run
+  ✓ [OBSERVED] Hardware/OS calls: motor_set_steering(50)  — recorded by the stand-in (stub) functions during the run
+16.0 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts

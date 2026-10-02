@@ -1,0 +1,43 @@
+[bench] PASS soem-too-many-slaves       score=1.00 29.7s
+[bench] PASS soem-slavecount            score=1.00 27.3s
+[bench] PASS soem-pusherror-callers     score=1.00 10.3s
+[bench] FAIL soem-error-list-full       score=0.50 32.4s
+[bench] PASS soem-sdo-abort             score=1.00 31.0s
+[bench] PASS soem-no-reply              score=1.00 33.0s
+[bench] PASS soem-frame-send            score=1.00 10.5s
+[bench] PASS soem-statecheck            score=1.00 11.0s
+[bench] PASS soem-poperror              score=1.00 15.6s
+[bench] PASS soem-srconfirm-callers     score=1.00 19.6s
+[bench] FAIL soem-mbx-counter           score=0.00 14.5s
+[bench] PASS soem-invented              score=1.00 0.3s
+# Verity benchmark — llm-embed mode (20261001-201244)
+
+Cases: 12 · passed: 10 · mean score: 0.875 · mean time per question: 19.59 s
+
+| metric | result |
+|---|---|
+| symbol identification | 9/11 passed · accuracy 0.864 |
+| file line references | 1/1 passed · accuracy 1.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 182 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 182/182 (100.00%) |
+| answer paragraphs without any evidence | 0 of 54 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| soem-too-many-slaves | scenario | failure_invalid | ✓ | 1.0 |  |
+| soem-slavecount | symbol | where_computed | ✓ | 1.0 |  |
+| soem-pusherror-callers | callpath | callers | ✓ | 1.0 |  |
+| soem-error-list-full | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["tail"]} |
+| soem-sdo-abort | scenario | failure_invalid | ✓ | 1.0 |  |
+| soem-no-reply | scenario | failure_missing | ✓ | 1.0 |  |
+| soem-frame-send | symbol | which_fn | ✓ | 1.0 |  |
+| soem-statecheck | symbol | explain | ✓ | 1.0 |  |
+| soem-poperror | symbol | failure_invalid | ✓ | 1.0 |  |
+| soem-srconfirm-callers | callpath | callers | ✓ | 1.0 |  |
+| soem-mbx-counter | symbol | explain | ✗ | 0.0 | symbols: {"missing": ["ec_nextmbxcnt"]} |
+| soem-invented | honesty | explain | ✓ | 1.0 |  |
+

@@ -1,0 +1,148 @@
+{
+ "summary": {
+  "cases": 2,
+  "passed": 1,
+  "mean_score": 1.0,
+  "symbol_identification": {
+   "cases": 2,
+   "passed": 2,
+   "accuracy": 1.0
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 1,
+   "claims": 26,
+   "rate": 0.0385
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 1,
+   "details": [
+    [
+     "h-cs-bank",
+     [
+      "ctor"
+     ]
+    ]
+   ]
+  },
+  "citation_precision": {
+   "verified_claims": 25,
+   "claims": 26,
+   "rate": 0.9615
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 9
+  },
+  "mean_seconds": 10.88
+ },
+ "results": [
+  {
+   "id": "h-steer-decide",
+   "category": "dataflow",
+   "q": "How does the vehicle decide which way to steer?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 14
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 14,
+     "total": 14
+    },
+    "_missing_evidence": {
+     "paragraphs": 8,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 6.77,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "motor_set_steering() has no code in this project \u2014 it is an output (hardware/OS output (by name)) (hal/hal.h:8). The decision is made by the code that calls it:",
+    "VehicleController_SetDirection() (control/vehicle_controller.c:10) \u2014 Converts the heading error into a rate-limited steering command and sends it to the motor.",
+    "Step by step, it calls wrap180() and stores the result in `error` (line 12); then it calls clamp() and stores the result in `command` (line 13); then it calls clamp() and stores the result in `command` (line 17); then it sets `s_last_command_deg = command` (line 18); then it calls motor_set_steering() (line 19).",
+    "It is called by NavigationTick() at nav/navigation.c:81 with (`currentHeading`, `target_heading`) \u2014 `target_heading = bearing_deg(g_nav.latitude, g_nav.longitude, g_nav.target_lat, g_nav.target_lon)` (line 80), only when `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` is false (GPS_TIMEOUT_MS = 2000), only when `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` is false (NAV_MODE_TRACKING = 1, NAV_MODE_DEAD_RECKONING = 4). The full chain from the program's start is: main() \u2192 NavigationTick() \u2192 VehicleController_SetDirection().",
+    "VehicleController_Hold() (control/vehicle_controller.c:23) \u2014 Centres the steering and signals that the route is no longer being followed.",
+    "Step by step, it sets `s_last_command_deg = 0.0` (line 25); then it calls motor_set_steering() (line 26); then it calls led_set_status() (line 27).",
+    "It is called by NavigationTick() at nav/navigation.c:73, only when `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` is true (GPS_TIMEOUT_MS = 2000). The full chain from the program's start is: main() \u2192 NavigationTick() \u2192 VehicleController_Hold().",
+    "The values it updates are used later by VehicleController_SetDirection() (uses s_last_command_deg)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-cs-bank",
+   "category": "dataflow",
+   "q": "How does the bank command reach the autopilot?",
+   "intent": "flow",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 12
+    },
+    "_hallucinated_names": {
+     "names": [
+      "ctor"
+     ]
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 12
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 14.98,
+   "passed": false,
+   "score": 1.0,
+   "answer": [
+    "The bank command is sent to the autopilot by the `AutopilotLink.SendBankCommand()` method, which is called from `NavLoop.Tick()` when the navigation mode is not initializing. The sequence number used in the frame is updated in `AutopilotLink._sequence`, and the values are later accessed by `CommandsSent.get()`.\n\n- `AutopilotLink.SendBankCommand()` is defined in `src/Control/AutopilotLink.cs` at line 72.\n- It calls `Double.IsNaN` (line 74), `ArgumentOutOfRangeException.#ctor` (line 75), `AutopilotLink.FormatFrame()` (line 77), `Encoding.GetBytes` (line 78), and `AutopilotTransport.Send()` (line 79).\n- `NavLoop.Tick()` in `src/Control/NavLoop.cs` at line 54 calls `SendBankCommand()` with the `bank` value computed by `_pid.Update(error, dt)` (line 43), but only when `_state.Mode == NavMode.Initializing` is false.\n- The overall call chain from program start is: `lambda()` \u2192 `NavLoop.Tick()` \u2192 `AutopilotLink.SendBankCommand()`.\n- The command sequence number is stored in `AutopilotLink._sequence` and later retrieved by `CommandsSent.get()`. Some details are inferred or runtime\u2011dependent: the exact transport implementation called by `AutopilotTransport.Send()` (e.g., `StreamAutopilotTransport.Send()` or `UdpAutopilotTransport.Send()`) depends on the runtime configuration."
+   ],
+   "prose_mode": "model"
+  }
+ ]
+}

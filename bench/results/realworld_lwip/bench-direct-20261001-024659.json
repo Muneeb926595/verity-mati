@@ -1,0 +1,673 @@
+{
+ "summary": {
+  "cases": 15,
+  "passed": 5,
+  "mean_score": 0.433,
+  "symbol_identification": {
+   "cases": 14,
+   "passed": 4,
+   "accuracy": 0.393
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 2,
+   "passed": 0,
+   "accuracy": 0.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 7,
+   "claims": 148,
+   "rate": 0.0473
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 141,
+   "claims": 148,
+   "rate": 0.9527
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 1,
+   "paragraphs": 44
+  },
+  "mean_seconds": 1.65
+ },
+ "results": [
+  {
+   "id": "lw-callers-tcp-process",
+   "category": "callpath",
+   "q": "Who calls tcp_process?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 1.58,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by tcp_input() at src/core/tcp_in.c:438 with (`pcb`) \u2014 `for (pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next) {` (line 250), only when `ip_addr_isbroadcast(ip_current_dest_addr(), ip_current_netif()) || ip_addr_ismulticast(ip_current_dest_addr())` is false, only when `(hdrlen_bytes < TCP_HLEN) || (hdrlen_bytes > p->tot_len)` is false (TCP_HLEN = 20), only when `pcb != NULL` is true. The full chain from the program's start is: zepif_udp_recv() \u2192 ethernet_input() \u2192 ip4_input() \u2192 tcp_input() \u2192 tcp_process()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-callers-ip4-input",
+   "category": "callpath",
+   "q": "Who calls ip4_input?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by ip_input() at src/core/ip.c:160, only when `p != NULL` is true, only when `IP_HDR_GET_VERSION(p->payload) == 6` is false; ethernet_input() at src/netif/ethernet.c:186, only when `p->len <= SIZEOF_ETH_HDR` is false, in the case `type == PP_HTONS(ETHTYPE_IP)`, only when `pbuf_remove_header(p, next_hdr_offset)` is false; ppp_input() at src/netif/ppp/ppp.c:888, only when `protocol != PPP_LCP && pcb->lcp_fsm.state != PPP_FSM_OPENED` is false (PPP_FSM_OPENED = 9), only when `pcb->phase <= PPP_PHASE_AUTHENTICATE && !(protocol == PPP_LCP #if LQR_SUPPORT || protocol == PPP_LQR #endif /* LQR_SUPPORT */ #if PAP_SUPPORT || protocol == PPP_PAP #endif /* PAP_SUPPORT */ #if CHAP_SUPPORT || protocol == PPP_CHAP #endif /* \u2026` is false (PPP_PHASE_AUTHENTICATE = 7, LQR_SUPPORT = 0, PAP_SUPPORT = 1, CHAP_SUPPORT = 1), in the case `protocol == PPP_IP`; create_ip4_input_fragment() at test/unit/ip4/test_ip4.c:104, only when `p != NULL` is true. The full chain from the program's start is: zepif_udp_recv() \u2192 ethernet_input() \u2192 ip4_input()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-tcp-bad-checksum",
+   "category": "scenario",
+   "q": "What happens when a TCP segment has a bad checksum?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "chkerr",
+      "pbuf_free"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 0
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 0,
+     "total": 0
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 1
+    }
+   },
+   "status": "UNKNOWN",
+   "seconds": 0.08,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "get_bad_xid() has no early exits or error returns of its own."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-ip-checksum",
+   "category": "symbol",
+   "q": "How is the IPv4 header checksum verified?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "ip4_input",
+      "inet_chksum"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.05,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The best match is pbuf_header_impl() (src/core/pbuf.c:620).",
+    "pbuf_header_impl() (src/core/pbuf.c:620).",
+    "Step by step, it checks `header_size_increment < 0` (line 623); if true it calls pbuf_remove_header() and returns `pbuf_remove_header(p, (size_t) - header_size_increment)` straight away; then it calls pbuf_add_header_impl() (line 626); then it returns `pbuf_add_header_impl(p, (size_t)header_size_increment, force)` (line 626).",
+    "It is called by pbuf_header() at src/core/pbuf.c:653 with (`p`, `header_size_increment`, `0`); pbuf_header_force() at src/core/pbuf.c:663 with (`p`, `header_size_increment`, `1`). The full chain from the program's start is: thread_wrapper() \u2192 ip6_reass_tmr() \u2192 ip6_reass_free_complete_datagram() \u2192 pbuf_header_force() \u2192 pbuf_header_impl().",
+    "Other candidates: pbuf_header() (src/core/pbuf.c:650), pbuf_free_header() (src/core/pbuf.c:675)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-established",
+   "category": "symbol",
+   "q": "Where is the TCP connection state set to ESTABLISHED?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "tcp_process"
+     ]
+    },
+    "citations": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "src/core/tcp_in.c:877"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "stats_.tcp is a field of type `struct stats_proto`, defined in src/include/lwip/stats.h:266 \u2014 the code describes it as: \"TCP\".",
+    "Nothing in this code assigns stats_.tcp after its declaration.",
+    "It is read by stats_display() (line 163), tcp_input() (line 135), tcp_listen_input() (line 666), tcp_create_segment() (line 195), tcp_write_checks() (line 339), tcp_write() (line 801).",
+    "Following where its value goes: stats_.tcp \u2192 stats_display() \u2192 stats_display_proto() \u2192 printf() \u2014 so it ultimately influences printf(), which is an output (console log).",
+    "In short: stats_.tcp carries a value and consumed by stats_display(), tcp_create_segment(), tcp_enqueue_flags(), feeding printf()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-ttl-decrement",
+   "category": "symbol",
+   "q": "Where is the IP TTL decremented?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "ip4_forward"
+     ]
+    },
+    "citations": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "src/core/ipv4/ip4.c:319"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "It is set by lwip_setsockopt_impl() (`sock->conn->pcb.ip->ttl = (u8_t)(*(const int *)optval)`, line 3563).",
+    "It is read by lwip_getsockopt_impl() (line 3117), lwip_setsockopt_impl() (line 3564).",
+    "Following where its value goes: ip_pcb.ttl \u2192 lwip_setsockopt_impl() \u2192 printf() \u2014 so it ultimately influences printf(), which is an output (console log).",
+    "In short: ip_pcb.ttl carries a value produced by lwip_setsockopt_impl() and consumed by lwip_getsockopt_impl(), lwip_setsockopt_impl(), feeding printf(). lwip_setsockopt_impl() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-ttl-zero",
+   "category": "scenario",
+   "q": "What happens when a forwarded packet's TTL reaches zero?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.25,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in ip4_forward() (src/core/ipv4/ip4.c:321): it checks `IPH_TTL(iphdr) == 0`, and when that is true it checks `IPH_TTL(iphdr) == 0` (line 321); if true it calls icmp_time_exceeded() and stops there (returns) and checks `IPH_PROTO(iphdr) != IP_PROTO_ICMP` (IP_PROTO_ICMP = 1) (line 325); if true it calls icmp_time_exceeded() and returns immediately, so the rest of ip4_forward() is skipped.",
+    "Because it returns early, these do not happen in this case: printf(), ip4_frag(), icmp_dest_unreach(), IP4_ADDR_ANY() \u2014 the previous values stay in place.",
+    "icmp_time_exceeded() calls icmp_send_response() (line 327)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-callers-dhcp-fine",
+   "category": "callpath",
+   "q": "Who calls dhcp_fine_tmr?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "lwip_cyclic_timers"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "It is called by tick_lwip() at test/unit/dhcp/test_dhcp.c:151, only when `tick % 5 == 0` is true; shell_main() (through the function pointer command.exec) at contrib/apps/shell/shell.c:1205, only when `((len > 0) && ((buffer[len-1] == '\\r') || (buffer[len-1] == '\\n'))) || (len >= BUFSIZE)` is true (BUFSIZE = 1024), only when `buffer[0] != 0xff && buffer[1] != 0xfe` is true, only when `err == ESUCCESS` is true (ESUCCESS = 0); tapif_input() (through the function pointer netif.input) at contrib/ports/unix/port/netif/tapif.c:326, only when `p == NULL` is false; timeout() (through the function pointer netif.input) at contrib/ports/unix/port/netif/pcapif.c:116, only when `lwip_htons(ethhdr->type) != ETHTYPE_IP || ip_lookup(pcapif->pkt + 14, netif)` is true (ETHTYPE_IP = 2048), only when `p != NULL` is true, in the case `lwip_htons(ethhdr->type) == ETHTYPE_IP`. The full chain from the program's start is: thread_wrapper() \u2192 dhcp_fine_tmr()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-offered-ip",
+   "category": "dataflow",
+   "q": "Where does the DHCP offered IP address come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "dhcp_handle_offer",
+      "yiaddr",
+      "dhcp_recv"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.04,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "dhcp_parse_extra_opts.dhcp (param, contrib/addons/dhcp_extra_opts/dhcp_extra_opts.c:36).",
+    "Nothing in this code assigns dhcp_parse_extra_opts.dhcp; its value must come from outside this code."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-tcp-write-full",
+   "category": "scenario",
+   "q": "What does tcp_write return when there is too much data for the send buffer?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "ERR_MEM"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 4,
+     "claims": 30
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 26,
+     "total": 30
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.08,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "tcp_write() (src/core/tcp_out.c:392) \u2014 Write data for sending (but does not send it immediately).",
+    "Step by step, it sets `struct tcp_seg *last_unsent = NULL, *seg = NULL, *prev_seg = NULL, *queue = NULL` (line 396); then it sets `u16_t pos = 0` (line 397); then it checks `LWIP_ERROR(\"tcp_write: invalid pcb\", pcb != NULL, return ERR_ARG)` (ERR_ARG = -16) (line 417); if true it returns `ERR_ARG)` straight away; then it calls printf() (line 417); then it checks `LWIP_MIN(pcb->mss, TCPWND_MIN16(pcb->snd_wnd_max / 2))` (line 420); then it sets `mss_local = LWIP_MIN(pcb->mss, TCPWND_MIN16(pcb->snd_wnd_max / 2))` (line 420); then it checks `mss_local` (line 421); then it sets `mss_local = mss_local ? mss_local : pcb->mss` (line 421); then it calls sys_check_core_locking() (line 423); then it checks `LWIP_DEBUGF(TCP_OUTPUT_DEBUG, (\"tcp_write(pcb=%p, data=%p, len=%\"U16_F\", apiflags=%\"U16_F\")\\n\", (void *)pcb, arg, len, (u16_t)apiflags))` (line 430); then it calls tcp_write_checks() and stores the result in `err` (line 435); then it checks `pcb->unsent != NULL` (line 479); if true it calls lwip_example_app_platform_assert(), tcp_pbuf_prealloc(), printf(), memcpy(), pbuf_clen(), pbuf_alloc() and sets `for (last_unsent = pcb->unsent; last_unsent->next != NULL`, `last_unsent = last_unsent->next)`; \u2026.",
+    "It is called by tcpecho_raw_send() at contrib/apps/tcpecho_raw/tcpecho_raw.c:109, repeatedly inside `while ((wr_err == ERR_OK) && (es->p != NULL) && (es->p->len <= tcp_sndbuf(tpcb)))`; lwip_netconn_do_writemore() at src/api/api_msg.c:1716, repeatedly inside `do-while`; lwiperf_tcp_client_send_more() at src/apps/lwiperf/lwiperf.c:336, repeatedly inside `do-while`, repeatedly inside `do-while`; altcp_tcp_write() at src/core/altcp_tcp.c:363, only when `conn == NULL` is false. The full chain from the program's start is: tcpecho_raw_recv() \u2192 tcpecho_raw_send() \u2192 tcp_write()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-threads",
+   "category": "symbol",
+   "q": "Which threads does the stack start?",
+   "intent": "entries",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "tcpip_thread"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.08,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The code has 2 threads: thread_wrapper() \u2014 thread: started as a thread by pthread_create() at contrib/ports/unix/port/sys_arch.c:206, registered at contrib/ports/unix/port/sys_arch.c:206; sys_thread_function() \u2014 thread: started as a thread by CreateThread() at contrib/ports/win32/sys_arch.c:467, registered at contrib/ports/win32/sys_arch.c:467.",
+    "thread_wrapper() sets `struct thread_wrapper_data *thread_data = (struct thread_wrapper_data *)arg` (line 181); then it calls one of IP4_ADDR_ANY(), acd_tmr(), dhcp_coarse_tmr(), dhcp_fine_tmr(), dns_tmr(), etharp_tmr() \u2026 through thread_wrapper_data.function \u2014 which one depends on the data at run time (line 183).",
+    "sys_thread_function() sets `struct threadlist* t = (struct threadlist*)arg` (line 436); then it calls one of IP4_ADDR_ANY(), acd_tmr(), dhcp_coarse_tmr(), dhcp_fine_tmr(), dns_tmr(), etharp_tmr() \u2026 through threadlist.function \u2014 which one depends on the data at run time (line 440)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-path-eth-tcp",
+   "category": "callpath",
+   "q": "How does a received Ethernet frame reach tcp_input?",
+   "intent": "flow",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "ethernet_input",
+      "ip4_input",
+      "tcp_input"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 5.37,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The received ethernet data enters the program at eth_rx_irq(), which reads rx_data (memory-mapped register, doc/ZeroCopyRx.c:33).",
+    "From there it passes through: eth_rx_irq() \u2192 pbuf_alloced_custom() \u2192 pbuf_init_alloced_pbuf() \u2192 tcp_output_segment() \u2192 low_level_output().",
+    "Key steps: pbuf_init_alloced_pbuf(): `p->payload = payload` (src/core/pbuf.c:182); tcp_output_segment(): `len = (u16_t)((u8_t *)seg->tcphdr - (u8_t *)seg->p->payload)` (src/core/tcp_out.c:1552).",
+    "Finally it reaches write() (file/device write, contrib/ports/unix/port/netif/sio.c:236)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-retransmit",
+   "category": "symbol",
+   "q": "What triggers a TCP retransmission timeout?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "rto"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 26
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 25,
+     "total": 26
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 17.14,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "Losing the data is detected in timeout() (contrib/ports/unix/port/netif/pcapif.c:96), which checks `lwip_htons(ethhdr->type) != ETHTYPE_IP || ip_lookup(pcapif->pkt + 14, netif)` (ETHTYPE_IP = 2048).",
+    "When that happens it calls ip_lookup; calls pbuf_alloc() (which sets `u16_t offset = (u16_t)layer` (line 229), checks `LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (\"pbuf_alloc(length=%\"U16_F\")\\n\", length))` (line 230), calls printf() (line 230)); calls pbuf_take() (which calls __coverity_tainted_string_argument__ (line 71), calls __coverity_tainted_data_argument__ (line 72), sets `size_t total_copy_len = len` (line 1240)); calls lwip_htons() (which returns `PP_HTONS(n)` (line 78)); calls IP4_ADDR_ANY(); calls acd_tmr() (which checks `acd->lastconflict > 0` (line 247); if true it sets `acd->lastconflict--`, checks `LWIP_DEBUGF(ACD_DEBUG | LWIP_DBG_TRACE, (\"acd_tmr() ACD-State: %\"U16_F\", ttw=%\"U16_F\"\\n\", (u16_t)(acd->state), acd->ttw))` (line 251), calls printf() (line 251)); calls dhcp_coarse_tmr() (which checks `LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, (\"dhcp_coarse_tmr()\\n\"))` (line 513), calls printf() (line 513), sets `struct dhcp *dhcp = netif_dhcp_data(netif)` (line 517)); calls dhcp_fine_tmr() (which sets `struct dhcp *dhcp = netif_dhcp_data(netif)` (line 553), checks `dhcp != NULL` (line 555); if true it calls printf(), dhcp_timeout() and sets `dhcp->request_timeout--`, `dhcp->request_timeout--`, checks `dhcp->request_timeout > 1` (line 557); if true it sets `dhcp->request_timeout--`); calls dns_tmr() (which checks `LWIP_DEBUGF(DNS_DEBUG, (\"dns_tmr: dns_check_entries\\n\"))` (line 397), calls printf() (line 397), calls dns_check_entries() (line 398)); calls etharp_tmr() (which checks `LWIP_DEBUGF(ETHARP_DEBUG, (\"etharp_timer\\n\"))` (line 202), calls printf() (line 202), sets `for (i = 0; i < ARP_TABLE_SIZE; ++i) {` (line 204)); calls ethernet_input() (which calls __coverity_tainted_string_sink_content__ (line 50), sets `u16_t next_hdr_offset = SIZEOF_ETH_HDR` (line 86), calls sys_check_core_locking() (line 89)); calls igmp_tmr() (which sets `struct igmp_group *group = netif_igmp_data(netif)` (line 646), checks `group->timer > 0` (line 649); if true it calls igmp_timeout() and sets `group->timer--`, checks `group->timer == 0` (line 651); if true it calls igmp_timeout()); calls ip6_reass_tmr() (which sets `r = reassdatagrams` (line 122), checks `r->timer > 0` (line 126); if true it sets `r->timer--`, `r = r->next`, sets `tmp = r` (line 131)); calls ip_reass_tmr() (which sets `r = reassdatagrams` (line 132), checks `r->timer > 0` (line 136); if true it calls printf() and sets `r->timer--`, `prev = r`, `r = r->next`, checks `LWIP_DEBUGF(IP_REASS_DEBUG, (\"ip_reass_tmr: timer dec %\"U16_F\"\\n\", (u16_t)r->timer))` (line 138)); calls lowpan6_input() (which checks `p == NULL` (line 656); if true it returns `ERR_OK` straight away, sets `MIB2_STATS_NETIF_ADD(netif, ifinoctets, p->tot_len)` (line 660), checks `p->len != p->tot_len` (line 662)); calls mld6_tmr() (which sets `struct mld_group *group = netif_mld6_data(netif)` (line 501), checks `group->timer > 0` (line 504); if true it calls mld6_send() and sets `group->timer--`, `group->group_state = MLD6_GROUP_IDLE_MEMBER`, checks `group->timer == 0` (line 506); if true it calls mld6_send() and sets `group->group_state = MLD6_GROUP_IDLE_MEMBER`); calls nd6_tmr() (which sets `for (i = 0; i < LWIP_ND6_NUM_NEIGHBORS; i++) {` (line 994), chooses a case based on `neighbor_cache[i].state` (line 995), checks `(neighbor_cache[i].counter.probes_sent >= LWIP_ND6_MAX_MULTICAST_SOLICIT) && (!neighbor_cache[i].isrouter)` (LWIP_ND6_MAX_MULTICAST_SOLICIT = 3) (line 997); if true it calls nd6_free_neighbor_cache_entry()); calls netif_input() (which calls sys_check_core_locking() (line 230), checks `LWIP_ASSERT(\"netif_input: invalid pbuf\", p != NULL)` (line 232), calls lwip_example_app_platform_assert() (line 232)); calls tcp_tmr() (which calls tcp_fasttmr() (line 237), checks `++tcp_timer & 1` (line 239); if true it calls tcp_slowtmr(), sets `if (++tcp_timer & 1) {` (line 239)); calls tcpip_input() (which calls __coverity_tainted_string_sink_content__ (line 54), checks `inp->flags & (NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET)` (line 300); if true it calls tcpip_inpkt(), returns `tcpip_inpkt(p, inp, ethernet_input)` (line 301)); calls bridgeif_tcpip_input() (which calls tcpip_inpkt() (line 395), returns `tcpip_inpkt(p, netif, bridgeif_input)` (line 395)); calls dummy_cyclic_handler() (which sets `cyclic_fired = 1` (line 40), sets `lwip_sys_now += HANDLER_EXECUTION_TIME` (line 41)); calls lwip_win32_platform_diag() (which calls __builtin_va_start() (line 777), calls vprintf() (line 780), calls __builtin_va_end() (line 781)); calls pbuf_free() (which checks `p == NULL` (line 735); if true it calls lwip_example_app_platform_assert(), printf() and returns `0` straight away, checks `LWIP_ASSERT(\"p != NULL\", p != NULL)` (line 736), checks `LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS, (\"pbuf_free(p == NULL) was called.\\n\"))` (line 738)); calls pbuf_free() (which checks `p == NULL` (line 735); if true it calls lwip_example_app_platform_assert(), printf() and returns `0` straight away, checks `LWIP_ASSERT(\"p != NULL\", p != NULL)` (line 736), checks `LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS, (\"pbuf_free(p == NULL) was called.\\n\"))` (line 738))."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-input-fn",
+   "category": "callpath",
+   "q": "What can input_fn point to in tcpip_inpkt?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 47
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 47,
+     "total": 47
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "anon.input_fn is a field of type `netif_input_fn`, defined in src/include/lwip/priv/tcpip_priv.h:153.",
+    "It is set by tcpip_inpkt() (`msg->msg.inp.input_fn = input_fn`, line 276).",
+    "It is read by tcpip_thread_handle_msg() (line 188).",
+    "anon.input_fn holds a function: at run time it points to IP4_ADDR_ANY(), acd_tmr(), dhcp_coarse_tmr(), dhcp_fine_tmr(), dns_tmr(), etharp_tmr(), ethernet_input(), igmp_tmr(), ip6_reass_tmr(), ip_input(), ip_reass_tmr(), lowpan6_input(), mld6_tmr(), nd6_tmr(), pppos_input_sys(), rfc7668_input(), tcp_tmr(), bridgeif_input(), dummy_cyclic_handler() (registered at src/api/tcpip.c:301, src/api/tcpip.c:304, doc/NO_SYS_SampleCode.c:72, doc/NO_SYS_SampleCode.c:72, doc/NO_SYS_SampleCode.c:72, src/netif/bridgeif.c:395, src/netif/lowpan6_ble.c:443, src/netif/lowpan6.c:918, src/netif/ppp/pppos.c:436, test/fuzz/fuzz_common.c:596, test/unit/core/test_netif.c:114, test/unit/core/test_netif.c:233, test/unit/core/test_netif.c:257, test/unit/core/test_netif.c:259, test/unit/dhcp/test_dhcp.c:494, test/unit/dhcp/test_dhcp.c:569, test/unit/dhcp/test_dhcp.c:796, test/unit/dhcp/test_dhcp.c:941, test/unit/dhcp/test_dhcp.c:1048, test/unit/lowpan6/test_lowpan6.c:55); it is called by tcpip_thread_handle_msg().",
+    "In short: anon.input_fn carries a value produced by tcpip_inpkt() and consumed by tcpip_thread_handle_msg()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lw-invented",
+   "category": "honesty",
+   "q": "What does tcp_retransmit_all do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "fsm_callbacks.retransmit is a field of type `void (*)(fsm *)`, defined in src/include/netif/ppp/fsm.h:123.",
+    "Nothing in this code assigns fsm_callbacks.retransmit after its declaration.",
+    "It is read by fsm_timeout() (line 300).",
+    "In short: fsm_callbacks.retransmit carries a value and consumed by fsm_timeout()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

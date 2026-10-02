@@ -1,0 +1,12 @@
+  ✓ Looking at your project files: Found 0 C, 0 header and 176 C# files
+  ✓ Working out how the code is built: No C code
+  – Reading the C code: No C code in this project
+  ✓ Reading the C# code: Read 176 C# file(s) with the C# compiler (Roslyn); 47 
+file(s) have unresolved references (missing packages)
+  – Double-checking with a second parser: No C code to cross-check
+  ✓ Connecting the pieces together: Traced 9 call(s) through function pointers 
+or tables; 1 matched by signature only; resolved 615 virtual call target(s); 
+connected 31 event(s) to their handlers; 1 indirect call(s) could not be 
+resolved; 322 entry point(s), 59 input/output site(s)
+  ✓ Preparing search: Indexed 2205 symbols for search (keyword + meaning search)
+Ready. Indexed in 2.3 s.

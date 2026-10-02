@@ -1,0 +1,589 @@
+{
+ "summary": {
+  "cases": 14,
+  "passed": 11,
+  "mean_score": 0.821,
+  "symbol_identification": {
+   "cases": 13,
+   "passed": 10,
+   "accuracy": 0.808
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 1,
+   "claims": 71,
+   "rate": 0.0141
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 70,
+   "claims": 71,
+   "rate": 0.9859
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 29
+  },
+  "mean_seconds": 10.78
+ },
+ "results": [
+  {
+   "id": "paho-keepalive-timeout",
+   "category": "scenario",
+   "q": "What happens when the broker does not answer a ping in time?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 20
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 20,
+     "total": 20
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 14.96,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "If the broker does not reply to a ping within the keep\u2011alive interval, the client marks the operation as a failure and resets its timers, then sends a new PINGREQ and marks that a ping is outstanding again.",
+    "This is handled in keepalive() (MQTTClient-C/src/MQTTClient.c:219): it checks `TimerIsExpired(&c->last_sent) || TimerIsExpired(&c->last_received)`, and when that is true it checks `c->ping_outstanding` (line 221); if true it sets `rc = FAILURE`; then it calls TimerInit() (line 226); then it calls TimerCountdownMS() (line 227); then it calls MQTTSerialize_pingreq() and stores the result in `len` (line 228); then it checks `len > 0 && (rc = sendPacket(c, len, &timer)) == SUCCESS` (SUCCESS = 0) (line 229); if true it sets `c->ping_outstanding = 1`; then it sets `if (len > 0 && (rc = sendPacket(c, len, &timer)) == SUCCESS) c->ping_outstanding = 1` (line 229).",
+    "TimerInit() sets `timer->end_time = (struct timeval){0, 0}` (line 22).",
+    "TimerCountdownMS() calls gettimeofday() (line 37); then it repeats while `timeradd(&now, &interval, &timer->end_time)` (line 39); then it sets `timeradd(&now, &interval, &timer->end_time)` (line 39)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-buffer-overflow",
+   "category": "scenario",
+   "q": "What happens when an incoming packet is bigger than the read buffer?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 9.84,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When an incoming packet is larger than the read buffer, the function `readPacket()` records a buffer overflow error and exits early, leaving the timer values unchanged.",
+    "This is handled in readPacket() (MQTTClient-C/src/MQTTClient.c:127): it checks `rem_len > (c->readbuf_size - len)`, and when that is true it records it (`rc = BUFFER_OVERFLOW`) and jumps to `exit` (line 143), skipping the rest of readPacket().",
+    "Because it returns early, these do not happen in this case: TimerLeftMS(), TimerCountdown() \u2014 the previous values stay in place."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-no-handler",
+   "category": "scenario",
+   "q": "What happens when a message arrives on a topic that has no message handler?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a message arrives on a topic that has no specific message handler, the client checks if the default handler is set; if it is, it creates a new `MessageData` object with the topic name and message and then invokes the default handler with that data.",
+    "This is handled in deliverMessage() (MQTTClient-C/src/MQTTClient.c:200): it checks `rc == FAILURE && c->defaultMessageHandler != NULL`, and when that is true it calls NewMessageData() and calls (unresolved call through MQTTClient.defaultMessageHandler).",
+    "NewMessageData() updates md (topicName, message; lines 24\u201325)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-sub-rejected",
+   "category": "scenario",
+   "q": "What happens when the broker rejects a subscription?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "0x80"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.12,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "These parts of the code look most relevant: MQTT_CLIENTID_REJECTED (enum value, MQTTPacket/src/MQTTConnect.h:27); SUBSCRIBE (enum value, MQTTPacket/src/MQTTPacket.h:46); MQTTSubscribe() (function, MQTTClient-C/src/MQTTClient.c:565); MQTTSubscribeWithResults() (function, MQTTClient-C/src/MQTTClient.c:517); MQTTSubackData.grantedQoS (field, MQTTClient-C/src/MQTTClient.h:100); MAX_MESSAGE_HANDLERS (constant, MQTTClient-C/src/MQTTClient.h:51)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "paho-publish-disconnected",
+   "category": "scenario",
+   "q": "What happens when MQTTPublish is called while the client is not connected?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.42,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When `MQTTPublish` is called while the client is not connected, it immediately jumps to the `exit` label, calls `MQTTCloseSession()`, and returns without performing any publishing actions such as initializing timers, setting a packet ID, or serializing the publish packet. This means the timer, packet ID, and serialized data remain unchanged from their previous values.",
+    "This is handled in MQTTPublish() (MQTTClient-C/src/MQTTClient.c:628): it checks `!c->isconnected`, and when that is true it jumps to `exit` (line 669), where it calls MQTTCloseSession(), skipping the rest of MQTTPublish().",
+    "Because it returns early, these do not happen in this case: TimerInit(), TimerCountdownMS(), getNextPacketId(), MQTTSerialize_publish() \u2014 the previous values stay in place."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-remlen-too-long",
+   "category": "scenario",
+   "q": "What happens when the remaining length field of a packet is longer than four bytes?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 18.17,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When the remaining length field of a packet is longer than four bytes, the function `decodePacket()` records an error by setting `rc` to `MQTTPACKET_READ_ERROR` and then jumps to the `exit` label, skipping the rest of the packet decoding process. This check occurs at line 95 of `MQTTClient-C/src/MQTTClient.c` where it evaluates `++len > MAX_NO_OF_REMAINING_LENGTH_BYTES`; if true, it writes the error code to `decodePacket.rc` at line 97 and exits at line 106."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-serialize-short",
+   "category": "scenario",
+   "q": "What happens when the buffer is too small to serialize a publish packet?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 14.61,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When the buffer is too small to serialize a publish packet, the function `MQTTSerialize_publish()` immediately records the error code `MQTTPACKET_BUFFER_TOO_SHORT` and exits, skipping all subsequent serialization steps such as `writeChar()`, `MQTTPacket_encode()`, `writeMQTTString()`, and `writeInt()`, so the previous buffer contents remain unchanged."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-packetid-wrap",
+   "category": "symbol",
+   "q": "How does the packet id wrap around?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "getNextPacketId",
+      "MAX_PACKET_ID"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 5.3,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The provided facts do not contain any information about packet identifiers or how they wrap around, so I cannot explain that behavior based on the given data.",
+    "decodePacket() (MQTTClient-C/src/MQTTClient.c:83).",
+    "Step by step, it sets `*value = 0` (line 90); then it repeats while `(i & 128) != 0` (line 91); then it sets `int rc = MQTTPACKET_READ_ERROR` (line 93); then it checks `++len > MAX_NO_OF_REMAINING_LENGTH_BYTES` (MAX_NO_OF_REMAINING_LENGTH_BYTES = 4) (line 95); if true it sets `rc = MQTTPACKET_READ_ERROR`; then it sets `rc = c->ipstack->mqttread(c->ipstack, &i, 1, timeout)` (line 100); then it checks `rc != 1` (line 101); then it sets `*value += (i & 127) * multiplier` (line 103); then it returns `len` (line 107).",
+    "It is called by readPacket() at MQTTClient-C/src/MQTTClient.c:124 with (`c`, `&rem_len`, `TimerLeftMS(timer)`), only when `rc != 1` is false. The full chain from the program's start is: MQTTRun() \u2192 cycle() \u2192 readPacket() \u2192 decodePacket()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-cycle-callers",
+   "category": "callpath",
+   "q": "Who calls cycle?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 15.55,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The function `cycle()` is called by three functions: `MQTTYield()`, `MQTTRun()`, and `waitfor()`. `MQTTYield()` calls `cycle()` at line 351 of `MQTTClient.c`, passing the arguments `c` and `&timer`. This call occurs repeatedly inside a `do-while` loop. `MQTTRun()` calls `cycle()` at line 379 of `MQTTClient.c`, passing the arguments `c` and `&timer`. Here `c` is obtained by casting the `parm` parameter to `MQTTClient*` at line 369, and the call is repeated inside a `while (1)` loop. `waitfor()` calls `cycle()` at line 403 of `MQTTClient.c`, passing the arguments `c` and `timer`. This call is repeated inside a `do-while` loop, but only when `TimerIsExpired(timer)` returns false. Thus, the full chain from the program\u2019s start is: `MQTTRun()` \u2192 `cycle()`, and `MQTTYield()` and `waitfor()` also invoke `cycle()` under the conditions described above."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-sendpacket-callers",
+   "category": "callpath",
+   "q": "Who calls sendPacket?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 18.29,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "In the code, `keepalive()` calls `sendPacket()` at line 229 of `MQTTClient.c` when the keep\u2011alive interval is non\u2011zero, a timer has expired, and no ping is outstanding. The `cycle()` function calls `sendPacket()` at line 297 when a publish message is not successfully deserialized, the message QoS is not `QOS0` (0), and the payload length is positive; it also calls `sendPacket()` at line 313 when a PUBREC packet is received, the acknowledgment is successfully deserialized, and the serialized acknowledgment length is positive. `MQTTConnectWithResults()` calls `sendPacket()` at line 437 when the client is not already connected and the connect packet is successfully serialized. `MQTTSubscribeWithResults()` calls `sendPacket()` at line 538, `MQTTUnsubscribe()` at line 592, `MQTTPublish()` at line 641, and `MQTTDisconnect()` at line 693, each time after successfully serializing the corresponding packet. The overall call chain starts with `MQTTRun()`, which invokes `cycle()`, which in turn may invoke `sendPacket()`."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-mqttread",
+   "category": "symbol",
+   "q": "What can mqttread point to?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 5.79,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`Network.mqttread` can point to the function `linux_read`.",
+    "Network.mqttread is a field of type `int (*)(struct Network *, unsigned char *, int, int)`, defined in MQTTClient-C/src/linux/MQTTLinux.h:63.",
+    "It is set by NetworkInit() (`n->mqttread = linux_read`, line 112).",
+    "In short: Network.mqttread carries a value produced by NetworkInit()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "paho-topic-origin",
+   "category": "dataflow",
+   "q": "Where does the topic name of a received message come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "MQTTDeserialize_publish",
+      "readMQTTLenString"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 3.3,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The topic name of a received message is stored in the `MessageData.topicName` field, which is set by `NewMessageData()` and later read by `messageArrived()`."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-isconnected",
+   "category": "symbol",
+   "q": "Where is isconnected set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.64,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The `isconnected` field is set in three places: it is set to `1` in `MQTTConnectWithResults()` at line 456 of `MQTTClient.c`, and it is set to `0` in both `MQTTClientInit()` at line 70 and `MQTTCloseSession()` at line 251 of the same file."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "paho-invented",
+   "category": "honesty",
+   "q": "What does MQTTReconnect do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 7.86,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `MQTTReconnect` in this code, so it does nothing because it does not exist. The code only defines the enum constants `MQTT_CONNECTION_ACCEPTED`, `MQTT_CLIENTID_REJECTED`, and `MQTT_SERVER_UNAVAILABLE` in `MQTTPacket/src/MQTTConnect.h`; `MQTT_CLIENTID_REJECTED` is an `int` with value 2 and is never assigned after its declaration."
+   ],
+   "prose_mode": "model"
+  }
+ ]
+}

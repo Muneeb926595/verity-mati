@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Verity</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --text: #1a1d23;
+        --muted: #6b7280;
+        --accent: #3056d3;
+        --surface: #ffffff;
+        --border: #e2e5ea;
+        --red: #c4372c;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1115;
+          --text: #e6e8eb;
+          --muted: #8d95a3;
+          --accent: #88a2ff;
+          --surface: #171a20;
+          --border: #2a2f38;
+          --red: #ff7a70;
+        }
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.55 var(--font);
+        -webkit-font-smoothing: antialiased;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      main {
+        max-width: 560px;
+        padding: 24px;
+        text-align: center;
+      }
+      .mark {
+        width: 68px;
+        height: 68px;
+        margin: 0 auto 16px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, #4a6cf0, #2a48b8);
+        box-shadow: 0 10px 26px rgba(48, 86, 211, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 30px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 6px 0;
+        color: var(--muted);
+      }
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        vertical-align: -3px;
+        border: 2px solid var(--accent);
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .error {
+        display: none;
+        margin-top: 18px;
+        text-align: left;
+      }
+      .error h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        color: var(--red);
+      }
+      pre {
+        max-height: 240px;
+        overflow: auto;
+        margin: 8px 0 14px;
+        padding: 10px 12px;
+        font: 12px/1.5 var(--mono);
+        white-space: pre-wrap;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid #3056d3;
+        background: #3056d3;
+        color: #fff;
+        cursor: pointer;
+      }
+      body.failed .starting {
+        display: none;
+      }
+      body.failed .error {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="52" height="52">
+          <path d="M15 32 L27.5 45 L49 18" fill="none" stroke="#fff" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h1>Verity</h1>
+      <div class="starting" role="status">
+        <p><span class="spinner" aria-hidden="true"></span><span id="msg">Starting the engine…</span></p>
+        <p id="slow" style="display: none">This is taking longer than usual…</p>
+      </div>
+      <div class="error" role="alert">
+        <h2>The Verity engine could not start</h2>
+        <pre id="detail"></pre>
+        <button id="retry" type="button">Try again</button>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var T = window.__TAURI_INTERNALS__;
+        var started = Date.now();
+        var navigated = false;
+        function invoke(cmd, args) {
+          return T ? T.invoke(cmd, args || {}) : Promise.reject(new Error("not running inside the Verity app"));
+        }
+        function poll() {
+          invoke("engine_status")
+            .then(function (s) {
+              if (s.state === "ready") {
+                // the shell navigates the window itself; this is only a fallback
+                if (!navigated && Date.now() - started > 1500) {
+                  navigated = true;
+                  location.replace(s.url);
+                }
+                setTimeout(poll, 700);
+              } else if (s.state === "failed") {
+                document.body.classList.add("failed");
+                document.getElementById("detail").textContent = s.message || "Unknown error";
+              } else {
+                document.body.classList.remove("failed");
+                if (Date.now() - started > 15000) document.getElementById("slow").style.display = "block";
+                setTimeout(poll, 400);
+              }
+            })
+            .catch(function (e) {
+              document.body.classList.add("failed");
+              document.getElementById("detail").textContent = String(e);
+            });
+        }
+        document.getElementById("retry").addEventListener("click", function () {
+          document.body.classList.remove("failed");
+          started = Date.now();
+          invoke("restart_engine").then(function () {
+            setTimeout(poll, 300);
+          });
+        });
+        poll();
+      })();
+    </script>
+  </body>
+</html>

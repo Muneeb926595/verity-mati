@@ -1,0 +1,20 @@
+{
+  "_doc": "Real open-source code NOT written by Verity's author (samples/realworld). Expected facts were verified by reading the code; the FIRST run is recorded in bench/results/realworld/first-run-before-fixes.* before any fixes.",
+  "projects": {"minmea": "samples/realworld/minmea", "rtos": "samples/realworld/FreeRTOS-Kernel"},
+  "cases": [
+    {"id": "rw-minmea-lat", "project": "minmea", "category": "dataflow", "q": "Where does the latitude in an RMC sentence come from?", "must_mention": ["minmea_parse_rmc", "minmea_scan", "fgets"]},
+    {"id": "rw-minmea-checksum", "project": "minmea", "category": "symbol", "q": "How is the NMEA checksum verified?", "must_mention": ["minmea_check", "hex2int"]},
+    {"id": "rw-minmea-callers-check", "project": "minmea", "category": "callpath", "q": "Who calls minmea_check?", "must_mention": ["minmea_sentence_id"]},
+    {"id": "rw-minmea-invalid", "project": "minmea", "category": "scenario", "q": "What happens when a sentence has an invalid checksum?", "must_mention": ["minmea_check", "MINMEA_INVALID"]},
+    {"id": "rw-minmea-rmc", "project": "minmea", "category": "symbol", "q": "What does minmea_parse_rmc do?", "must_mention": ["minmea_scan", "valid", "latitude_direction"]},
+    {"id": "rw-minmea-tocoord", "project": "minmea", "category": "symbol", "q": "Which function converts a minmea_float to a coordinate?", "must_mention": ["minmea_tocoord"]},
+    {"id": "rw-rtos-delay", "project": "rtos", "category": "symbol", "q": "What does vTaskDelay do?", "must_mention": ["vTaskSuspendAll", "prvAddCurrentTaskToDelayedList", "xTaskResumeAll"]},
+    {"id": "rw-rtos-callers", "project": "rtos", "category": "callpath", "q": "Who calls prvAddCurrentTaskToDelayedList?", "must_mention": ["vTaskDelay", "xTaskDelayUntil", "vTaskPlaceOnEventList", "ulTaskGenericNotifyTake"]},
+    {"id": "rw-rtos-queue-full", "project": "rtos", "category": "scenario", "q": "What happens when xQueueSend is called on a full queue?", "must_mention": ["errQUEUE_FULL", "xTasksWaitingToSend"]},
+    {"id": "rw-rtos-tick", "project": "rtos", "category": "symbol", "q": "Where is the tick count incremented?", "must_mention": ["xTaskIncrementTick", "xTickCount"], "must_cite": ["tasks.c:4856"]},
+    {"id": "rw-rtos-isrs", "project": "rtos", "category": "symbol", "q": "Which interrupt handlers does the port define?", "must_mention": ["xPortSysTickHandler", "xPortPendSVHandler", "vPortSVCHandler"]},
+    {"id": "rw-rtos-malloc", "project": "rtos", "category": "scenario", "q": "What does pvPortMalloc do when there is not enough memory?", "must_mention": ["NULL"]},
+    {"id": "rw-rtos-impact", "project": "rtos", "category": "callpath", "q": "What could be affected if I change prvAddCurrentTaskToDelayedList?", "must_mention": ["vTaskDelay", "xTaskDelayUntil"]},
+    {"id": "rw-rtos-tickcount", "project": "rtos", "category": "symbol", "q": "What is xTickCount?", "must_mention": ["xTaskIncrementTick", "xTaskGetTickCount"]}
+  ]
+}

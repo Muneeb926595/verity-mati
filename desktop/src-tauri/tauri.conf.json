@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Verity",
+  "mainBinaryName": "Verity",
+  "version": "0.5.0",
+  "identifier": "dev.verity.desktop",
+  "build": {
+    "frontendDist": "../splash"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Verity",
+        "url": "index.html",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 760,
+        "minHeight": 540,
+        "center": true,
+        "resizable": true,
+        "dragDropEnabled": false,
+        "backgroundThrottling": "disabled"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "category": "DeveloperTool",
+    "shortDescription": "Understand your C/C# codebase",
+    "longDescription": "Verity is a fully offline code-intelligence tool for C and C# codebases.",
+    "copyright": "Verity",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

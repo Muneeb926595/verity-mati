@@ -1,0 +1,127 @@
+{
+ "_doc": "EIGHTH HELD-OUT real project (Phase 4 final measurement): nanopb (samples/realworld/nanopb, ~5K lines of C; Protocol Buffers for embedded systems: the core library plus two example applications, as a firmware project embeds it; the generated *.pb.h files are not present: uncompiled). Questions written from facts verified in the source AFTER all Phase 4 fixes and BEFORE Verity was ever run on it. First runs kept in bench/results/realworld_heldout8/first-run-*.",
+ "projects": {
+  "nanopb": "samples/realworld/nanopb"
+ },
+ "cases": [
+  {
+   "id": "np-stream-full",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when the output buffer is full while encoding?",
+   "must_mention": [
+    "pb_write",
+    "stream full"
+   ]
+  },
+  {
+   "id": "np-end-of-stream",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when the decoder needs more bytes than are left in the input?",
+   "must_mention": [
+    "pb_read",
+    "end-of-stream"
+   ]
+  },
+  {
+   "id": "np-missing-required",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when a decoded message is missing a required field?",
+   "must_mention": [
+    "pb_decode_inner",
+    "missing required field"
+   ]
+  },
+  {
+   "id": "np-varint-overflow",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when a varint is too long?",
+   "must_mention": [
+    "pb_decode_varint",
+    "varint overflow"
+   ]
+  },
+  {
+   "id": "np-wrong-wire-type",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when a field arrives with the wrong wire type?",
+   "must_mention": [
+    "decode_basic_field",
+    "wrong wire type"
+   ]
+  },
+  {
+   "id": "np-max-depth",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when messages are nested too deeply?",
+   "must_mention": [
+    "pb_make_string_substream",
+    "PB_MESSAGE_NESTING_MAX"
+   ]
+  },
+  {
+   "id": "np-array-max",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when an array has more items than its maximum size during encoding?",
+   "must_mention": [
+    "encode_array",
+    "array max size exceeded"
+   ]
+  },
+  {
+   "id": "np-zero-tag",
+   "project": "nanopb",
+   "category": "scenario",
+   "q": "What happens when the decoder reads a tag of zero?",
+   "must_mention": [
+    "pb_decode_inner",
+    "zero tag"
+   ]
+  },
+  {
+   "id": "np-read-callers",
+   "project": "nanopb",
+   "category": "callpath",
+   "q": "Who calls pb_read?",
+   "must_mention": [
+    "pb_decode_fixed32",
+    "pb_dec_bytes",
+    "pb_skip_string"
+   ]
+  },
+  {
+   "id": "np-bytes-written",
+   "project": "nanopb",
+   "category": "symbol",
+   "q": "Where is bytes_written updated?",
+   "must_mention": [
+    "pb_write",
+    "pb_encode_submessage"
+   ]
+  },
+  {
+   "id": "np-errmsg",
+   "project": "nanopb",
+   "category": "symbol",
+   "q": "Where is the stream error message errmsg set?",
+   "must_mention": [
+    "PB_SET_ERROR"
+   ]
+  },
+  {
+   "id": "np-invented",
+   "project": "nanopb",
+   "category": "honesty",
+   "q": "What does pb_decode_json do?",
+   "must_not_claim_defined": [
+    "pb_decode_json"
+   ]
+  }
+ ]
+}

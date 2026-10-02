@@ -1,0 +1,9 @@
+A.currentHeading=337.5000 mode=1
+A.steering_calls=1 last_steer=50
+A2.currentHeading=0.0000
+B.mode=2 consecutive_invalid=5
+B.steering_calls=0
+C.mode=3 steering_calls=1 last_steer=0 led=0
+D.gga_rc=0
+D.rmc_rc=0 currentHeading=337.5000 lat=33.68440 lon=73.04790 mode=1
+D.bad_checksum_rc=-1 checksum_errors=1

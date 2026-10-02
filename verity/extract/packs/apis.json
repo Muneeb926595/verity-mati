@@ -1,0 +1,377 @@
+{
+ "_doc": "API knowledge pack: what well-known external functions do. Unknown externals are opaque (return value derived from all arguments).",
+ "sources": {
+  "read": "file/device read",
+  "recv": "socket receive",
+  "recvfrom": "socket receive",
+  "fread": "file read",
+  "fgets": "file/stdin read",
+  "getchar": "stdin",
+  "getc": "file read",
+  "fgetc": "file read",
+  "scanf": "stdin",
+  "fscanf": "file read",
+  "getline": "file read",
+  "ReadFile": "Win32 file/serial read",
+  "WSARecv": "socket receive",
+  "ReadConsoleA": "console",
+  "HAL_UART_Receive": "UART receive",
+  "HAL_UART_Receive_IT": "UART receive",
+  "HAL_ADC_GetValue": "ADC sample",
+  "uart_read": "UART read",
+  "xQueueReceive": "RTOS queue receive",
+  "osMessageQueueGet": "RTOS queue receive",
+  "mq_receive": "POSIX queue receive",
+  "GetPrivateProfileIntA": "configuration file (ini)",
+  "GetPrivateProfileStringA": "configuration file (ini)",
+  "RegQueryValueExA": "Windows registry",
+  "RegQueryValueExW": "Windows registry",
+  "GetEnvironmentVariableA": "environment variable",
+  "getenv": "environment variable",
+  "WSARecvFrom": "socket receive",
+  "DeviceIoControl": "device driver",
+  "QueryPerformanceCounter": "high-resolution clock",
+  "GetTickCount": "system clock",
+  "GetTickCount64": "system clock",
+  "GetSystemTime": "system clock",
+  "GetLocalTime": "system clock",
+  "time": "system clock",
+  "clock": "system clock",
+  "_kbhit": "keyboard",
+  "_getch": "keyboard",
+  "ReadConsoleW": "console",
+  "ClearCommError": "serial port status"
+ },
+ "sinks": {
+  "write": "file/device write",
+  "send": "socket send",
+  "sendto": "socket send",
+  "fwrite": "file write",
+  "fputs": "file write",
+  "puts": "stdout",
+  "printf": "console log",
+  "fprintf": "file/console log",
+  "WriteFile": "Win32 file/serial write",
+  "WSASend": "socket send",
+  "HAL_UART_Transmit": "UART transmit",
+  "HAL_GPIO_WritePin": "GPIO write",
+  "__HAL_TIM_SET_COMPARE": "PWM duty",
+  "xQueueSend": "RTOS queue send",
+  "osMessageQueuePut": "RTOS queue send",
+  "mq_send": "POSIX queue send",
+  "OutputDebugStringA": "debug log",
+  "OutputDebugStringW": "debug log",
+  "MessageBoxA": "message box",
+  "MessageBoxW": "message box",
+  "RegSetValueExA": "Windows registry",
+  "WritePrivateProfileStringA": "configuration file (ini)",
+  "PostMessageA": "window message",
+  "SendMessageA": "window message",
+  "SetWindowTextA": "user interface",
+  "Beep": "speaker",
+  "WriteConsoleA": "console",
+  "wprintf": "console log",
+  "fputc": "file write",
+  "putchar": "console"
+ },
+ "spawn": {
+  "pthread_create": 2,
+  "CreateThread": 2,
+  "_beginthreadex": 2,
+  "_beginthread": 0,
+  "xTaskCreate": 0,
+  "xTaskCreateStatic": 0,
+  "osThreadNew": 0,
+  "taskSpawn": 4,
+  "k_thread_create": 2,
+  "thrd_create": 1
+ },
+ "register": {
+  "signal": [
+   1,
+   "signal handler"
+  ],
+  "atexit": [
+   0,
+   "exit handler"
+  ],
+  "SetTimer": [
+   3,
+   "timer callback"
+  ],
+  "xTimerCreate": [
+   4,
+   "timer callback"
+  ],
+  "osTimerNew": [
+   0,
+   "timer callback"
+  ],
+  "timer_create": [
+   1,
+   "timer callback"
+  ],
+  "qsort": [
+   3,
+   "comparator"
+  ],
+  "bsearch": [
+   4,
+   "comparator"
+  ],
+  "CreateTimerQueueTimer": [
+   2,
+   "timer callback"
+  ],
+  "SetConsoleCtrlHandler": [
+   0,
+   "console control handler"
+  ]
+ },
+ "copies": {
+  "memcpy": [
+   1,
+   0
+  ],
+  "memmove": [
+   1,
+   0
+  ],
+  "strcpy": [
+   1,
+   0
+  ],
+  "strncpy": [
+   1,
+   0
+  ],
+  "strcat": [
+   1,
+   0
+  ],
+  "strncat": [
+   1,
+   0
+  ],
+  "sprintf": [
+   2,
+   0
+  ],
+  "snprintf": [
+   3,
+   0
+  ],
+  "sscanf": [
+   0,
+   2
+  ]
+ },
+ "pure": [
+  "sin",
+  "cos",
+  "tan",
+  "atan",
+  "atan2",
+  "asin",
+  "acos",
+  "sqrt",
+  "fabs",
+  "fmod",
+  "floor",
+  "ceil",
+  "round",
+  "pow",
+  "exp",
+  "log",
+  "log10",
+  "atof",
+  "atoi",
+  "atol",
+  "strtod",
+  "strtof",
+  "strtol",
+  "strtoul",
+  "abs",
+  "labs",
+  "strlen",
+  "strcmp",
+  "strncmp",
+  "strchr",
+  "strstr",
+  "memcmp",
+  "toupper",
+  "tolower",
+  "isdigit",
+  "isalpha"
+ ],
+ "source_name_patterns": [
+  "(^|_)(read|recv|rx|receive|get_?tick|getc|poll_in|adc_|sample|capture)",
+  "^(Read|Recv|Receive|Sample|Capture|Poll)[A-Z]"
+ ],
+ "sink_name_patterns": [
+  "(^|_)(write|send|tx|transmit|motor|pwm|servo|steer|actuat|led|output|display|print|set_steering|set_throttle)",
+  "^(Write|Send|Transmit|Set(Motor|Pwm|Led|Output)|Output|Display)[A-Z]"
+ ],
+ "writes": {
+  "_doc": "functions that write through a pointer argument: name -> argument indexes written",
+  "InterlockedExchange": [
+   0
+  ],
+  "InterlockedIncrement": [
+   0
+  ],
+  "InterlockedDecrement": [
+   0
+  ],
+  "InterlockedAdd": [
+   0
+  ],
+  "InterlockedExchangeAdd": [
+   0
+  ],
+  "InterlockedCompareExchange": [
+   0
+  ],
+  "InterlockedExchangePointer": [
+   0
+  ],
+  "_InterlockedExchange": [
+   0
+  ],
+  "_InterlockedIncrement": [
+   0
+  ],
+  "ReadFile": [
+   1,
+   3
+  ],
+  "WriteFile": [
+   3
+  ],
+  "memcpy": [
+   0
+  ],
+  "memmove": [
+   0
+  ],
+  "memset": [
+   0
+  ],
+  "strcpy": [
+   0
+  ],
+  "strncpy": [
+   0
+  ],
+  "strcat": [
+   0
+  ],
+  "strcpy_s": [
+   0
+  ],
+  "strncpy_s": [
+   0
+  ],
+  "strcat_s": [
+   0
+  ],
+  "memcpy_s": [
+   0
+  ],
+  "sprintf": [
+   0
+  ],
+  "snprintf": [
+   0
+  ],
+  "sprintf_s": [
+   0
+  ],
+  "_snprintf": [
+   0
+  ],
+  "sscanf": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "sscanf_s": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "fread": [
+   0
+  ],
+  "fgets": [
+   0
+  ],
+  "recv": [
+   1
+  ],
+  "recvfrom": [
+   1
+  ],
+  "read": [
+   1
+  ],
+  "GetPrivateProfileStringA": [
+   3
+  ],
+  "RegQueryValueExA": [
+   4,
+   5
+  ],
+  "QueryPerformanceCounter": [
+   0
+  ],
+  "QueryPerformanceFrequency": [
+   0
+  ],
+  "GetSystemTime": [
+   0
+  ],
+  "GetLocalTime": [
+   0
+  ],
+  "GetCommState": [
+   1
+  ],
+  "ClearCommError": [
+   1,
+   2
+  ],
+  "DeviceIoControl": [
+   4,
+   6
+  ],
+  "atomic_store": [
+   0
+  ],
+  "atomic_fetch_add": [
+   0
+  ],
+  "__atomic_store_n": [
+   0
+  ],
+  "xQueueReceive": [
+   1
+  ],
+  "osMessageQueueGet": [
+   1
+  ],
+  "HAL_UART_Receive": [
+   1
+  ],
+  "HAL_UART_Receive_IT": [
+   1
+  ],
+  "HAL_ADC_GetValue": []
+ }
+}

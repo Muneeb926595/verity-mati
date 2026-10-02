@@ -1,0 +1,34 @@
+  ✓ Looking at your project files: Found 204 C, 276 header and 100 C# files
+  ✓ Working out how the code is built: C: neutral C17 + MSVC; build settings 
+from the recorded build (compile_commands.json); platform SDK headers not on 
+this machine — Verity's API knowledge pack stands in for them; 46 missing 
+header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 246 C file(s); also checked 4 configuration 
+switch(es): build, t, don, if
+  ✓ Reading the C# code: Read 100 C# file(s) with the C# compiler (Roslyn)
+  ✓ Double-checking with a second parser: cppcheck agrees on 92% of function 
+definitions and 84% of direct calls
+  ✓ Connecting the pieces together: Traced 3973 call(s) through function 
+pointers or tables; resolved 370 virtual call target(s); 52 indirect call(s) 
+could not be resolved; 46 entry point(s), 1818 input/output site(s)
+  ✓ Preparing search: Indexed 9918 symbols for search (keyword search; meaning 
+search off)
+Ready. Indexed in 348.5 s.
+      348.66 real      1280.66 user       586.40 sys
+          1917190144  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             1523103  page reclaims
+                9139  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                2583  messages sent
+               70277  messages received
+                  13  signals received
+              181920  voluntary context switches
+             2933200  involuntary context switches
+        493826764369  instructions retired
+        134458113296  cycles elapsed
+          1903806168  peak memory footprint

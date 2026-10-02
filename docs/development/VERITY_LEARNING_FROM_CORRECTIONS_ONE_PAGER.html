@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verity · Learning from corrections</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   LAAM DOCS — shared design system (v1.1). DO NOT edit tokens/components; only
+   ADD scoped rules at the very bottom if a doc truly needs something new.
+
+   v1.1 — mermaid correctness (see the .mermaid rules below + renderMermaid in the
+   engine): classDef colours are honoured again, labels stop losing their last
+   glyph, and a theme toggle no longer stacks every diagram into diagram #1.
+   ============================================================================ */
+:root{
+  --bg-a:#FCFAF6; --bg-b:#F1ECE3; --bg-c:#E9E2D6;
+  --ink:#1D1B1E; --ink-2:#3A363E; --ink-3:#6E6874; --ink-4:#8A8390;
+  --paper:#fff; --line:rgba(20,15,25,.07); --line-2:#F2EEE6;
+  --chip:#F1EBE0; --chip-ink:#4A4550; --th:#F7F3EB;
+  --code-bg:#211D26; --code-ink:#E9E4EF;
+  --shadow-sm:0 1px 2px rgba(20,15,25,.04); --shadow-lg:0 16px 40px -20px rgba(20,15,25,.15);
+  --maroon-a:#8E2E5E; --maroon-b:#5C1D42; --maroon-c:#3E1230; --pink:#F3B8D3; --pink-2:#F9C6DD;
+  --radius:24px;
+}
+:root[data-theme="dark"]{
+  --bg-a:#17141B; --bg-b:#120F17; --bg-c:#0C0A11;
+  --ink:#F2EEF4; --ink-2:#D8D2DE; --ink-3:#A8A1B0; --ink-4:#8A8494;
+  --paper:#1E1A24; --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.06);
+  --chip:#2A2532; --chip-ink:#CFC7D6; --th:#241F2C;
+  --code-bg:#0E0C12; --code-ink:#E9E4EF;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 16px 44px -18px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:86px}
+body{background:radial-gradient(130% 90% at 50% -15%,var(--bg-a) 0%,var(--bg-b) 62%,var(--bg-c) 100%);
+  min-height:100vh;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  color:var(--ink);transition:background .3s,color .3s}
+a{text-decoration:none;color:inherit}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;
+  background:linear-gradient(90deg,#8E2E5E,#C2497D,#EDA83A);transition:width .1s ease-out}
+.topnav{position:sticky;top:12px;z-index:40;max-width:1280px;margin:14px auto 0;display:flex;align-items:center;
+  gap:6px;padding:8px 12px;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:99px;box-shadow:0 10px 30px -14px rgba(30,20,35,.25)}
+.topnav .brand{font-weight:800;font-size:13.5px;letter-spacing:-.2px;padding:0 10px;flex:none}
+.topnav .navlinks{display:flex;gap:2px;overflow-x:auto;white-space:nowrap;flex:1;scrollbar-width:none}
+.topnav .navlinks::-webkit-scrollbar{display:none}
+.topnav a.nl{flex:none;font-size:12.5px;font-weight:700;color:var(--ink-3);padding:7px 12px;border-radius:99px;transition:all .15s}
+.topnav a.nl:hover{background:var(--th);color:var(--ink)}
+.topnav a.nl.active{background:#8E2E5E;color:#fff}
+.tn-tool{flex:none;display:flex;align-items:center;gap:6px}
+.rtime{font-size:11.5px;font-weight:700;color:var(--ink-4);padding:0 4px;white-space:nowrap}
+.iconbtn{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex:none}
+.iconbtn:hover{background:var(--th);transform:translateY(-1px)}
+.searchbox{position:relative;flex:none}
+.searchbox input{width:150px;max-width:34vw;font:600 12.5px 'Plus Jakarta Sans';color:var(--ink);background:var(--paper);
+  border:1px solid var(--line);border-radius:99px;padding:7px 12px 7px 30px;outline:none;transition:width .2s,border .15s}
+.searchbox input:focus{border-color:#C2497D;width:220px}
+.searchbox svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-4)}
+.search-results{position:absolute;top:42px;right:0;width:340px;max-width:80vw;max-height:56vh;overflow:auto;
+  background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);padding:6px;display:none;z-index:70}
+.search-results.on{display:block}
+.search-results a{display:block;padding:9px 11px;border-radius:10px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.search-results a:hover,.search-results a.hi{background:var(--th)}
+.search-results .sr-sec{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-4);margin-top:3px}
+.search-results .sr-empty{padding:14px;color:var(--ink-4);font-size:13px;font-weight:600;text-align:center}
+.wrap{max-width:1080px;margin:0 auto;padding:34px 36px 10px}
+.shell{max-width:1280px;margin:8px auto 0;display:grid;grid-template-columns:264px minmax(0,1fr);gap:34px;padding:0 24px}
+.sidebar{position:sticky;top:74px;align-self:start;height:calc(100vh - 90px);overflow-y:auto;padding:14px 6px 40px;scrollbar-width:thin}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+.sb-title{font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-4);margin:14px 10px 6px}
+.sb-title:first-child{margin-top:0}
+.sidebar a.toc{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;font-size:12.8px;font-weight:600;
+  color:var(--ink-3);border-left:2px solid transparent;transition:all .13s;line-height:1.3}
+.sidebar a.toc:hover{background:var(--th);color:var(--ink)}
+.sidebar a.toc.active{background:color-mix(in srgb,#8E2E5E 10%,transparent);color:#8E2E5E;border-left-color:#8E2E5E}
+:root[data-theme="dark"] .sidebar a.toc.active{color:var(--pink-2);background:color-mix(in srgb,var(--pink) 14%,transparent);border-left-color:var(--pink)}
+.sidebar a.toc .tick{width:14px;height:14px;flex:none;opacity:0;color:#2B7D4F}
+.sidebar a.toc.done .tick{opacity:1}
+.sidebar a.toc.done{color:var(--ink-4)}
+.progress-pill{margin:6px 10px 12px;padding:10px 12px;border-radius:14px;background:var(--paper);border:1px solid var(--line)}
+.progress-pill .lbl{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-4);display:flex;justify-content:space-between}
+.progress-pill .bar{height:7px;border-radius:99px;background:var(--th);margin-top:7px;overflow:hidden}
+.progress-pill .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8E2E5E,#EDA83A);border-radius:99px;transition:width .3s}
+.content{min-width:0;padding-bottom:60px}
+.content section{margin:30px 0;scroll-margin-top:84px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;margin:0 0 8px}
+h2.big{font-size:29px;font-weight:800;letter-spacing:-.8px;line-height:1.14;margin:0 0 10px;color:var(--ink)}
+h3.mid{font-size:20px;font-weight:800;letter-spacing:-.3px;margin:26px 0 8px;color:var(--ink)}
+h4.sub{font-size:15.5px;font-weight:800;margin:20px 0 6px;color:var(--ink)}
+p{font-size:14.5px;line-height:1.66;color:var(--ink-2);font-weight:450}
+.lede{font-size:15.5px;line-height:1.55;color:var(--ink-3);font-weight:500;margin:0 0 20px;max-width:760px}
+.ichip{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex:none}
+.sechead{display:flex;align-items:center;gap:15px;margin-bottom:16px}
+ul,ol{font-size:14.5px;line-height:1.7;color:var(--ink-2)}
+li{margin:3px 0}
+b,strong{color:var(--ink)}
+hr.div{border:none;border-top:1px dashed var(--line);margin:30px 0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm),var(--shadow-lg)}
+.pad{padding:24px 28px}
+.pill{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.4px;padding:5px 12px;border-radius:99px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--chip);color:var(--chip-ink)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:99px;
+  background:#E3F2E9;color:#2B7D4F;border:1px solid #B7E0C6}
+.stat b{font-size:26px;font-weight:800;display:block;line-height:1}
+.stat span{font-size:12px;font-weight:700;color:rgba(255,255,255,.62)}
+.tbl{overflow-x:auto;border-radius:16px}
+table{border-collapse:separate;border-spacing:0;width:100%;margin:14px 0;font-size:13.4px;background:var(--paper);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden}
+th{text-align:left;background:var(--th);padding:10px 14px;font-size:11px;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--ink-4);font-weight:800;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top;font-weight:500;color:var(--ink-2);line-height:1.55}
+tr:last-child td{border-bottom:none}
+td b{color:var(--ink)}
+tbody tr:hover{background:color-mix(in srgb,var(--th) 55%,transparent)}
+pre.code{position:relative;background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:16px;overflow-x:auto;
+  font:12.6px/1.7 'IBM Plex Mono',monospace;margin:14px 0;border:1px solid rgba(255,255,255,.06)}
+pre.code code{background:none;padding:0;color:inherit;font:inherit}
+code{font:.9em 'IBM Plex Mono',monospace;background:var(--chip);padding:1.5px 6px;border-radius:6px;color:var(--chip-ink);word-break:break-word}
+.copybtn{position:absolute;top:9px;right:9px;font:700 11px 'Plus Jakarta Sans';color:#C9C2D2;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:4px 10px;cursor:pointer;opacity:0;transition:.15s}
+pre.code:hover .copybtn{opacity:1}
+.copybtn:hover{background:rgba(255,255,255,.16);color:#fff}
+.copybtn.ok{color:#8FE3B8;border-color:#3E7A5A}
+.codecap{font:700 11px 'IBM Plex Mono';color:var(--ink-4);margin:14px 0 -6px;display:flex;align-items:center;gap:7px}
+.codecap::before{content:"›";color:#C2497D;font-weight:800}
+details{background:var(--paper);border:1px solid var(--line);border-radius:16px;margin:10px 0;padding:0 18px;box-shadow:var(--shadow-sm)}
+summary{cursor:pointer;font-weight:700;padding:14px 0;font-size:14px;display:flex;align-items:center;gap:10px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary .dm{flex:none;width:22px;height:22px;border-radius:8px;background:#FBEFD8;color:#A5720F;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:14px;transition:transform .2s}
+details[open]{padding-bottom:15px}
+details[open] summary .dm{transform:rotate(45deg)}
+details .dc{font-size:13.8px;line-height:1.65;color:var(--ink-2)}
+details .dc p:first-child{margin-top:0}
+.note{background:linear-gradient(140deg,#FDF6E4,#FCF1D8);border:1px solid #EDD9A4;border-radius:18px;padding:15px 20px;margin:13px 0;
+  font-size:13.8px;line-height:1.62;color:#6E5A38;font-weight:500}
+.note b{color:#5C4A20}
+:root[data-theme="dark"] .note{background:linear-gradient(140deg,#2A2410,#241F0C);border-color:#5C4E24;color:#E4D7A8}
+:root[data-theme="dark"] .note b{color:#F4E6B0}
+.cal{border-radius:18px;padding:14px 18px 14px 46px;margin:13px 0;position:relative;font-size:13.8px;line-height:1.62;font-weight:500;
+  border:1px solid var(--line);background:var(--paper)}
+.cal::before{position:absolute;left:14px;top:14px;font-size:17px;line-height:1}
+.cal .t{display:block;font-weight:800;font-size:12.5px;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px}
+.cal.why{background:linear-gradient(140deg,#E7F0FA,#DEEBF8);border-color:#Bcd4ee}.cal.why::before{content:"🧭"}.cal.why .t{color:#2F6FB2}
+.cal.tip{background:linear-gradient(140deg,#E7F5EC,#DCF0E4);border-color:#A9D9BC}.cal.tip::before{content:"💡"}.cal.tip .t{color:#2B7D4F}
+.cal.mem{background:linear-gradient(140deg,#F1ECFB,#EAE1F8);border-color:#CBB8EA}.cal.mem::before{content:"🧠"}.cal.mem .t{color:#6F4BB8}
+.cal.mistake{background:linear-gradient(140deg,#FCEBE8,#FBE0DB);border-color:#F0BDB2}.cal.mistake::before{content:"⚠️"}.cal.mistake .t{color:#B04A3B}
+.cal.anti{background:linear-gradient(140deg,#FBE9EF,#F8DEE8);border-color:#EEB6CC}.cal.anti::before{content:"🚫"}.cal.anti .t{color:#A83266}
+.cal.senior{background:linear-gradient(140deg,#EEF1F5,#E6EAF0);border-color:#CAD2DE}.cal.senior::before{content:"🎓"}.cal.senior .t{color:#4A5568}
+.cal.interview{background:linear-gradient(140deg,#FDF0E1,#FBE7CE);border-color:#EFCF9E}.cal.interview::before{content:"🎤"}.cal.interview .t{color:#A5720F}
+.cal.prod{background:linear-gradient(140deg,#E1F4F1,#D3EEE9);border-color:#A6DBD1}.cal.prod::before{content:"🏭"}.cal.prod .t{color:#0C7A70}
+.cal b{color:var(--ink)}
+:root[data-theme="dark"] .cal{background:var(--paper)!important;border-color:var(--line)!important;color:var(--ink-2)}
+:root[data-theme="dark"] .cal b{color:var(--ink)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+.compare.three{grid-template-columns:repeat(3,1fr)}
+.compare .cc{border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:var(--paper)}
+.compare .cc.node{border-top:3px solid #83CD29}
+.compare .cc.other{border-top:3px solid #C2497D}
+.compare .cc.py{border-top:3px solid #4C86D6}
+.compare .cc.go{border-top:3px solid #00ADD8}
+.compare .cc h5{margin:0 0 8px;font-size:13px;font-weight:800;display:flex;align-items:center;gap:7px;color:var(--ink)}
+.compare .cc h5 .dot{width:9px;height:9px;border-radius:99px}
+.compare .cc.node h5 .dot{background:#83CD29}.compare .cc.other h5 .dot{background:#C2497D}
+.compare .cc.py h5 .dot{background:#4C86D6}.compare .cc.go h5 .dot{background:#00ADD8}
+.compare .cc pre.code{margin:6px 0 0}
+.compare .cc p{font-size:13px;margin:6px 0 0}
+.compare .cc ul{font-size:13px;margin:6px 0 0;padding-left:18px}
+.tabs{margin:16px 0}
+.tabs .tabbar{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:0}
+.tabs .tab{font:700 12.5px 'Plus Jakarta Sans';color:var(--ink-3);background:none;border:none;border-bottom:2px solid transparent;
+  padding:9px 14px;cursor:pointer;border-radius:8px 8px 0 0}
+.tabs .tab:hover{background:var(--th)}
+.tabs .tab.active{color:#8E2E5E;border-bottom-color:#8E2E5E}
+:root[data-theme="dark"] .tabs .tab.active{color:var(--pink-2);border-bottom-color:var(--pink)}
+.tabs .tabpanel{display:none;padding:16px 2px 2px;animation:fade .25s}
+.tabs .tabpanel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.quiz{border:1px solid var(--line);border-left:4px solid #C2497D;border-radius:16px;padding:16px 20px;margin:16px 0;background:var(--paper)}
+.quiz .qh{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#C2497D;margin-bottom:8px}
+.quiz .q{font-size:14.5px;font-weight:700;color:var(--ink);margin:0 0 12px}
+.quiz .opt{display:block;width:100%;text-align:left;font:600 13.5px 'Plus Jakarta Sans';color:var(--ink-2);background:var(--paper);
+  border:1px solid var(--line);border-radius:11px;padding:11px 14px;margin:7px 0;cursor:pointer;transition:.13s}
+.quiz .opt:hover{border-color:#C2497D;background:var(--th)}
+.quiz .opt.correct{border-color:#2B7D4F;background:#E3F2E9;color:#22694A}
+.quiz .opt.wrong{border-color:#B04A3B;background:#FCEBE8;color:#8F3A2E}
+.quiz .opt .mk{float:right;font-weight:800}
+.quiz .exp{display:none;margin-top:12px;padding:12px 14px;border-radius:11px;background:var(--th);font-size:13px;line-height:1.55;color:var(--ink-2)}
+.quiz .exp.on{display:block}
+.quiz .exp b{color:var(--ink)}
+.checkpoint{display:flex;gap:12px;align-items:flex-start;border:1px dashed #A9D9BC;background:linear-gradient(140deg,#E7F5EC,#DCF0E4);
+  border-radius:14px;padding:13px 16px;margin:16px 0}
+:root[data-theme="dark"] .checkpoint{background:linear-gradient(140deg,#12291C,#0E2417);border-color:#2E6B49}
+.checkpoint input{margin-top:2px;width:18px;height:18px;accent-color:#2B7D4F;flex:none;cursor:pointer}
+.checkpoint .cptxt{font-size:13.5px;font-weight:600;color:#2B6647;line-height:1.5}
+:root[data-theme="dark"] .checkpoint .cptxt{color:#9FE3BC}
+.checkpoint.done .cptxt{text-decoration:line-through;opacity:.7}
+.recap{background:linear-gradient(140deg,#211D26,#2C2633);color:#EDE7F2;border-radius:20px;padding:20px 24px;margin:22px 0}
+.recap h4{margin:0 0 10px;font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:9px}
+.recap ul{margin:0;padding-left:18px;color:#D5CEDD;font-size:13.6px;line-height:1.7}
+.recap ul b{color:#fff}
+.takeaways{border:1px solid var(--line);border-radius:16px;background:var(--paper);padding:4px 20px;margin:16px 0}
+.checklist{list-style:none;padding:0;margin:14px 0}
+.checklist li{display:flex;gap:11px;align-items:flex-start;padding:9px 2px;border-bottom:1px dashed var(--line);font-size:13.8px;font-weight:600;color:var(--ink-2)}
+.checklist li:last-child{border-bottom:none}
+.checklist li::before{content:"✓";color:#2B7D4F;font-weight:800;flex:none}
+.gt{border-bottom:2px dotted #C2497D;cursor:help;position:relative;font-weight:700;color:var(--ink)}
+.gt .gtip{visibility:hidden;opacity:0;position:absolute;left:50%;bottom:150%;transform:translateX(-50%);width:260px;
+  background:#211D26;color:#EDE7F2;font-size:12px;font-weight:500;line-height:1.5;padding:10px 12px;border-radius:12px;
+  box-shadow:var(--shadow-lg);transition:.15s;z-index:50;text-transform:none;letter-spacing:0}
+.gt:hover .gtip{visibility:visible;opacity:1;bottom:135%}
+.timeline{position:relative;margin:18px 0;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:linear-gradient(#8E2E5E,#EDA83A)}
+.tl{position:relative;margin:0 0 18px}
+.tl::before{content:"";position:absolute;left:-26px;top:3px;width:14px;height:14px;border-radius:99px;background:var(--paper);border:3px solid #8E2E5E}
+.tl h5{margin:0 0 3px;font-size:14px;font-weight:800;color:var(--ink)}
+.tl p{margin:0;font-size:13.3px;color:var(--ink-3)}
+.mmwrap{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0;overflow-x:auto;text-align:center}
+.mmwrap .mmcap{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-4);margin-bottom:10px}
+.mermaid{font-family:'Plus Jakarta Sans'!important}
+/* Mermaid renders htmlLabels as <span class="nodeLabel"><p>…</p></span>. Without this, the
+   global `p` rule above wins over the colour mermaid puts on the span — so every classDef
+   colour is ignored and labels paint dark ink (unreadable on a dark fill) — and it also
+   changes the label's font-size AFTER mermaid measured it, clipping the last glyph. */
+.mermaid p{color:inherit;font-size:inherit;line-height:inherit;font-weight:inherit;margin:0}
+/* Labels live in a foreignObject sized to the width mermaid measured; if the webfont lands
+   late, the real text is a hair wider. Let it paint past the box (the engine sets extra node
+   padding to receive it) rather than clipping a character. */
+.mermaid foreignObject{overflow:visible}
+.mermaid .nodeLabel,.mermaid .edgeLabel{overflow:visible}
+.svgfig{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0;overflow-x:auto;text-align:center}
+.svgfig .cap{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-4);margin-bottom:12px}
+.svgfig svg{max-width:100%;height:auto}
+.legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:12px;font-size:11.5px;font-weight:700;color:var(--ink-3)}
+.legend span i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.gridcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+.fcard{border:1px solid var(--line);border-radius:16px;padding:15px 17px;background:var(--paper)}
+.fcard h5{margin:0 0 6px;font-size:13.5px;font-weight:800;color:var(--ink);display:flex;gap:8px;align-items:center}
+.fcard p{font-size:12.8px;margin:0;color:var(--ink-3)}
+.tree{background:var(--code-bg);color:#CFC7D6;border-radius:16px;padding:18px 20px;font:12.5px/1.75 'IBM Plex Mono',monospace;
+  overflow-x:auto;margin:14px 0;white-space:pre}
+.kbd{font:700 11px 'IBM Plex Mono';background:var(--paper);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;
+  padding:1px 7px;color:var(--ink-2)}
+#toTop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:99px;border:1px solid var(--line);
+  background:#8E2E5E;color:#fff;font-size:18px;cursor:pointer;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;
+  transition:.2s;z-index:50}
+#toTop.on{opacity:1;pointer-events:auto}
+#toTop:hover{transform:translateY(-3px)}
+.mtoggle{display:none}
+@media(max-width:960px){
+  .shell{grid-template-columns:1fr;padding:0 18px}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;height:100vh;background:var(--paper);z-index:80;
+    transform:translateX(-105%);transition:transform .25s;box-shadow:var(--shadow-lg);padding-top:20px}
+  .sidebar.open{transform:none}
+  .mtoggle{display:flex}
+  .compare,.compare.three{grid-template-columns:1fr}
+  .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:75;opacity:0;pointer-events:none;transition:.2s}
+  .sb-backdrop.on{opacity:1;pointer-events:auto}
+}
+@media(max-width:560px){.wrap{padding:26px 16px 8px}.searchbox input{width:38px}.searchbox input:focus{width:180px}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+/* ── custom svg diagrams: shared polish (font + soft depth, theme-aware) ── */
+.svgfig svg{color:var(--ink)}                    /* lets fill="currentColor" track the theme */
+.svgfig svg text{font-family:'Plus Jakarta Sans',sans-serif}
+.svgfig svg rect:not([fill="none"]),.svgfig svg circle:not([fill="none"]),.svgfig svg ellipse:not([fill="none"]){
+  filter:drop-shadow(0 1px 2px rgba(20,15,25,.16))}
+:root[data-theme="dark"] .svgfig svg rect:not([fill="none"]),
+:root[data-theme="dark"] .svgfig svg circle:not([fill="none"]),
+:root[data-theme="dark"] .svgfig svg ellipse:not([fill="none"]){filter:drop-shadow(0 1px 3px rgba(0,0,0,.55))}
+.stepnum circle{fill:#EDA83A}.stepnum text{fill:#3E1230;font-weight:800}
+@media print{
+  #progress,.topnav,.sidebar,#toTop,.copybtn,.sb-backdrop,.mtoggle{display:none!important}
+  .shell{grid-template-columns:1fr;padding:0}
+  body{background:#fff}
+  .card,.cal,.note,.quiz{break-inside:avoid;box-shadow:none}
+  details{border:1px solid #ccc}details[open]{padding-bottom:14px}
+  a{color:inherit}
+}
+</style>
+</head>
+<body data-doc="d98">
+<div id="progress"></div>
+
+<nav class="topnav">
+  <span class="brand">Verity · Learning from corrections</span>
+  <div class="navlinks">
+    <a class="nl" href="#why">Why</a>
+    <a class="nl" href="#experience">What you see</a>
+    <a class="nl" href="#how">How it works</a>
+    <a class="nl" href="#storage">Storage</a>
+    <a class="nl" href="#guardrails">Guardrails</a>
+    <a class="nl" href="#plan">Build plan</a>
+    <a class="nl" href="#proof">Proof</a>
+  </div>
+  <div class="tn-tool">
+    <span class="searchbox">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search  /" aria-label="Search this page">
+      <div id="searchResults" class="search-results"></div>
+    </span>
+    <span id="rtime" class="rtime"></span>
+    <button class="iconbtn" style="width:auto;padding:0 12px" onclick="window.print()" title="Save as PDF">⎙ PDF</button>
+    <button id="themeBtn" class="iconbtn" title="Toggle dark mode (d)">☾</button>
+  </div>
+</nav>
+
+<header class="wrap" style="padding-top:30px">
+  <div style="background:linear-gradient(140deg,#8E2E5E 0%,#5C1D42 55%,#3E1230 100%);border-radius:28px;padding:36px 42px;color:#fff;box-shadow:0 26px 60px -24px rgba(120,35,80,.55);position:relative;overflow:hidden">
+    <div style="position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%)"></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+      <div class="ichip" style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></div>
+      <div>
+        <div style="font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F3B8D3">Verity · Phase 5 · feature spec</div>
+        <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.65)">One page to pick up in the next session · written 1 Oct 2026 against v0.5.0</div>
+      </div>
+    </div>
+    <h1 style="font-size:35px;font-weight:800;letter-spacing:-1.2px;line-height:1.1;margin:0 0 14px;max-width:26ch">Make each project's answers better every time someone corrects them</h1>
+    <p style="font-size:16px;line-height:1.55;font-weight:500;color:rgba(255,255,255,.86);margin:0 0 22px;max-width:72ch">Today Verity answers the same question the same way until an engineer changes its code. This feature lets the people using it <b style="color:#fff">point at the right place</b> when an answer is wrong. The correction is kept for that project, <b style="color:#fff">shown in every answer it affects</b> and can be undone. It becomes ranking hints, glossary words and test cases, with <b style="color:#fff">no model retraining and nothing leaving the machine</b>.</p>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:4px">
+      <div class="stat"><b style="color:#F9C6DD">9 → 14 / 24</b><span>first contact, final round (facts → model)</span></div>
+      <div class="stat"><b style="color:#FBD9A8">0</b><span>learning from use today</span></div>
+      <div class="stat"><b style="color:#A8E3D3">4</b><span>ways each correction is used</span></div>
+      <div class="stat"><b style="color:#C9D8F5">7</b><span>build steps, P5-0 first</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap content">
+
+<section id="why">
+  <div class="sechead"><div class="ichip" style="background:#E7F0FA;color:#2F6FB2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.5"/></svg></div>
+    <div><p class="eyebrow" style="color:#2F6FB2">WHY · 01</p><h2 class="big">Today it never learns</h2></div></div>
+  <p class="lede">On a project Verity has never seen, structural answers are dependable from the start. Behavioural questions ("what happens when it is full / times out / is rejected") are the weak spot. The people asking often know the right place, but they have no way to tell Verity.</p>
+
+  <div class="tbl"><table>
+    <tr><th>Where accuracy stands (v0.5.0)</th><th>Result</th><th>Measured on</th></tr>
+    <tr><td>Structural questions on first contact: call paths, where a value is set, threads, names that do not exist</td><td><b>about 9 in 10</b></td><td>Phase 3 first runs: call paths 9/10, invented names 4/4</td></tr>
+    <tr><td>Behavioural questions on first contact, facts only</td><td><b>2–4 in 10</b></td><td>Phase 3: 4/19. Phase 4 final round: 9/24 over all questions</td></tr>
+    <tr><td>Same final round with the local model choosing among verified candidates</td><td><b>14/24</b></td><td>the gain was all on behavioural questions</td></tr>
+    <tr><td>Projects already fixed against, every answer read by hand</td><td><b>57/64 · 58/64</b></td><td>held-outs #5–#9, facts only · with the model</td></tr>
+  </table></div>
+
+  <h3 class="mid">What the remaining misses look like</h3>
+  <div class="gridcards">
+    <div class="fcard"><h5>Right place, wrong rank</h5><p>The correct check was a candidate, but another ranked first. Example: SOEM "error list is full", where the index wrap-around beat <code>head == tail</code>. How common this is has not been measured; that is P5-0.</p></div>
+    <div class="fcard"><h5>Meaning the code does not spell out</h5><p>MQTT's SUBACK failure code <code>0x80</code>, a priority <i>ceiling</i> mistaken for priority inheritance, the word "bus-off". A project glossary fixes these.</p></div>
+    <div class="fcard"><h5>Code the default build leaves out</h5><p>nanopb's nesting limit sits behind <code>#ifdef PB_MESSAGE_NESTING_MAX</code>. A correction can point at it; a real Windows build removes the guess.</p></div>
+    <div class="fcard"><h5>Paths the analysis does not follow</h5><p>A timeout caught inside an <code>#if DEBUG … #else</code> pair of handlers (M2Mqtt <code>Ping()</code>). Ranking cannot fix this; the correction flags it for the engineering loop.</p></div>
+  </div>
+
+  <div class="cal why"><span class="t">The idea</span>Let the person who knows say so once, and make every later answer on that project use it: openly, reversibly, and without inventing anything.</div>
+  <div class="cal mistake"><span class="t">Measure this first</span>Nobody knows yet how often the right check is already among the top 3 candidates. That number decides how much "show the alternatives" is worth (step P5-0).</div>
+</section>
+
+<section id="experience">
+  <div class="sechead"><div class="ichip" style="background:#F1ECFB;color:#6F4BB8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h6"/><path d="M15 16l2 2 4-4"/></svg></div>
+    <div><p class="eyebrow" style="color:#6F4BB8">WHAT YOU SEE · 02</p><h2 class="big">Point at the right place, once</h2></div></div>
+  <p class="lede">When the top candidates are close, the answer shows them. Picking one, or any line in the source viewer, records a correction for this project. Later answers say when they use it.</p>
+
+  <div class="svgfig"><div class="cap">The answer card with alternatives (illustration, SOEM example)</div>
+  <svg viewBox="0 0 720 336" role="img" aria-label="answer card with alternatives and correction buttons">
+    <rect x="10" y="10" width="700" height="316" rx="16" fill="none" stroke="#8A8390" stroke-opacity=".5"/>
+    <text x="32" y="42" font-size="14" font-weight="700" fill="currentColor">What happens when the error list is full?</text>
+    <rect x="32" y="56" width="4" height="42" rx="2" fill="#8E2E5E"/>
+    <text x="46" y="72" font-size="12" fill="currentColor">ecx_pusherror() checks `context-&gt;elist.head &gt; EC_MAXELIST` (src/ec_main.c:89)</text>
+    <text x="46" y="91" font-size="11.5" fill="#8A8390">and when that is true it sets `context-&gt;elist.head = 0` …</text>
+    <text x="32" y="126" font-size="10.5" font-weight="800" letter-spacing="1" fill="#8A8390">OTHER PLACES THAT COULD BE THE ANSWER</text>
+    <rect x="32" y="136" width="656" height="40" rx="10" fill="none" stroke="#8A8390" stroke-opacity=".45"/>
+    <text x="48" y="160" font-size="11.5" fill="currentColor">[2] ecx_pusherror() checks `context-&gt;elist.head == context-&gt;elist.tail` (line 93)</text>
+    <rect x="592" y="143" width="84" height="26" rx="8" fill="#0C7A70"/><text x="634" y="160" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">This one</text>
+    <rect x="32" y="184" width="656" height="40" rx="10" fill="none" stroke="#8A8390" stroke-opacity=".45"/>
+    <text x="48" y="208" font-size="11.5" fill="currentColor">[3] ecx_poperror() checks `notEmpty` (line 116)</text>
+    <rect x="592" y="191" width="84" height="26" rx="8" fill="#0C7A70"/><text x="634" y="208" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">This one</text>
+    <rect x="32" y="238" width="160" height="30" rx="8" fill="#4C86D6"/><text x="112" y="257" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">The answer was right</text>
+    <rect x="204" y="238" width="230" height="30" rx="8" fill="#A5720F"/><text x="319" y="257" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">None of these: pick a line</text>
+    <rect x="32" y="282" width="656" height="32" rx="8" fill="#8E2E5E" fill-opacity=".13"/>
+    <text x="48" y="302" font-size="11.5" fill="currentColor">Next time: "Using correction c-0007 (2 Oct): full = head meets tail. Undo"</text>
+    <g class="stepnum"><circle cx="24" cy="136" r="11"/><text x="24" y="140" text-anchor="middle" font-size="12">1</text></g>
+    <g class="stepnum"><circle cx="592" cy="143" r="11"/><text x="592" y="147" text-anchor="middle" font-size="12">2</text></g>
+    <g class="stepnum"><circle cx="24" cy="282" r="11"/><text x="24" y="286" text-anchor="middle" font-size="12">3</text></g>
+  </svg>
+  <div class="legend"><span><i style="background:#0C7A70"></i>records a correction</span><span><i style="background:#4C86D6"></i>records a confirmation (a test case)</span><span><i style="background:#A5720F"></i>opens the source viewer: "use this line"</span><span><i style="background:#8E2E5E"></i>disclosure in later answers</span></div>
+  </div>
+
+  <h3 class="mid">The same thing without the app (proposed interfaces)</h3>
+  <div class="tabs">
+    <div class="tabbar"><button class="tab active" data-tab="cli">CLI</button><button class="tab" data-tab="mcp">MCP</button><button class="tab" data-tab="rpc">JSON-RPC</button></div>
+    <div class="tabpanel active" data-panel="cli"><pre class="code"><code>$ bin/verity ask samples/realworld/SOEM "What happens when the error list is full?"
+  …
+  Other places that could be the answer:
+    [2] ecx_pusherror() checks `context-&gt;elist.head == context-&gt;elist.tail` (src/ec_main.c:93)
+    [3] ecx_poperror() checks `notEmpty` (src/ec_main.c:116)
+  Answer 3f2a91c0d4be · correct it: verity correct &lt;project&gt; 3f2a91c0d4be --pick 2
+
+$ bin/verity correct samples/realworld/SOEM 3f2a91c0d4be --line src/ec_main.c:93 --note "full = head meets tail"
+  Saved correction c-0007. Used for this and similar questions. Undo: verity corrections undo c-0007</code></pre></div>
+    <div class="tabpanel" data-panel="mcp"><p>A new tool next to the six that exist (<code>verity_index</code>, <code>verity_status</code>, <code>verity_ask</code>, <code>verity_search</code>, <code>verity_symbol</code>, <code>verity_source</code>), so that an assistant using Verity can record a correction the user states:</p>
+<pre class="code"><code>verity_correct { "project": "…/SOEM", "answer_id": "3f2a91c0d4be",
+                  "pick": 2 | "file": "src/ec_main.c", "line": 93,
+                  "note": "full = head meets tail" }</code></pre></div>
+    <div class="tabpanel" data-panel="rpc"><p>New methods in the engine's method table, served over the existing <code>/rpc</code> endpoint:</p>
+<pre class="code"><code>answer.correct     { path, answer_id, pick | target: { file, line }, note }  → correction
+answer.confirm     { path, answer_id }                                      → confirmation
+corrections.list   { path, status }      corrections.remove  { path, id }
+corrections.export { path, format: "json" | "bench" }   corrections.import { path, data }
+glossary.list | glossary.accept | glossary.remove</code></pre></div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="sechead"><div class="ichip" style="background:#E2F3F0;color:#0C7A70"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.6 10.5l6.8-3M8.6 13.5l6.8 3"/></svg></div>
+    <div><p class="eyebrow" style="color:#0C7A70">HOW IT WORKS · 03</p><h2 class="big">One correction, four uses</h2></div></div>
+  <p class="lede">A correction never adds text to an answer. It changes which verified candidate comes first, teaches the project a word, and becomes a test.</p>
+
+  <div class="mmwrap"><div class="mmcap">Where a correction enters the existing answer pipeline</div><div class="mermaid">
+flowchart TB
+  Q["Question"] --> C["Recipes find candidate checks<br/>(real code only)"]
+  C --> R["Rank: heuristics + local model"]
+  L[("learned.db<br/>corrections · glossary")] -.->|"pin · hint · words"| R
+  R --> V["Verifier re-checks every claim"]
+  V --> A["Answer + close alternatives"]
+  A -->|"this one / pick a line"| K["Correction<br/>(anchored to the line)"]
+  K --> L
+  K --> T["Project test case<br/>(bench suite format)"]
+  I["Every re-index"] -.->|"re-anchor or mark stale"| L
+  classDef user fill:#8E2E5E,color:#fff,stroke:#8E2E5E
+  classDef store fill:#0C7A70,color:#fff,stroke:#0C7A70
+  classDef guard fill:#4C86D6,color:#fff,stroke:#4C86D6
+  class A,K user
+  class L,T store
+  class V guard
+</div></div>
+
+  <div class="tbl"><table>
+    <tr><th>Use</th><th>Applies when</th><th>What it changes</th><th>What it never does</th></tr>
+    <tr><td><b>① Pin</b></td><td>The same question comes again (same intent and the same topic words)</td><td>The corrected place goes first. If it was not a candidate, the branch or function at that line is built as one.</td><td>Skip the verifier</td></tr>
+    <tr><td><b>② Hint</b></td><td>A similar question: same kind of question, and topic-word overlap ≥ 0.5 (or meaning-search similarity ≥ 0.85)</td><td>Ranking bonus: +50% for the corrected branch, +25% for its function</td><td>Outweigh a clearly better match, or reach another project</td></tr>
+    <tr><td><b>③ Glossary</b></td><td>The question used words the right place's code does not contain ("bus-off")</td><td>Suggests term → identifiers (<code>CO_CAN_ERRTX_BUS_OFF</code>). Once a person accepts it, it joins this project's word expansion.</td><td>Apply before it is accepted</td></tr>
+    <tr><td><b>④ Test case</b></td><td>Always (a confirmation also becomes one)</td><td>A case in the existing suite format: the question, and must-mention the right function and its constant</td><td>Change answers. It only guards against regressions.</td></tr>
+  </table></div>
+  <div class="cal tip"><span class="t">Start values, not truths</span>The thresholds and bonuses above are starting points. Tune them in P5-6 on a project nobody has tuned for, and keep the first run of that measurement.</div>
+
+  <h3 class="mid">What stays human: the engineering loop</h3>
+  <p>Corrections make one project better. Making <i>every</i> project better is still engineering, done the same way as the Phase 4 audit:</p>
+  <div class="timeline">
+    <div class="tl"><h5>Collect</h5><p>Export corrections from the pilot projects (<code>corrections.export</code>).</p></div>
+    <div class="tl"><h5>Sort</h5><p>Rank problem (the right check was a candidate), vocabulary (a glossary would do), or analysis gap (the path is not followed at all).</p></div>
+    <div class="tl"><h5>Fix generically</h5><p>One rule plus a regression test per idiom, never a special case for one project.</p></div>
+    <div class="tl"><h5>Re-measure</h5><p>On a never-seen project: questions written first, first run kept, read by hand.</p></div>
+  </div>
+</section>
+
+<section id="storage">
+  <div class="sechead"><div class="ichip" style="background:#FBF1DE;color:#A5720F"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+    <div><p class="eyebrow" style="color:#A5720F">STORAGE · 04</p><h2 class="big">Kept apart from the index</h2></div></div>
+  <p class="lede">The index can always be rebuilt from the code; corrections cannot. So they get their own file in the same project folder.</p>
+
+  <div class="compare">
+    <div class="cc node"><h5><span class="dot"></span>index.db (exists)</h5><ul>
+      <li>Rebuildable. A corrupted one is moved aside and recreated (<code>verity/store/db.py:109</code>).</li>
+      <li>Already keeps every answer with an id and the hashes of the files it used (<code>answer</code> table, <code>db.py:64</code>, written by <code>Answerer._store</code>, <code>verity/agent/answer.py:278</code>).</li>
+    </ul></div>
+    <div class="cc other"><h5><span class="dot"></span>learned.db (new)</h5><ul>
+      <li><code>data/repos/&lt;repo-id&gt;/learned.db</code>, next to the index (<code>config.repo_dir</code>).</li>
+      <li>Survives re-index, full re-index and index corruption. A correction refers to the answer it fixes by id.</li>
+    </ul></div>
+  </div>
+
+  <pre class="codecap">learned.db, proposed schema</pre>
+  <pre class="code"><code>CREATE TABLE correction (
+  id TEXT PRIMARY KEY,                 -- c-0007
+  created REAL, author TEXT, note TEXT,
+  answer_id TEXT,                      -- answer.id in index.db
+  question TEXT, intent TEXT, topic TEXT,          -- topic = the router's words (JSON list)
+  wrong TEXT,                          -- JSON {fn, file, line, cond} that ranked first
+  target_fn TEXT, target_file TEXT, target_line INT, target_cond TEXT,
+  anchor TEXT,                         -- sha1 of the target line's code text
+  status TEXT                          -- active | stale | removed
+);
+CREATE TABLE glossary (term TEXT, identifiers TEXT,  -- "bus-off" -&gt; ["CO_CAN_ERRTX_BUS_OFF"]
+                       source TEXT,                 -- correction id or "manual"
+                       status TEXT);                -- suggested | accepted | rejected
+CREATE TABLE confirmation (answer_id TEXT, created REAL, question TEXT);  -- "the answer was right"</code></pre>
+
+  <div class="cal prod"><span class="t">When the code changes</span>Each correction stores the target line's text hash and its function. After every index it is re-anchored. If the line moved, it follows it inside the same function. If the code on that line changed or disappeared, the correction turns <b>stale</b>: it is listed for review and never applied.</div>
+  <div class="note"><b>Sharing with a team.</b> Corrections stay on the machine. To share them, export and import a JSON file. Accepted glossary terms can also be committed to the repository's existing <code>verity.toml</code>, the hints file read by <code>config.load_hints</code> (<code>verity/config.py:37</code>), under a new <code>[glossary]</code> table.</div>
+</section>
+
+<section id="guardrails">
+  <div class="sechead"><div class="ichip" style="background:#F7E6EF;color:#8E2E5E"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+    <div><p class="eyebrow" style="color:#8E2E5E">GUARDRAILS · 05</p><h2 class="big">What it does on its own, and what it never does</h2></div></div>
+  <p class="lede">"Auto-improvement" here means: once someone corrects an answer, the rest happens by itself, inside that project, in plain view.</p>
+
+  <div class="compare">
+    <div class="cc node"><h5><span class="dot"></span>Automatic, after a correction</h5><ul>
+      <li>Saved and used at once, for this project</li>
+      <li>Pins the same question; nudges similar ones</li>
+      <li>Suggests glossary words</li>
+      <li>Adds a test case</li>
+      <li>Turns stale by itself when the code changes</li>
+    </ul></div>
+    <div class="cc other"><h5><span class="dot"></span>Never automatic</h5><ul>
+      <li>Deciding that an answer is wrong (a person flags it)</li>
+      <li>Accepting a glossary term</li>
+      <li>Applying to another project</li>
+      <li>Turning corrections into general rules (engineering: reviewed, tested, measured)</li>
+      <li>Retraining the model, or sending anything off the machine</li>
+    </ul></div>
+  </div>
+
+  <ul class="checklist">
+    <li>A correction only reorders candidates, or builds one from real code. Every claim still passes the verifier.</li>
+    <li>Every answer that uses a correction says so, with its date and note. One click undoes it.</li>
+    <li>A picked line must exist in the indexed project. A pick from the alternatives must be one of them.</li>
+    <li>When two corrections disagree on the same question, the newest wins and both are flagged.</li>
+    <li>Works in facts-only mode too. The model is not needed.</li>
+  </ul>
+  <div class="cal anti"><span class="t">Not this</span>Silently tuning weights from thumbs-down clicks. Unreviewed feedback drifts towards confident wrong answers, and nobody can tell why an answer changed.</div>
+</section>
+
+<section id="plan">
+  <div class="sechead"><div class="ichip" style="background:#ECEEF2;color:#4A5568"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M16 16l2 2 4-4"/></svg></div>
+    <div><p class="eyebrow" style="color:#4A5568">BUILD PLAN · 06</p><h2 class="big">Pick-up plan for the next session</h2></div></div>
+  <p class="lede">Seven steps, each with its own tests. P5-0 comes first, because it decides how much the rest is worth. The sizes are rough estimates.</p>
+
+  <div class="timeline">
+    <div class="tl"><h5>P5-0 · Measure first (≈½ day)</h5><p>Return the top 3 candidates in the answer's <code>meta</code>. Add <code>--topk 3</code> to the benchmark grader (expected names in any of the top 3). Run it on the kept first-run questions (optimistic: that code is tuned now) and on a new never-seen project #10 (the honest number). <b>Gate:</b> show alternatives only if top-3 is clearly above top-1.</p></div>
+    <div class="tl"><h5>P5-1 · Alternatives in the answer (≈1 day)</h5><p>An <code>alternatives</code> list when the 2nd and 3rd candidates score close to the first. Shown by the CLI, returned by MCP <code>verity_ask</code>, rendered by the app.</p></div>
+    <div class="tl"><h5>P5-2 · Correction store and interfaces (≈1–1½ days)</h5><p><code>learned.db</code>, plus the RPC methods, <code>verity correct</code> / <code>verity corrections</code>, and the MCP <code>verity_correct</code> tool.</p></div>
+    <div class="tl"><h5>P5-3 · Apply: pin, hint, glossary (≈1½ days)</h5><p>Load matching corrections once per question. Pin, or add the hint bonus inside each recipe's ranking. Per-project glossary on top of the global word map. Disclosure line in the answer.</p></div>
+    <div class="tl"><h5>P5-4 · Anchors and stale corrections (≈½ day)</h5><p>Re-anchor after each index; stale corrections are never applied.</p></div>
+    <div class="tl"><h5>P5-5 · App (≈1 day)</h5><p>Buttons on the answer card, "use this line" in the source viewer, and Settings → Corrections / Glossary (undo, accept, export).</p></div>
+    <div class="tl"><h5>P5-6 · Prove it, document it (≈1 day)</h5><p>The protocol in section 07. Update the design doc §39, README and PROGRESS.</p></div>
+  </div>
+
+  <h3 class="mid">Where the code changes (anchors verified 1 Oct 2026)</h3>
+  <div class="tbl"><table>
+    <tr><th>Area</th><th>Where</th><th>Change</th></tr>
+    <tr><td>Failure-question ranking</td><td><code>verity/agent/recipes.py</code>: <code>r_failure_invalid</code> :2355, <code>score()</code> :2496, <code>cx.rank_all</code> :2677, <code>_rerank</code> :248</td><td>Expose the top candidates; add the correction bonus to <code>score()</code>; pin</td></tr>
+    <tr><td>Other question kinds</td><td><code>r_failure_missing</code> :3686, <code>r_explain</code> target sort :1036, <code>r_where_computed</code> function sort :1729</td><td>The same three hooks</td></tr>
+    <tr><td>Per-question context</td><td><code>Ctx</code> :77; <code>Answerer.ask</code>, <code>verity/agent/answer.py:101</code></td><td>Load matching corrections once; record which were used</td></tr>
+    <tr><td>Answer object</td><td><code>verity/render/render.py:47</code></td><td><code>alternatives</code>, <code>meta.corrections_used</code></td></tr>
+    <tr><td>Word expansion</td><td><code>expand_words</code>, <code>verity/retrieval/search.py:57</code> (global <code>SYNONYMS</code> :14)</td><td>Accepted glossary terms per project, on top of the global map</td></tr>
+    <tr><td>Store</td><td>new <code>verity/learn/store.py</code></td><td>The schema in section 04</td></tr>
+    <tr><td>Engine API</td><td><code>METHODS</code>, <code>verity/engine/core.py:479</code> (JSON-RPC on <code>/rpc</code>)</td><td><code>answer.correct</code>, <code>answer.confirm</code>, <code>corrections.*</code>, <code>glossary.*</code></td></tr>
+    <tr><td>CLI · MCP</td><td><code>verity/cli.py</code> subcommands; <code>TOOLS</code>, <code>verity/mcp_server.py:17</code></td><td><code>verity correct</code>, <code>verity corrections</code>; tool <code>verity_correct</code></td></tr>
+    <tr><td>App</td><td><code>ui/src/components/AnswerView.tsx</code>, <code>SourceViewer.tsx</code>, <code>Settings.tsx</code></td><td>Alternatives and buttons; "use this line"; corrections list</td></tr>
+    <tr><td>Benchmark</td><td><code>grade()</code>, <code>verity/bench/run.py:95</code>; suites are <code>{projects, cases[q, must_mention]}</code></td><td><code>--topk</code>; export corrections as a suite</td></tr>
+    <tr><td>Tests</td><td>new <code>tests/test_learning.py</code></td><td>Pin; hint; an unrelated question unaffected; stale after an edit; undo; export → suite passes; survives an index.db reset</td></tr>
+  </table></div>
+</section>
+
+<section id="proof">
+  <div class="sechead"><div class="ichip" style="background:#FBE7EF;color:#A83266"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+    <div><p class="eyebrow" style="color:#A83266">PROOF · 07</p><h2 class="big">How we will know it helps</h2></div></div>
+  <p class="lede">Measured the same way as Phases 3 and 4: on a project nobody tuned for, with the questions written first, the first run kept, and every answer read by hand.</p>
+
+  <div class="mmwrap"><div class="mmcap">The measurement protocol</div><div class="mermaid">
+flowchart TB
+  W["Write project #10's questions first<br/>(with paraphrase pairs)"] --> F["First run: kept, read by hand"]
+  F --> M["One correction per miss (question A)"]
+  M --> P["Ask paraphrase A2 and neighbour B"]
+  P --> G["Full regression: facts-only + model"]
+  G --> S["Edit a corrected line and re-index:<br/>the correction must turn stale"]
+  S --> RPT["Report two numbers:<br/>before corrections · after one per miss"]
+  classDef step fill:#4C86D6,color:#fff,stroke:#4C86D6
+  classDef out fill:#8E2E5E,color:#fff,stroke:#8E2E5E
+  class W,F,M,P,G,S step
+  class RPT out
+</div></div>
+
+  <h3 class="mid">Acceptance</h3>
+  <ul class="checklist">
+    <li>The corrected question asked again: right every time, with the correction disclosed.</li>
+    <li>A paraphrase of a corrected question (written beforehand): right in at least 9 of 10.</li>
+    <li>A neighbouring question in the same area: reported honestly, with no target.</li>
+    <li>Unrelated questions and every existing suite, facts-only and with the model: no score drops, and changed answers read by hand.</li>
+    <li>A target line edited or deleted, then re-indexed: the correction is never applied and is listed as stale.</li>
+    <li><code>learned.db</code> survives an <code>index.db</code> reset.</li>
+  </ul>
+  <div class="cal senior"><span class="t">Keep the two numbers apart</span>Report accuracy before any correction (first contact, as today) and after one correction per miss. Never blend them: the second measures the team's effort, not the tool's first impression.</div>
+
+  <h3 class="mid">Quick answers</h3>
+  <div class="gridcards">
+    <div class="fcard"><h5>Does it retrain the model?</h5><p>No. The model's weights never change; corrections steer which verified candidate comes first.</p></div>
+    <div class="fcard"><h5>Does it need the model?</h5><p>No. Pin, hints and glossary work in facts-only mode too.</p></div>
+    <div class="fcard"><h5>Does one project affect another?</h5><p>Not automatically. Only by export and import, or through the repository's <code>verity.toml</code>.</p></div>
+    <div class="fcard"><h5>What if a correction is wrong?</h5><p>Every answer that uses it says so, and one click undoes it. Stale and conflicting corrections are never applied silently.</p></div>
+    <div class="fcard"><h5>Who can see corrections?</h5><p>Only this machine, unless someone exports them.</p></div>
+    <div class="fcard"><h5>Does it fix analysis gaps?</h5><p>No. Those become flagged cases for the engineering loop.</p></div>
+  </div>
+
+  <div class="recap"><h4>🧭 Start here next session</h4><ul>
+    <li>Read this page, then §39 of the design doc (<code>LOCAL_CODE_INTELLIGENCE_SYSTEM_DESIGN.html</code>) and <code>PROGRESS.md</code> in <code>~/Desktop/mati</code>.</li>
+    <li>Run <code>bash scripts/verify.sh</code> and pytest; 148 tests should pass.</li>
+    <li>Do P5-0 before writing any UI: measure top-1 against top-3.</li>
+    <li>Pick never-seen project #10 now, and write its questions (with paraphrase pairs) before running anything on it.</li>
+    <li>Keep corrections out of <code>index.db</code>, and keep every correction visible and undoable.</li>
+  </ul></div>
+
+  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Provenance: written 1 Oct 2026 against <code>~/Desktop/mati</code> v0.5.0 (final regression: <code>logs/final14.status</code>, re-checks in <code>logs/final15.status</code>). File and line references were verified that day; re-check them before editing. The thresholds, bonuses, interfaces and effort sizes are proposals.</p>
+</section>
+
+</main>
+
+
+<button id="toTop" title="Back to top (t)">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+/* LAAM DOCS shared interaction engine — vanilla, dependency-free (except Mermaid CDN).
+   Every feature is element-guarded, so this SAME script also drives the one-pager
+   (search/sidebar/checkpoints simply no-op when their elements are absent). */
+(function(){
+  "use strict";
+  var DOC = (document.body.getAttribute('data-doc') || 'laamdoc');
+  var LS = function(k){ return 'laamdocs:'+DOC+':'+k; };
+  var $ = function(s,r){ return (r||document).querySelector(s); };
+  var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+  function currentTheme(){ return document.documentElement.getAttribute('data-theme') || 'light'; }
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    try{ localStorage.setItem(LS('theme'), t); }catch(e){}
+    var btn = $('#themeBtn'); if(btn){ btn.textContent = (t==='dark' ? '☀' : '☾'); btn.title = (t==='dark'?'Switch to light':'Switch to dark'); }
+    renderMermaid(true);
+  }
+  (function initTheme(){
+    var saved; try{ saved = localStorage.getItem(LS('theme')); }catch(e){}
+    document.documentElement.setAttribute('data-theme', saved || 'light');
+  })();
+  var mermaidReady = (typeof mermaid !== 'undefined');
+  var mermaidRun = 0;
+  /* Render diagrams ONE AT A TIME. Mermaid derives each render's element id from Date.now(),
+     so a batched mermaid.run() can hand two diagrams the same id inside one millisecond;
+     getElementById then resolves both to the FIRST container, stacking every diagram into
+     diagram #1 and blanking the rest (most visible on a theme toggle). A tick between renders
+     keeps the ids distinct; the token makes a newer render supersede one still in flight. */
+  function renderMermaidNodes(els){
+    var token = ++mermaidRun, i = 0;
+    (function next(){
+      if(token !== mermaidRun || i >= els.length) return;
+      var el = els[i++], step = function(){ setTimeout(next, 2); }, r;
+      try{ r = mermaid.run({ nodes:[el] }); }catch(e){ return step(); }
+      if(r && r.then) r.then(step, step); else step();
+    })();
+  }
+  function renderMermaid(rerender){
+    if(!mermaidReady) return;
+    try{
+      var theme = currentTheme()==='dark' ? 'dark' : 'default';
+      mermaid.initialize({ startOnLoad:false, theme:theme, securityLevel:'loose',
+        fontFamily:"'Plus Jakarta Sans',sans-serif",
+        /* padding > mermaid's default 15 gives labels slack: widths may be measured before
+           the webfont arrives, and the real font renders wider than the fallback. */
+        flowchart:{curve:'basis',htmlLabels:true,padding:22} });
+      var els = $$('.mermaid');
+      els.forEach(function(el){
+        /* innerHTML, NOT textContent — textContent drops the <br> elements the HTML parser
+           created, so any re-render would collapse multi-line node labels onto one line. */
+        if(!el.getAttribute('data-src')) el.setAttribute('data-src', el.innerHTML);
+        if(rerender){ el.removeAttribute('data-processed'); el.innerHTML = el.getAttribute('data-src'); }
+      });
+      renderMermaidNodes(els);
+    }catch(e){}
+  }
+  function initCopy(){
+    $$('pre.code').forEach(function(pre){
+      if(pre.querySelector('.copybtn')) return;
+      var b = document.createElement('button');
+      b.className='copybtn'; b.type='button'; b.textContent='Copy';
+      b.addEventListener('click', function(){
+        var code = pre.querySelector('code'); var txt = code ? code.innerText : pre.innerText;
+        txt = txt.replace(/\nCopy$/, '');
+        navigator.clipboard.writeText(txt).then(function(){
+          b.textContent='Copied ✓'; b.classList.add('ok');
+          setTimeout(function(){ b.textContent='Copy'; b.classList.remove('ok'); }, 1400);
+        }).catch(function(){ b.textContent='⌘C'; });
+      });
+      pre.appendChild(b);
+    });
+  }
+  var bar = $('#progress'), toTop = $('#toTop');
+  function onScroll(){
+    var h = document.documentElement, max = (h.scrollHeight - h.clientHeight) || 1;
+    var pct = Math.min(100, (h.scrollTop / max) * 100);
+    if(bar) bar.style.width = pct + '%';
+    if(toTop) toTop.classList.toggle('on', h.scrollTop > 600);
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  if(toTop) toTop.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+  (function(){
+    var main = $('.content') || $('main'); var el = $('#rtime'); if(!main||!el) return;
+    var words = (main.innerText.match(/\S+/g) || []).length;
+    el.textContent = Math.max(1, Math.round(words/200)) + ' min read';
+  })();
+  (function(){
+    var secs = $$('.content section[id]');
+    if(!secs.length || !('IntersectionObserver' in window)) return;
+    var setActive = function(id){
+      $$('.topnav a.nl').forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
+      $$('.sidebar a.toc').forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
+      var act = $('.sidebar a.toc.active');
+      if(act && act.scrollIntoViewIfNeeded){ try{act.scrollIntoViewIfNeeded();}catch(e){} }
+    };
+    var io = new IntersectionObserver(function(ents){
+      ents.forEach(function(e){ if(e.isIntersecting) setActive(e.target.id); });
+    }, { rootMargin:'-80px 0px -70% 0px', threshold:0 });
+    secs.forEach(function(s){ io.observe(s); });
+  })();
+  (function(){
+    var input = $('#searchInput'), box = $('#searchResults'); if(!input||!box) return;
+    var idx = $$('.content section[id]').map(function(s){
+      var h = s.querySelector('h2.big, h3.mid'); var eb = s.querySelector('.eyebrow');
+      return { id:s.id, title: h ? h.textContent.trim() : s.id,
+        eyebrow: eb ? eb.textContent.trim() : '', text: (s.innerText||'').toLowerCase().slice(0,4000) };
+    });
+    var hiIdx = -1, current = [];
+    function render(q){
+      q = q.trim().toLowerCase();
+      if(!q){ box.classList.remove('on'); box.innerHTML=''; return; }
+      current = idx.filter(function(x){ return (x.title.toLowerCase().indexOf(q)>-1) || (x.text.indexOf(q)>-1) || (x.eyebrow.toLowerCase().indexOf(q)>-1); }).slice(0,12);
+      if(!current.length){ box.innerHTML='<div class="sr-empty">No matches for “'+q+'”</div>'; box.classList.add('on'); return; }
+      box.innerHTML = current.map(function(x,i){
+        return '<a href="#'+x.id+'" data-i="'+i+'"><div class="sr-sec">'+(x.eyebrow||'Section')+'</div>'+x.title+'</a>';
+      }).join('');
+      hiIdx=-1; box.classList.add('on');
+    }
+    input.addEventListener('input', function(){ render(this.value); });
+    input.addEventListener('keydown', function(e){
+      var items = $$('a', box);
+      if(e.key==='ArrowDown'){ e.preventDefault(); hiIdx=Math.min(items.length-1,hiIdx+1); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); hiIdx=Math.max(0,hiIdx-1); }
+      else if(e.key==='Enter'){ if(items[hiIdx]){ items[hiIdx].click(); } else if(items[0]){ items[0].click(); } }
+      else if(e.key==='Escape'){ box.classList.remove('on'); input.blur(); return; }
+      items.forEach(function(a,i){ a.classList.toggle('hi', i===hiIdx); });
+    });
+    box.addEventListener('click', function(){ setTimeout(function(){ box.classList.remove('on'); input.value=''; },80); });
+    document.addEventListener('click', function(e){ if(!box.contains(e.target) && e.target!==input) box.classList.remove('on'); });
+  })();
+  document.addEventListener('click', function(e){
+    var opt = e.target.closest ? e.target.closest('.quiz .opt') : null;
+    if(!opt) return;
+    var quiz = opt.closest('.quiz'); if(quiz.getAttribute('data-answered')==='1') return;
+    quiz.setAttribute('data-answered','1');
+    var correct = opt.getAttribute('data-correct')==='true';
+    opt.classList.add(correct?'correct':'wrong');
+    opt.insertAdjacentHTML('beforeend', '<span class="mk">'+(correct?'✓':'✗')+'</span>');
+    if(!correct){
+      $$('.opt', quiz).forEach(function(o){ if(o.getAttribute('data-correct')==='true'){ o.classList.add('correct'); o.insertAdjacentHTML('beforeend','<span class="mk">✓</span>'); } });
+    }
+    var exp = quiz.querySelector('.exp'); if(exp) exp.classList.add('on');
+  });
+  document.addEventListener('click', function(e){
+    var tab = e.target.closest ? e.target.closest('.tabs .tab') : null; if(!tab) return;
+    var tabs = tab.closest('.tabs'); var key = tab.getAttribute('data-tab');
+    $$('.tab', tabs).forEach(function(t){ t.classList.toggle('active', t===tab); });
+    $$('.tabpanel', tabs).forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-panel')===key); });
+  });
+  (function(){
+    var boxes = $$('input.cp'); if(!boxes.length) return;
+    var saved = {}; try{ saved = JSON.parse(localStorage.getItem(LS('cp'))||'{}'); }catch(e){}
+    function persist(){ try{ localStorage.setItem(LS('cp'), JSON.stringify(saved)); }catch(e){} }
+    function refresh(){
+      var done = 0;
+      boxes.forEach(function(b){
+        var id = b.getAttribute('data-cp'); var on = !!saved[id];
+        b.checked = on;
+        var wrap = b.closest('.checkpoint'); if(wrap) wrap.classList.toggle('done', on);
+        var toc = $('.sidebar a.toc[href="#'+id+'"]'); if(toc) toc.classList.toggle('done', on);
+        if(on) done++;
+      });
+      var pill = $('#cpBar'), lbl = $('#cpCount');
+      if(pill) pill.style.width = Math.round(done/boxes.length*100)+'%';
+      if(lbl) lbl.textContent = done+'/'+boxes.length;
+      var badge = $('#doneBadge');
+      if(badge) badge.style.display = (done===boxes.length && boxes.length>0) ? 'inline-flex' : 'none';
+    }
+    boxes.forEach(function(b){
+      b.addEventListener('change', function(){
+        var id=b.getAttribute('data-cp'); if(b.checked) saved[id]=1; else delete saved[id];
+        persist(); refresh();
+      });
+    });
+    refresh();
+  })();
+  (function(){
+    var t = $('#menuBtn'), sb = $('.sidebar'), bd = $('#sbBackdrop'); if(!t||!sb) return;
+    function close(){ sb.classList.remove('open'); if(bd) bd.classList.remove('on'); }
+    t.addEventListener('click', function(){ sb.classList.toggle('open'); if(bd) bd.classList.toggle('on'); });
+    if(bd) bd.addEventListener('click', close);
+    $$('.sidebar a.toc').forEach(function(a){ a.addEventListener('click', close); });
+  })();
+  var tb = $('#themeBtn'); if(tb) tb.addEventListener('click', function(){ applyTheme(currentTheme()==='dark'?'light':'dark'); });
+  document.addEventListener('keydown', function(e){
+    var tag = (e.target.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea'||e.metaKey||e.ctrlKey||e.altKey) return;
+    if(e.key==='/'){ e.preventDefault(); var si=$('#searchInput'); if(si) si.focus(); return; }
+    if(e.key==='t'){ window.scrollTo({top:0,behavior:'smooth'}); return; }
+    if(e.key==='d'){ applyTheme(currentTheme()==='dark'?'light':'dark'); return; }
+    if(e.key==='j'||e.key==='k'){
+      var secs = $$('.content section[id]'); if(!secs.length) return;
+      var y = window.scrollY + 90, cur = 0;
+      secs.forEach(function(s,i){ if(s.offsetTop <= y) cur = i; });
+      var next = e.key==='j' ? Math.min(secs.length-1,cur+1) : Math.max(0,cur-1);
+      secs[next].scrollIntoView({behavior:'smooth'});
+    }
+  });
+  function boot(){ initCopy(); onScroll(); renderMermaid(false);
+    var tb2=$('#themeBtn'); if(tb2){ tb2.textContent = currentTheme()==='dark'?'☀':'☾'; } }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+</body>
+</html>

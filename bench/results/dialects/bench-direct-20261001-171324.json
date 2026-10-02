@@ -1,0 +1,783 @@
+{
+ "summary": {
+  "cases": 17,
+  "passed": 17,
+  "mean_score": 1.0,
+  "symbol_identification": {
+   "cases": 13,
+   "passed": 13,
+   "accuracy": 1.0
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 4,
+   "passed": 4,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 5,
+   "passed": 5,
+   "accuracy": 1.0
+  },
+  "scenario_outputs": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 3,
+   "passed": 3,
+   "accuracy": 1.0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 72,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 72,
+   "claims": 72,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 56
+  },
+  "mean_seconds": 0.43
+ },
+ "results": [
+  {
+   "id": "msvc-origin-temp",
+   "category": "dataflow",
+   "q": "Where does the temperature value come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "g_temperatureC (global, src/state.c:6) \u2014 \"latest calibrated temperature, degC\".",
+    "It is assigned by `g_temperatureC = celsius` in OnTemperature() (src/dispatcher.c:25).",
+    "Tracing back further, the value originates at ReadFile(param 2) (input: Win32 file/serial read) and travels: ReadSerial() \u2192 ReaderThread() \u2192 ParseFrame() \u2192 OnTemperature() \u2192 g_temperatureC.",
+    "It also depends on a second input: GetPrivateProfileIntA() result (input: configuration file (ini)), via wmain() \u2192 OnTemperature() \u2192 g_temperatureC."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-threads",
+   "category": "symbol",
+   "q": "Which threads does the program start?",
+   "intent": "entries",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "entries",
+     "got": "entries"
+    },
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The code has 2 threads: ReaderThread() \u2014 thread: started as a thread by CreateThread() at src/main.c:14, registered at src/main.c:14; WatchdogThread() \u2014 thread: started as a thread by CreateThread() at src/main.c:15, registered at src/main.c:15.",
+    "ReaderThread() sets `HANDLE port = (HANDLE)param` (line 11); then it calls ReadSerial() and stores the result in `n` (line 15); then it checks `n == 0` (line 16); if true it calls Sleep(); then it checks `ParseFrame(buffer, n, &frame)` (line 20); if true it calls GetTickCount64(), InterlockedExchange(), DispatchFrame() and sets `g_stats.framesOk++`, `g_lastFrameTicks = (__int64)GetTickCount64()`, `InterlockedExchange(&g_linkState, LINK_UP)`; then it returns `0` (line 27).",
+    "WatchdogThread() calls Sleep() (line 35); then it calls GetTickCount64() and stores the result in `now` (line 36); then it checks `g_linkState == LINK_UP && now - g_lastFrameTicks > FRAME_TIMEOUT_MS` (LINK_UP = 1, FRAME_TIMEOUT_MS = 3000) (line 37); if true it calls InterlockedExchange(), LogEvent() and sets `InterlockedExchange(&g_linkState, LINK_LOST)`; then it returns `0` (line 42)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-silent",
+   "category": "scenario",
+   "q": "What happens if the serial link goes silent?",
+   "intent": "failure_missing",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "failure_missing",
+     "got": "failure_missing"
+    },
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Losing the data is detected in WatchdogThread() (src/worker.c:37), which checks `g_linkState == LINK_UP && now - g_lastFrameTicks > FRAME_TIMEOUT_MS` (LINK_UP = 1, FRAME_TIMEOUT_MS = 3000).",
+    "When that happens it sets `InterlockedExchange(&g_linkState, LINK_LOST)`; calls InterlockedExchange().",
+    "Note that this only triggers when all of these hold: `g_linkState == LINK_UP`; `now - g_lastFrameTicks > FRAME_TIMEOUT_MS`. For example, when `g_linkState == LINK_UP` is false this path is not taken."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-crc",
+   "category": "scenario",
+   "q": "What happens when a frame has a bad CRC?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Invalid data is caught in ParseFrame() (src/frame_parser.c:27): it checks `out->crc != expected`, and when that is true it records it (`g_stats.crcErrors++`) and returns `FALSE`, so the rest of ParseFrame() is skipped.",
+    "Its caller ReaderThread() checks `ParseFrame(buffer, n, &frame)` (src/worker.c:20) and then calls GetTickCount64() and calls InterlockedExchange() and calls DispatchFrame()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-callers-ontemp",
+   "category": "callpath",
+   "q": "Who calls OnTemperature?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by DispatchFrame() (through the dispatch table _HANDLER_ENTRY.handler) at src/dispatcher.c:14 (OnTemperature() is listed in the table g_handlers at src/dispatcher.c:4) with (`frame`), repeatedly inside `for (size_t i = 0; i < sizeof(g_handlers) / sizeof(g_handlers[0]); i++)`, only when `g_handlers[i].type == frame->type` is true. The full chain from the program's start is: ReaderThread() \u2192 DispatchFrame() \u2192 OnTemperature()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-scenario-85",
+   "category": "scenario",
+   "q": "What happens when the temperature is 85.5 degrees?",
+   "intent": "scenario",
+   "checks": {
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {
+      "g_temperatureC": "85.5000",
+      "g_alarmActive": "1"
+     }
+    },
+    "outputs": {
+     "ok": true,
+     "score": 1.0,
+     "got": [
+      "CreateFileA(\"\\\\.\\pipe\\TelemetryAlarm\", 1073741824, 0, 0, 3, 0, 0)",
+      "WriteFile(4096, \"ALARM over-temperature 85.5 C\", 29, 6167933988, 0)",
+      "OutputDebugStringA(\"ALARM over-temperature 85.5 C\")"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "OBSERVED",
+   "seconds": 1.57,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "I ran the real code in a sandbox with temperature = 85.5.",
+    "Functions that ran, in order: OnTemperature() \u2192 RaiseAlarm() \u2192 SendAlarmMessage() \u2192 LogEvent().",
+    "Decisions, in the order they ran: in OnTemperature(): `celsius > ALARM_THRESHOLD_C` was TRUE (line 26); in RaiseAlarm(): `InterlockedExchange(&g_alarmActive, 1) == 0` was TRUE (line 19).",
+    "Resulting values: g_temperatureC = 85.5000, g_alarmActive = 1.",
+    "Outputs it produced: CreateFileA(\"\\\\.\\pipe\\TelemetryAlarm\", 1073741824, 0, 0, 3, 0, 0); WriteFile(4096, \"ALARM over-temperature 85.5 C\", 29, 6167933988, 0); OutputDebugStringA(\"ALARM over-temperature 85.5 C\")."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-scenario-20",
+   "category": "scenario",
+   "q": "What happens when the temperature is 20 degrees?",
+   "intent": "scenario",
+   "checks": {
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {
+      "g_temperatureC": "20.0000"
+     }
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "OBSERVED",
+   "seconds": 1.56,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "I ran the real code in a sandbox with temperature = 20.",
+    "Functions that ran, in order: OnTemperature().",
+    "Decisions, in the order they ran: in OnTemperature(): `celsius > ALARM_THRESHOLD_C` was false (line 26), `g_alarmActive` was false (line 28).",
+    "Resulting values: g_temperatureC = 20.0000."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-export",
+   "category": "symbol",
+   "q": "What does Telemetry_GetTemperature do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Telemetry_GetTemperature() (src/api.c:4) \u2014 Exported to the HMI: returns the latest temperature; FALSE while the link is not up.",
+    "Step by step, it checks `temperatureC == NULL || g_linkState != LINK_UP` (LINK_UP = 1) (line 6); if true it returns `FALSE` straight away; then it sets `*temperatureC = g_temperatureC` (line 9); then it returns `TRUE` (line 10).",
+    "Telemetry_GetTemperature() is exported from the library (`__declspec(dllexport)`), so it is called by other programs rather than by code in this project."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-alarm-flag",
+   "category": "symbol",
+   "q": "What is g_alarmActive for?",
+   "intent": "purpose",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "g_alarmActive is a global variable of type `volatile LONG`, defined in src/state.c:3 \u2014 the code describes it as: \"1 while the over-temperature alarm is raised\".",
+    "It is set by RaiseAlarm() (`if (InterlockedExchange(&g_alarmActive, 1) == 0) {`, line 19); ClearAlarm() (`InterlockedExchange(&g_alarmActive, 0)`, line 29).",
+    "It is read by OnTemperature() (line 28).",
+    "In short: g_alarmActive carries a value produced by ClearAlarm(), RaiseAlarm() and consumed by OnTemperature()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "msvc-legacy",
+   "category": "symbol",
+   "q": "What changes when USE_LEGACY_PROTOCOL is defined?",
+   "intent": "search",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "RUNTIME-DEPENDENT",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`USE_LEGACY_PROTOCOL` appears in the source (src/frame_parser.c:22) but only inside code that none of the analysed builds compiles. Facts about it are therefore not available; the closest analysed code is described below.",
+    "USE_LEGACY_PROTOCOL is a build switch: the code tests it but never defines it, so by default it is OFF. In ParseFrame() (src/frame_parser.c:22): when USE_LEGACY_PROTOCOL is defined, it runs `out->temperatureCenti = (INT16)(out->temperatureCenti * 10)`.",
+    "Verity analysed both builds: with it, extra behaviour appears in ParseFrame()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-interrupts",
+   "category": "symbol",
+   "q": "Which interrupts does the code use?",
+   "intent": "entries",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "entries",
+     "got": "entries"
+    },
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The code has 2 interrupt handlers: adc_isr() \u2014 interrupt handler: interrupt handler (TI 'interrupt' keyword), registered at src/main.c:18; epwm1_isr() \u2014 interrupt handler: interrupt handler (TI 'interrupt' keyword), registered at src/main.c:19.",
+    "adc_isr() sets `Uint16 raw = AdcResult.ADCRESULT0` (line 6); then it sets `g_phaseCurrent = (float32)raw * CURRENT_SCALE - CURRENT_OFFSET` (line 7); then it sets `AdcRegs.ADCINTFLGCLR.bit.ADCINT1 = 1` (line 8); then it sets `PieCtrlRegs.PIEACK.all = PIEACK_GROUP1` (line 9).",
+    "epwm1_isr() checks `g_pwmEnabled` (line 29); if true it calls CurrentLoop(); then it sets `EPwm1Regs.ETCLR.bit.INT = 1` (line 32); then it sets `PieCtrlRegs.PIEACK.all = PIEACK_GROUP3` (line 33)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-origin-current",
+   "category": "dataflow",
+   "q": "Where does the phase current come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "g_phaseCurrent (global, src/main.c:3) \u2014 \"latest measured phase current, amps\".",
+    "It is assigned by `g_phaseCurrent = (float32)raw * CURRENT_SCALE - CURRENT_OFFSET` in adc_isr() (src/adc.c:7).",
+    "Tracing back further, the value originates at ADCRESULT0 (input: memory-mapped register) and travels: adc_isr() \u2192 g_phaseCurrent."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-callers-loop",
+   "category": "callpath",
+   "q": "Who calls CurrentLoop?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by epwm1_isr() at src/control.c:30, only when `g_pwmEnabled` is true. The full chain from the program's start is: epwm1_isr() \u2192 CurrentLoop()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-overcurrent",
+   "category": "scenario",
+   "q": "What happens on overcurrent?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {
+      "g_faultFlags": "1",
+      "g_pwmEnabled": "0",
+      "EPwm1Regs.TZFRC.bit.OST": "1",
+      "GpioDataRegs.GPASET.bit.GPIO31": "1"
+     }
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 1.37,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in CheckFaults() (src/faults.c:16): it checks `g_phaseCurrent > OVERCURRENT_A || g_phaseCurrent < -OVERCURRENT_A`, and when that is true it calls TripPWM() and records it (`g_faultFlags |= FAULT_OVERCURRENT`).",
+    "TripPWM() sets `EPwm1Regs.TZFRC.bit.OST = 1` (line 7); then it sets `g_pwmEnabled = 0` (line 9); then it sets `GpioDataRegs.GPASET.bit.GPIO31 = 1` (line 10).",
+    "Consequence: epwm1_isr() checks `g_pwmEnabled` (src/control.c:29); with g_pwmEnabled = 0, `g_pwmEnabled` is false, so it no longer calls CurrentLoop().",
+    "I ran the real code in a sandbox (an input that triggers the check) with g_phaseCurrent = 13.2.",
+    "Functions that ran, in order: CheckFaults() \u2192 TripPWM().",
+    "Decisions, in the order they ran: in CheckFaults(): `g_phaseCurrent > OVERCURRENT_A || g_phaseCurrent < -OVERCURRENT_A` was TRUE (line 16).",
+    "Resulting values: g_faultFlags = 1, g_pwmEnabled = 0, EPwm1Regs.TZFRC.bit.OST = 1, GpioDataRegs.GPASET.bit.GPIO31 = 1."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-scenario-13",
+   "category": "scenario",
+   "q": "What happens when the phase current is 13 A?",
+   "intent": "scenario",
+   "checks": {
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {
+      "g_faultFlags": "1",
+      "g_pwmEnabled": "0",
+      "EPwm1Regs.TZFRC.bit.OST": "1",
+      "GpioDataRegs.GPASET.bit.GPIO31": "1"
+     }
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "OBSERVED",
+   "seconds": 1.38,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "I ran the real code in a sandbox with current = 13.",
+    "Functions that ran, in order: CheckFaults() \u2192 TripPWM().",
+    "Decisions, in the order they ran: in CheckFaults(): `g_phaseCurrent > OVERCURRENT_A || g_phaseCurrent < -OVERCURRENT_A` was TRUE (line 16).",
+    "Resulting values: g_faultFlags = 1, g_pwmEnabled = 0, EPwm1Regs.TZFRC.bit.OST = 1, GpioDataRegs.GPASET.bit.GPIO31 = 1."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-scenario-5",
+   "category": "scenario",
+   "q": "What happens when the phase current is 5 A?",
+   "intent": "scenario",
+   "checks": {
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {}
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "OBSERVED",
+   "seconds": 1.39,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "I ran the real code in a sandbox with current = 5.",
+    "Functions that ran, in order: CheckFaults().",
+    "Decisions, in the order they ran: in CheckFaults(): `g_phaseCurrent > OVERCURRENT_A || g_phaseCurrent < -OVERCURRENT_A` was false (line 16)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "ti-explain-loop",
+   "category": "symbol",
+   "q": "What does CurrentLoop do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 12
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 12,
+     "total": 12
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "CurrentLoop() (src/control.c:8) \u2014 PI current controller: runs every PWM period and sets the duty cycle.",
+    "Step by step, it sets `float32 error = g_currentRef - g_phaseCurrent` (line 10); then it sets `s_integral += KI * error` (line 11); then it checks `s_integral > 1.0f` (line 12); if true it sets `s_integral = 1.0f`; then it checks `s_integral < 0.0f` (line 14); if true it sets `s_integral = 0.0f`; then it sets `float32 duty = KP * error + s_integral` (line 17); then it checks `duty > 0.95f` (line 18); then it checks `duty < 0.0f` (line 21); then it sets `EPwm1Regs.CMPA.half.CMPA = (Uint16)(duty * PWM_PERIOD)` (line 24).",
+    "It is called by epwm1_isr() at src/control.c:30, only when `g_pwmEnabled` is true. The full chain from the program's start is: epwm1_isr() \u2192 CurrentLoop()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

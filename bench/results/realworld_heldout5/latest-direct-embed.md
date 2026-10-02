@@ -1,0 +1,32 @@
+# Verity benchmark — direct-embed mode (20261001-070856)
+
+Cases: 14 · passed: 7 · mean score: 0.643 · mean time per question: 0.06 s
+
+| metric | result |
+|---|---|
+| symbol identification | 6/13 passed · accuracy 0.615 |
+| file line references | 1/1 passed · accuracy 1.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 95 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 95/95 (100.00%) |
+| answer paragraphs without any evidence | 0 of 32 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| ucos-q-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-mem-empty | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["OSMemGet", "OS_ERR_MEM_NO_FREE_BLKS"]} |
+| ucos-sem-timeout | scenario | failure_missing | ✗ | 0.5 | symbols: {"missing": ["OS_ERR_TIMEOUT"]} |
+| ucos-prio-exist | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["OSTaskCreate", "OS_ERR_PRIO_EXIST"]} |
+| ucos-no-tcb | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["OS_TCBInit", "OS_ERR_TASK_NO_MORE_TCB"]} |
+| ucos-pend-isr | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["OS_ERR_PEND_ISR"]} |
+| ucos-mutex-pcp | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["OSTCBPrio = pcp"]} |
+| ucos-ostime | symbol | where_computed | ✓ | 1.0 |  |
+| ucos-cpu-usage | symbol | where_computed | ✗ | 0.5 | symbols: {"missing": ["OSIdleCtrMax"]} |
+| ucos-prio-high | dataflow | origin | ✓ | 1.0 |  |
+| ucos-tick-callers | callpath | callers | ✓ | 1.0 |  |
+| ucos-sched-callers | callpath | callers | ✓ | 1.0 |  |
+| ucos-threads | symbol | entries | ✓ | 1.0 |  |
+| ucos-invented | honesty | explain | ✓ | 1.0 |  |

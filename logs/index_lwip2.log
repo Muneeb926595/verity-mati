@@ -1,0 +1,35 @@
+  ✓ Looking at your project files: Found 204 C, 276 header and 100 C# files
+  ✓ Working out how the code is built: C: neutral C17 + MSVC; build settings 
+from the recorded build (compile_commands.json); platform SDK headers not on 
+this machine — Verity's API knowledge pack stands in for them; 46 missing 
+header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 246 C file(s); also checked 4 configuration 
+switch(es): USE_SRP, PACKET_LIB_GET_ADAPTER_NETADDRESS, PPPOE_SERVER, 
+HAVE_MULTILINK
+  ✓ Reading the C# code: Read 100 C# file(s) with the C# compiler (Roslyn)
+  ✓ Double-checking with a second parser: cppcheck agrees on 91% of function 
+definitions and 84% of direct calls
+  ✓ Connecting the pieces together: Traced 2677 call(s) through function 
+pointers or tables; resolved 370 virtual call target(s); 36 indirect call(s) 
+could not be resolved; 51 entry point(s), 1839 input/output site(s)
+  ✓ Preparing search: Indexed 10115 symbols for search (keyword search; meaning 
+search off)
+Ready. Indexed in 119.0 s.
+      119.16 real       444.11 user       161.80 sys
+           494419968  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             1072896  page reclaims
+                1715  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                 846  messages sent
+               18293  messages received
+                   1  signals received
+              140843  voluntary context switches
+             1127164  involuntary context switches
+        423242410134  instructions retired
+        110618110364  cycles elapsed
+           269091536  peak memory footprint

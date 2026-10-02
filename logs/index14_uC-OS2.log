@@ -1,0 +1,19 @@
+  ✓ Looking at your project files: Found 14 C, 6 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + MSVC; build settings 
+reconstructed from the source (no build needed); platform SDK headers not on 
+this machine — Verity's API knowledge pack stands in for them; 4 missing 
+header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 18 C file(s); also checked 3 configuration 
+switch(es): CPU_CFG_CRITICAL_METHOD, OS_SAFETY_CRITICAL, 
+OS_SAFETY_CRITICAL_IEC61508; also read the code with all 1 optional feature(s) 
+switched on
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 99% of function 
+definitions and 86% of direct calls
+  ✓ Connecting the pieces together: Traced 3 call(s) through function pointers 
+or tables; 6 indirect call(s) could not be resolved; 3 entry point(s), 2 
+input/output site(s)
+  ✓ Preparing search: Indexed 823 symbols for search (keyword + meaning search)
+Ready. Indexed in 33.3 s.
+  ! Configuration switch SAFETY_CRITICAL_RELEASE was not analysed as a separate 
+build (it affects 13 files; budget 24).

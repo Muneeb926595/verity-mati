@@ -1,0 +1,4 @@
+[bench] indexed c: done 1.88
+[bench] indexed cs: done 1.4
+[bench] PASS c-explain-process          score=1.00 28.6s
+[bench] PASS c-purpose-heading          score=1.00 4.3s

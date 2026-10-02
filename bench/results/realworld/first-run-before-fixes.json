@@ -1,0 +1,616 @@
+{
+ "summary": {
+  "cases": 14,
+  "passed": 8,
+  "mean_score": 0.75,
+  "symbol_identification": {
+   "cases": 14,
+   "passed": 10,
+   "accuracy": 0.786
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 0,
+   "accuracy": 0.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 8,
+   "claims": 129,
+   "rate": 0.062
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 1,
+   "details": [
+    [
+     "rw-minmea-rmc",
+     [
+      "variation_directi"
+     ]
+    ]
+   ]
+  },
+  "citation_precision": {
+   "verified_claims": 121,
+   "claims": 129,
+   "rate": 0.938
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 1,
+   "paragraphs": 37
+  },
+  "mean_seconds": 0.04
+ },
+ "results": [
+  {
+   "id": "rw-minmea-lat",
+   "category": "dataflow",
+   "q": "Where does the latitude in an RMC sentence come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.05,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "minmea_sentence_rmc.latitude (field, minmea.h:88).",
+    "It is assigned by `frame->latitude.value *= latitude_direction` in minmea_parse_rmc() (minmea.c:438).",
+    "Tracing back further, the value originates at fgets(param 1) (input: file/stdin read) and travels: main() \u2192 minmea_parse_rmc() (uses minmea_scan()) \u2192 minmea_sentence_rmc.latitude."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-minmea-checksum",
+   "category": "symbol",
+   "q": "How is the NMEA checksum verified?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "hex2int"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "Invalid data is caught in minmea_check() (minmea.c:69): it checks `checksum != expected`, and when that is true it returns immediately, so the rest of minmea_check() is skipped."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-minmea-callers-check",
+   "category": "callpath",
+   "q": "Who calls minmea_check?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by minmea_sentence_id() at minmea.c:379; START_TEST() at tests.c:88, repeatedly inside `for (const char **sentence=valid_sentences_nochecksum; *sentence; sentence++)`; START_TEST() at tests.c:89, repeatedly inside `for (const char **sentence=valid_sentences_nochecksum; *sentence; sentence++)`; START_TEST() at tests.c:93, repeatedly inside `for (const char **sentence=valid_sentences_checksum; *sentence; sentence++)`. The full chain from the program's start is: main() \u2192 minmea_sentence_id() \u2192 minmea_check()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-minmea-invalid",
+   "category": "scenario",
+   "q": "What happens when a sentence has an invalid checksum?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "MINMEA_INVALID"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 12
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 12,
+     "total": 12
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "Invalid data is caught in minmea_check() (minmea.c:57): it checks `*sentence == '*'`, and when that is true it calls hex2int() and calls hex2int() and returns immediately, so the rest of minmea_check() is skipped.",
+    "hex2int() checks `c >= '0' && c <= '9'` (line 20); if true it returns `c - '0'` straight away; then it checks `c >= 'A' && c <= 'F'` (line 22); if true it returns `c - 'A' + 10` straight away; then it checks `c >= 'a' && c <= 'f'` (line 24); if true it returns `c - 'a' + 10` straight away; then it returns `-1` (line 26).",
+    "hex2int() checks `c >= '0' && c <= '9'` (line 20); if true it returns `c - '0'` straight away; then it checks `c >= 'A' && c <= 'F'` (line 22); if true it returns `c - 'A' + 10` straight away; then it checks `c >= 'a' && c <= 'f'` (line 24); if true it returns `c - 'a' + 10` straight away; then it returns `-1` (line 26).",
+    "Bad input is also rejected in other places: minmea_parse_gbs() drops it when `memcmp(frame->type.sentence_id, \"GBS\", sizeof(frame->type.sentence_id))` (minmea.c:410); minmea_parse_gga() drops it when `memcmp(frame->type.sentence_id, \"GGA\", sizeof(frame->type.sentence_id))` (minmea.c:463); minmea_parse_gll() drops it when `memcmp(frame->type.sentence_id, \"GLL\", sizeof(frame->type.sentence_id))` (minmea.c:516)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-minmea-rmc",
+   "category": "symbol",
+   "q": "What does minmea_parse_rmc do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 17
+    },
+    "_hallucinated_names": {
+     "names": [
+      "variation_directi"
+     ]
+    },
+    "_citation_precision": {
+     "verified": 17,
+     "total": 17
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 1.0,
+   "answer": [
+    "minmea_parse_rmc() (minmea.c:416).",
+    "Step by step, it checks `!minmea_scan(sentence, \"tTcfdfdffDfd\", &frame->type, &frame->time, &validity, &frame->latitude, &latitude_direction, &frame->longitude, &longitude_direction, &frame->speed, &frame->course, &frame->date, &frame->variation, &variation_directi` (line 423); if true it returns `false` straight away; then it checks `memcmp(frame->type.sentence_id, \"RMC\", sizeof(frame->type.sentence_id))` (line 434); if true it returns `false` straight away; then it sets `frame->valid = (validity == 'A')` (line 437); then it sets `frame->latitude.value *= latitude_direction` (line 438); then it sets `frame->longitude.value *= longitude_direction` (line 439); then it sets `frame->variation.value *= variation_direction` (line 440); then it returns `true` (line 442).",
+    "It is called by main() at example.c:24, repeatedly inside `while (fgets(line, sizeof(line), stdin) != NULL)`, in the case `minmea_sentence_id(line, false) == MINMEA_SENTENCE_RMC`; START_TEST() at tests.c:549; START_TEST() at tests.c:568; START_TEST() at tests.c:1048, repeatedly inside `for (const char **sentence=sentences; *sentence; sentence++)`, in the case `minmea_sentence_id(*sentence, false) == MINMEA_SENTENCE_RMC`. The full chain from the program's start is: main() \u2192 minmea_parse_rmc().",
+    "The values it updates are used later by main() (uses minmea_float.value); minmea_parse_gga() (uses minmea_float.value); minmea_parse_gll() (uses minmea_float.value); minmea_rescale() (uses minmea_float.value)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-minmea-tocoord",
+   "category": "symbol",
+   "q": "Which function converts a minmea_float to a coordinate?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 3,
+     "claims": 14
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 14
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The best match is minmea_tocoord() (minmea.h:294).",
+    "minmea_tocoord() (minmea.h:294) \u2014 Convert a raw coordinate to a floating point DD.DDD... value. Returns NaN for \"unknown\" values.",
+    "Step by step, it checks `f->scale == 0` (line 296); if true it calls __builtin_nanf and returns `NAN` straight away; then it checks `f->scale > (INT_LEAST32_MAX / 100)` (line 298); if true it calls __builtin_nanf and returns `NAN` straight away; then it checks `f->scale < (INT_LEAST32_MIN / 100)` (line 300); if true it calls __builtin_nanf and returns `NAN` straight away; then it sets `int_least32_t degrees = f->value / (f->scale * 100)` (line 302); then it sets `int_least32_t minutes = f->value % (f->scale * 100)` (line 303); then it returns `(float) degrees + (float) minutes / (60 * f->scale)` (line 304).",
+    "It is called by main() at example.c:34, repeatedly inside `while (fgets(line, sizeof(line), stdin) != NULL)`, in the case `minmea_sentence_id(line, false) == MINMEA_SENTENCE_RMC`, only when `minmea_parse_rmc(&frame, line)` is true; main() at example.c:35, repeatedly inside `while (fgets(line, sizeof(line), stdin) != NULL)`, in the case `minmea_sentence_id(line, false) == MINMEA_SENTENCE_RMC`, only when `minmea_parse_rmc(&frame, line)` is true; START_TEST() at tests.c:1201; START_TEST() at tests.c:1201, only when `isnan(minmea_tocoord(&(struct minmea_float) { 42, 0 }))` is true. The full chain from the program's start is: main() \u2192 minmea_tocoord().",
+    "Other candidates: minmea_tofloat() (minmea.h:283), minmea_gettime() (minmea.c:665), minmea_getdatetime() (minmea.c:643)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-delay",
+   "category": "symbol",
+   "q": "What does vTaskDelay do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.12,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "vTaskDelay() (tasks.c:2506) \u2014 task. h.",
+    "Step by step, it sets `BaseType_t xAlreadyYielded = pdFALSE` (line 2508); then it checks `xTicksToDelay > ( TickType_t ) 0U` (line 2513); if true it calls vTaskSuspendAll(), prvAddCurrentTaskToDelayedList(), xTaskResumeAll() and sets `xAlreadyYielded = xTaskResumeAll()`; then it checks `xAlreadyYielded == pdFALSE` (line 2539).",
+    "It is called by exampleTask() at examples/cmake_example/main.c:60 with (`100`), repeatedly inside `for( ; ; )`. The full chain from the program's start is: exampleTask() \u2192 vTaskDelay()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-callers",
+   "category": "callpath",
+   "q": "Who calls prvAddCurrentTaskToDelayedList?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by xTaskPeriodicDelay() at tasks.c:2394; xTaskDelayUntil() at tasks.c:2476, only when `xShouldDelay != pdFALSE` is true; vTaskDelay() at tasks.c:2528, only when `xTicksToDelay > ( TickType_t ) 0U` is true; vTaskPlaceOnEventList() at tasks.c:5425. The full chain from the program's start is: exampleTask() \u2192 vTaskDelay() \u2192 prvAddCurrentTaskToDelayedList()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-queue-full",
+   "category": "scenario",
+   "q": "What happens when xQueueSend is called on a full queue?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "errQUEUE_FULL",
+      "xTasksWaitingToSend"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 17
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 16,
+     "total": 17
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.26,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "This is handled in xTimerGenericCommandFromISR() (timers.c:514): it checks `( xTimerQueue != NULL ) && ( xTimer != NULL )`, and when that is true it calls xQueueGenericSendFromISR() and records it (`xMessage.xMessageID = xCommandID`) and records it (`xMessage.u.xTimerParameters.xMessageValue = xOptionalValue`) and records it (`xMessage.u.xTimerParameters.pxTimer = xTimer`).",
+    "xQueueGenericSendFromISR() sets `Queue_t * const pxQueue = xQueue` (line 1174); then it calls ulPortRaiseBASEPRI() (line 1205); then it checks `( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE )` (line 1207); if true it calls prvCopyDataToQueue(), prvNotifyQueueSetContainer(), xTaskRemoveFromEventList(), uxTaskGetNumberOfTasks() and sets `const int8_t cTxLock = pxQueue->cTxLock`, `const UBaseType_t uxPreviousMessagesWaiting = pxQueue->uxMessagesWaiting`, `*pxHigherPriorityTaskWoken = pdTRUE`; then it checks `cTxLock == queueUNLOCKED` (line 1223); if true it calls prvNotifyQueueSetContainer(), xTaskRemoveFromEventList() and sets `*pxHigherPriorityTaskWoken = pdTRUE`, `*pxHigherPriorityTaskWoken = pdTRUE`; then it checks `pxQueue->pxQueueSetContainer != NULL` (line 1227); if true it calls prvNotifyQueueSetContainer() and sets `*pxHigherPriorityTaskWoken = pdTRUE`; then it checks `( xCopyPosition == queueOVERWRITE ) && ( uxPreviousMessagesWaiting != ( UBaseType_t ) 0 )` (line 1229)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-tick",
+   "category": "symbol",
+   "q": "Where is the tick count incremented?",
+   "intent": "search",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "tasks.c:4856"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "These parts of the code look most relevant: xTickCount (global variable, tasks.c:506); pvTaskIncrementMutexHeldCount() (function, tasks.c:7772); xTaskIncrementTick() (function, tasks.c:4831); traceENTER_pvTaskIncrementMutexHeldCount (constant, include/FreeRTOS.h:2338); traceRETURN_pvTaskIncrementMutexHeldCount (constant, include/FreeRTOS.h:2342); traceTASK_INCREMENT_TICK (constant, include/FreeRTOS.h:878)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-isrs",
+   "category": "symbol",
+   "q": "Which interrupt handlers does the port define?",
+   "intent": "entries",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "xPortSysTickHandler",
+      "xPortPendSVHandler",
+      "vPortSVCHandler"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 0
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 0,
+     "total": 0
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 1
+    }
+   },
+   "status": "UNKNOWN",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "I found no interrupt handlers in this code. Entry points found: main() (program start), exampleTask() (thread), prvTimerTask() (thread)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-malloc",
+   "category": "scenario",
+   "q": "What does pvPortMalloc do when there is not enough memory?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.04,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in pvPortMalloc() (portable/MemMang/heap_4.c:238): it checks `heapBLOCK_SIZE_IS_VALID( xWantedSize ) != 0`, and when that is true it records it (`xFreeBytesRemaining -= pxBlock->xBlockSize`) and records it (`pxPreviousBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock`) and records it (`pxNewBlockLink->pxNextFreeBlock = pxPreviousBlock->pxNextFreeBlock`) and records it (`pxPreviousBlock->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER( pxNewBlockLink )`) and records it (`pxBlock->pxNextFreeBlock = heapPROTECT_BLOCK_POINTER( NULL )`) and records it (`pxNewBlockLink->xBlockSize = pxBlock->xBlockSize - xWantedSize`) and records it (`pxBlock->xBlockSize = xWantedSize`) and records it (`heapALLOCATE_BLOCK( pxBlock )`) and records it (`xMinimumEverFreeBytesRemaining = xFreeBytesRemaining`) and records it (`xNumberOfSuccessfulAllocations++`)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-impact",
+   "category": "callpath",
+   "q": "What could be affected if I change prvAddCurrentTaskToDelayedList?",
+   "intent": "impact",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 3,
+     "claims": 20
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 17,
+     "total": 20
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Changing prvAddCurrentTaskToDelayedList() (tasks.c:8685) can affect three kinds of things: the code that calls it, the data that depends on its result, and the outputs that data reaches.",
+    "Called directly by: xTaskPeriodicDelay(), xTaskDelayUntil(), vTaskDelay(), vTaskPlaceOnEventList(), vTaskPlaceOnUnorderedEventList(), vTaskPlaceOnEventListRestricted(), ulTaskGenericNotifyTake(), xTaskGenericNotifyWait(). Indirectly (through the call chain): exampleTask(), xQueueGenericSend(), xQueueReceive(), xQueueSemaphoreTake(), xQueuePeek(), xEventGroupSync(), xEventGroupWaitBits(), vQueueWaitForMessageRestricted(), xStreamBufferSend(), xStreamBufferReceive(), prvReloadTimer(), prvProcessExpiredTimer(), prvProcessReceivedCommands(), xTaskCallApplicationTaskHook(), xTimerGenericCommandFromTask(), xTimerPendFunctionCall(), prvInitialiseMutex(), xQueueGiveMutexRecursive(), xQueueSelectFromSet(), xQueueTakeMutexRecursive(), prvProcessTimerOrBlockTask(), prvSwitchTimerLists(), prvTimerTask(), xQueueCreateMutex(), xQueueCreateMutexStatic(), prvSampleTimeNow().",
+    "It changes this state: tskTaskControlBlock.ucDelayAborted, pxCurrentTCB, xNextTaskUnblockTime, which is read by eTaskGetState(), pcTaskGetName(), prvAddNewTaskToReadyList(), prvGetExpectedIdleTime(), pvTaskIncrementMutexHeldCount(), ulTaskGenericNotifyTake(), ulTaskGenericNotifyValueClear(), uxTaskBasePriorityGet().",
+    "Functions that use values derived from it: eTaskConfirmSleepModeStatus(), eTaskGetState(), pcTaskGetName(), pvPortMalloc(), pvTaskIncrementMutexHeldCount(), pxPortInitialiseStack(), ulTaskGenericNotifyTake(), ulTaskGenericNotifyValueClear(), uxListRemove(), uxQueueGetQueueItemSize().",
+    "It depends on xLIST.pxIndex, xLIST.uxNumberOfItems, xLIST_ITEM.pvContainer, xLIST_ITEM.pxNext, xLIST_ITEM.pxPrevious, xLIST_ITEM.xItemValue, pxDelayedTaskList, pxOverflowDelayedTaskList, xNextTaskUnblockTime, xTickCount, INCLUDE_vTaskSuspend, INCLUDE_xTaskAbortDelay, pdFALSE, portMAX_DELAY \u2014 changes to those also change its behaviour.",
+    "It runs on this path from the program start: exampleTask() \u2192 vTaskDelay() \u2192 prvAddCurrentTaskToDelayedList()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "rw-rtos-tickcount",
+   "category": "symbol",
+   "q": "What is xTickCount?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "xTickCount is a global variable of type `volatile TickType_t`, defined in tasks.c:506.",
+    "It is set by vTaskStartScheduler() (`xTickCount = ( TickType_t ) configINITIAL_TICK_COUNT`, line 3799); vTaskStepTick() (`xTickCount += xTicksToJump`, line 4698); xTaskIncrementTick() (`xTickCount = xConstTickCount`, line 4856); vTaskResetState() (`xTickCount = ( TickType_t ) configINITIAL_TICK_COUNT`, line 8941).",
+    "It is read by xTaskPeriodicDelay() (line 2378), xTaskDelayUntil() (line 2429), prvGetExpectedIdleTime() (line 4055), xTaskGetTickCount() (line 4222), xTaskGetTickCountFromISR() (line 4257), vTaskStepTick() (line 4674).",
+    "In short: xTickCount carries a value produced by vTaskResetState(), vTaskStartScheduler(), vTaskStepTick() and consumed by prvAddCurrentTaskToDelayedList(), prvGetExpectedIdleTime(), vTaskInternalSetTimeOutState(). vTaskStepTick(), xTaskIncrementTick() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

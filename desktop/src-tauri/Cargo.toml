@@ -1,0 +1,34 @@
+[package]
+name = "verity-desktop"
+version = "0.5.0"
+description = "Verity desktop shell: starts the local engine and shows its UI"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "verity-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libc = "0.2"
+
+[profile.release]
+strip = true
+lto = false
+codegen-units = 16
+incremental = true
+
+# macOS only: used by the self-test to snapshot the web view (VERITY_DESKTOP_SNAPSHOT_DIR). Already part of Tauri's tree.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSData", "NSDictionary", "NSError", "NSString"] }
+objc2-app-kit = { version = "0.3", features = ["NSImage", "NSImageRep", "NSBitmapImageRep"] }
+objc2-web-kit = { version = "0.3", features = ["WKWebView", "WKSnapshotConfiguration", "block2", "objc2-app-kit"] }

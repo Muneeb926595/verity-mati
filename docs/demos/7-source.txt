@@ -1,0 +1,73 @@
+    19  }
+    20  
+    21  /* Counts consecutive bad fixes; too many switches navigation to 
+degraded mode. */
+    22  static void nav_handle_invalid_fix(gps_status_t status)
+    23  {
+    24      g_nav.consecutive_invalid++;
+    25      if (g_nav.consecutive_invalid >= MAX_INVALID_FIXES) {
+    26          g_nav.mode = NAV_MODE_DEGRADED;
+    27      }
+    28      (void)status;
+    29  }
+    30  
+    31  /* Smooths the GPS course over ground into the vehicle heading.
+    32   * Below MIN_SPEED_FOR_HEADING the GPS course is unreliable, so the 
+previous heading is kept. */
+    33  double CalculateHeading(double gps_heading, double speed_knots)
+    34  {
+    35      double delta;
+    36  
+    37      if (speed_knots < MIN_SPEED_FOR_HEADING) {
+    38          return currentHeading;
+    39      }
+    40      delta = wrap180(gps_heading - currentHeading);
+    41      return wrap360(currentHeading + HEADING_FILTER_ALPHA * delta);
+    42  }
+    43  
+    44  /* Entry point for every decoded GPS fix (registered as the GPS receiver
+callback in main). */
+    45  void ProcessGpsData(const gps_fix_t *fix)
+    46  {
+    47      gps_status_t status = gps_validate_fix(fix);
+    48  
+    49      if (status != GPS_OK) {
+    50          nav_handle_invalid_fix(status);
+    51          return;
+    52      }
+    53      g_nav.consecutive_invalid = 0;
+    54      g_nav.latitude    = fix->latitude;
+    55      g_nav.longitude   = fix->longitude;
+    56      g_nav.speed_knots = fix->speed_knots;
+    57      g_nav.last_fix_ms = fix->timestamp_ms;
+    58      g_nav.has_fix     = 1;
+>   59      currentHeading = CalculateHeading(fix->heading_deg, 
+fix->speed_knots);
+    60      g_nav.mode = NAV_MODE_TRACKING;
+    61  }
+    62  
+    63  /* Periodic navigation step (every NAV_TICK_MS): detects GPS loss and 
+steers toward the target. */
+    64  void NavigationTick(uint32_t now_ms)
+    65  {
+    66      double target_heading;
+    67  
+    68      if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) 
+{
+    69  #ifdef ENABLE_DEAD_RECKONING
+    70          g_nav.mode = NAV_MODE_DEAD_RECKONING;
+    71  #else
+    72          g_nav.mode = NAV_MODE_HOLD;
+    73          VehicleController_Hold();
+    74          return;
+    75  #endif
+    76      }
+    77      if (g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != 
+NAV_MODE_DEAD_RECKONING) {
+    78          return;
+    79      }
+    80      target_heading = bearing_deg(g_nav.latitude, g_nav.longitude, 
+g_nav.target_lat, g_nav.target_lon);
+    81      VehicleController_SetDirection(currentHeading, target_heading);
+    82  }
+    83  

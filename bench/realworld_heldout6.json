@@ -1,0 +1,148 @@
+{
+ "_doc": "SIXTH HELD-OUT real project (Phase 4): Eclipse Paho MQTT Embedded-C (samples/realworld/paho-mqtt, ~7K lines; MQTT packet library + C client with the Linux network port; the C++ client and the vendor-SDK ports (FreeRTOS, CC3200) were removed as a real project would; the platform header is chosen by a build-time macro, MQTTCLIENT_PLATFORM_HEADER, which is not defined: uncompiled). Questions written from facts verified in the source AFTER all Phase 4 re-ranking work and BEFORE Verity was ever run on it. First runs (keyword-only, +embeddings, +local-model re-ranking) kept in bench/results/realworld_heldout6/first-run-*.",
+ "projects": {
+  "paho": "samples/realworld/paho-mqtt"
+ },
+ "cases": [
+  {
+   "id": "paho-keepalive-timeout",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when the broker does not answer a ping in time?",
+   "must_mention": [
+    "keepalive",
+    "ping_outstanding"
+   ]
+  },
+  {
+   "id": "paho-buffer-overflow",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when an incoming packet is bigger than the read buffer?",
+   "must_mention": [
+    "readPacket",
+    "BUFFER_OVERFLOW"
+   ]
+  },
+  {
+   "id": "paho-no-handler",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when a message arrives on a topic that has no message handler?",
+   "must_mention": [
+    "deliverMessage",
+    "defaultMessageHandler"
+   ]
+  },
+  {
+   "id": "paho-sub-rejected",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when the broker rejects a subscription?",
+   "must_mention": [
+    "MQTTSubscribeWithResults",
+    "0x80"
+   ]
+  },
+  {
+   "id": "paho-publish-disconnected",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when MQTTPublish is called while the client is not connected?",
+   "must_mention": [
+    "isconnected",
+    "MQTTCloseSession"
+   ]
+  },
+  {
+   "id": "paho-remlen-too-long",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when the remaining length field of a packet is longer than four bytes?",
+   "must_mention": [
+    "MAX_NO_OF_REMAINING_LENGTH_BYTES",
+    "MQTTPACKET_READ_ERROR"
+   ]
+  },
+  {
+   "id": "paho-serialize-short",
+   "project": "paho",
+   "category": "scenario",
+   "q": "What happens when the buffer is too small to serialize a publish packet?",
+   "must_mention": [
+    "MQTTSerialize_publish",
+    "MQTTPACKET_BUFFER_TOO_SHORT"
+   ]
+  },
+  {
+   "id": "paho-packetid-wrap",
+   "project": "paho",
+   "category": "symbol",
+   "q": "How does the packet id wrap around?",
+   "must_mention": [
+    "getNextPacketId",
+    "MAX_PACKET_ID"
+   ]
+  },
+  {
+   "id": "paho-cycle-callers",
+   "project": "paho",
+   "category": "callpath",
+   "q": "Who calls cycle?",
+   "must_mention": [
+    "MQTTYield",
+    "waitfor",
+    "MQTTRun"
+   ]
+  },
+  {
+   "id": "paho-sendpacket-callers",
+   "project": "paho",
+   "category": "callpath",
+   "q": "Who calls sendPacket?",
+   "must_mention": [
+    "MQTTPublish",
+    "keepalive",
+    "MQTTConnectWithResults"
+   ]
+  },
+  {
+   "id": "paho-mqttread",
+   "project": "paho",
+   "category": "symbol",
+   "q": "What can mqttread point to?",
+   "must_mention": [
+    "linux_read"
+   ]
+  },
+  {
+   "id": "paho-topic-origin",
+   "project": "paho",
+   "category": "dataflow",
+   "q": "Where does the topic name of a received message come from?",
+   "must_mention": [
+    "MQTTDeserialize_publish",
+    "readMQTTLenString"
+   ]
+  },
+  {
+   "id": "paho-isconnected",
+   "project": "paho",
+   "category": "symbol",
+   "q": "Where is isconnected set?",
+   "must_mention": [
+    "MQTTConnectWithResults",
+    "MQTTCloseSession"
+   ]
+  },
+  {
+   "id": "paho-invented",
+   "project": "paho",
+   "category": "honesty",
+   "q": "What does MQTTReconnect do?",
+   "must_not_claim_defined": [
+    "MQTTReconnect"
+   ]
+  }
+ ]
+}

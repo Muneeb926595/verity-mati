@@ -1,0 +1,29 @@
+# Verity benchmark — direct mode (20261001-203945)
+
+Cases: 12 · passed: 10 · mean score: 0.875 · mean time per question: 0.07 s
+
+| metric | result |
+|---|---|
+| symbol identification | 9/11 passed · accuracy 0.864 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 17 of 119 (14.29%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 102/119 (85.71%) |
+| answer paragraphs without any evidence | 0 of 38 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| nm-slave-busy | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-acknowledge | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-function | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-slave | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-timeout | scenario | failure_missing | ✓ | 1.0 |  |
+| nm-checksum | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wait-negative | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["ArgumentException"]} |
+| nm-validate-callers | callpath | callers | ✓ | 1.0 |  |
+| nm-exception-detect | symbol | explain | ✗ | 0.0 | symbols: {"missing": ["CreateResponse", "ExceptionOffset"]} |
+| nm-retries-set | symbol | where_computed | ✓ | 1.0 |  |
+| nm-crc-calc | symbol | where_computed | ✓ | 1.0 |  |
+| nm-invented | honesty | explain | ✓ | 1.0 |  |

@@ -1,0 +1,120 @@
+Your question
+  What happens if GPS becomes unavailable?
+
+Answer
+  When GPS data stops arriving, NavigationTick() detects the loss after 2000 ms and sets `g_nav.mode
+  = NAV_MODE_HOLD`, then calls VehicleController_Hold() which sets `s_last_command_deg = 0.0`, calls
+  `motor_set_steering(0)`, and calls `led_set_status(0)`. This stops bearing_deg() and
+  VehicleController_SetDirection() from running, so the vehicle holds its current position. If
+  ENABLE_DEAD_RECKONING is defined, NavigationTick() would instead set `g_nav.mode =
+  NAV_MODE_DEAD_RECKONING` and continue processing.
+
+  Losing the data is detected in NavigationTick() (nav/navigation.c:68), which checks `g_nav.has_fix
+  && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` (GPS_TIMEOUT_MS = 2000).
+
+  When that happens it sets `g_nav.mode = NAV_MODE_HOLD`; calls VehicleController_Hold() (which sets
+  `s_last_command_deg = 0.0` (line 25), calls motor_set_steering(0) (line 26), calls
+  led_set_status(0) (line 27)); returns, so bearing_deg(), VehicleController_SetDirection() no
+  longer run.
+
+  Note that this only triggers when all of these hold: `g_nav.has_fix`; `(now_ms -
+  g_nav.last_fix_ms) > GPS_TIMEOUT_MS`. For example, when `g_nav.has_fix` is false this path is not
+  taken.
+
+  NavigationTick() also stops early when `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode !=
+  NAV_MODE_DEAD_RECKONING` (line 77), which skips bearing_deg(), VehicleController_SetDirection() —
+  so without fresh valid data it does not reach those calls either.
+
+  This behaviour depends on the build configuration: ENABLE_DEAD_RECKONING is not defined anywhere
+  in the code, so by default the path above is taken. If ENABLE_DEAD_RECKONING is defined when
+  building, it instead sets `g_nav.mode = NAV_MODE_DEAD_RECKONING` and keeps going.
+
+  I ran the real code in a sandbox (one good input, then no data for 2100 ms) with latitude = 0.0,
+  longitude = 0.0, speed_knots = 4, hdop = 1.25, satellites = 8, valid = 1.
+
+  Functions that ran, in order: ProcessGpsData() → gps_validate_fix() → CalculateHeading() →
+  wrap180() → wrap360() → NavigationTick() → bearing_deg() → wrap360() →
+  VehicleController_SetDirection() → wrap180() → wrap360() → clamp() → NavigationTick() →
+  VehicleController_Hold().
+
+  Decisions, in the order they ran: in ProcessGpsData(): `status != GPS_OK` was false (line 49); in
+  gps_validate_fix(): `fix == 0 || !fix->valid` was false (line 7), `fix->latitude < -90.0 ||
+  fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (line 10),
+  `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (line 14); in
+  CalculateHeading(): `speed_knots < MIN_SPEED_FOR_HEADING` was false (line 37); in
+  NavigationTick(): `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was TRUE 1 of 2
+  times (line 68), `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was
+  false (line 77).
+
+  Resulting values: g_nav.mode = 3 (NAV_MODE_HOLD), g_nav.has_fix = 1, g_nav.speed_knots = 4.0000.
+
+  Outputs it produced: motor_set_steering(50); motor_set_steering(0); led_set_status(0).
+
+How the data flows
+    NavigationTick() checks `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS`  (nav/navigation.c:68)
+  ↓ VehicleController_Hold()  (nav/navigation.c:73)
+
+Evidence
+  [E9] gps/gps_validation.c:7  if (fix == 0 || !fix->valid) {
+  [E10] gps/gps_validation.c:10  if (fix->latitude < -90.0 || fix->latitude > 90.0 ||
+  [E11] gps/gps_validation.c:14  if (fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES) {
+  [E2] include/nav_config.h:6  #define GPS_TIMEOUT_MS          2000u    /* no fix for this long = GPS lost */
+  [E13] nav/geo_math.c:11  if (r < 0.0) {
+  [E12] nav/navigation.c:37  if (speed_knots < MIN_SPEED_FOR_HEADING) {
+  [E8] nav/navigation.c:49  if (status != GPS_OK) {
+  [E1] nav/navigation.c:68  if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) {
+  [E6] nav/navigation.c:70  g_nav.mode = NAV_MODE_DEAD_RECKONING;
+  [E3] nav/navigation.c:72  g_nav.mode = NAV_MODE_HOLD;
+  [E4] nav/navigation.c:73  VehicleController_Hold();
+  [E5] nav/navigation.c:77  if (g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING) {
+  [E7] sandboxed run one good input, then no data for 2100 ms
+
+Certainty: Depends on runtime values  confirmed: 5, runtime-dependent: 1, observed: 11
+
+Execution path
+  → ProcessGpsData()  (nav/navigation.c:45)
+  → gps_validate_fix()  (gps/gps_validation.c:5)
+  → CalculateHeading()  (nav/navigation.c:33)
+  → wrap180()  (nav/geo_math.c:18)
+  → wrap360()  (nav/geo_math.c:7)
+  → NavigationTick()  (nav/navigation.c:64)
+  → bearing_deg()  (nav/geo_math.c:31)
+  → wrap360()  (nav/geo_math.c:7)
+  → VehicleController_SetDirection()  (control/vehicle_controller.c:10)
+  → wrap180()  (nav/geo_math.c:18)
+  → wrap360()  (nav/geo_math.c:7)
+  → clamp()  (nav/geo_math.c:23)
+  → NavigationTick()  (nav/navigation.c:64)
+  → VehicleController_Hold()  (control/vehicle_controller.c:23)
+
+Assumptions
+  • Default build configuration: ENABLE_DEAD_RECKONING is not defined (it is only tested in #ifdef, never defined in this code).
+  • latitude was not given; used 0.0 so it passes the code's own check (rejects latitude < -90; rejects latitude > 90)
+  • longitude was not given; used 0.0 so it passes the code's own check (rejects longitude < -180; rejects longitude > 180)
+  • speed_knots was not given; used 4 so it passes the code's own check (rejects speed_knots < 2)
+  • hdop was not given; used 1.25 so it passes the code's own check (rejects hdop > 2.5)
+  • satellites was not given; used 8 so it passes the code's own check (rejects satellites < 4)
+  • valid was not given; used 1 so it passes the code's own check (rejects valid = 0)
+  • The input stops after one good value; the main loop keeps running for 2100 ms (longer than the 2000 ms timeout).
+  • After the input is processed, the main loop's next step runs once: NavigationTick().
+
+Verification
+  17 of 17 statements re-checked against the code
+  ✓ [CONFIRMED] NavigationTick() checks `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` at nav/navigation.c:68.
+  ✓ [CONFIRMED] GPS_TIMEOUT_MS is 2000.
+  ✓ [CONFIRMED] NavigationTick() sets `g_nav.mode = NAV_MODE_HOLD` at nav/navigation.c:72.  — only when ENABLE_DEAD_RECKONING is not defined (the default)
+  ✓ [CONFIRMED] NavigationTick() calls VehicleController_Hold() at nav/navigation.c:73.  — only when ENABLE_DEAD_RECKONING is not defined (the default)
+  ✓ [CONFIRMED] NavigationTick() also stops early when `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` (nav/navigation.c:77).
+  ✓ [RUNTIME-DEPENDENT] With ENABLE_DEAD_RECKONING defined, NavigationTick() sets `g_nav.mode = NAV_MODE_DEAD_RECKONING`.  — depends on whether ENABLE_DEAD_RECKONING is defined when building
+  ✓ [OBSERVED] `status != GPS_OK` was false (nav/navigation.c:49).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix == 0 || !fix->valid` was false (gps/gps_validation.c:7).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (gps/gps_validation.c:10).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (gps/gps_validation.c:14).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `speed_knots < MIN_SPEED_FOR_HEADING` was false (nav/navigation.c:37).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `r < 0.0` was false (nav/geo_math.c:11).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was true (nav/navigation.c:68).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (nav/navigation.c:77).  — seen in a sandboxed run of the real code
+  ✓ [OBSERVED] Call sequence observed: ProcessGpsData → gps_validate_fix → CalculateHeading → wrap180 → wrap360 → NavigationTick → bearing_deg → wrap360 → VehicleController_SetDirection → wrap180 → wrap360 → clamp → NavigationTick → VehicleController_Hold  — recorded by instrumentation during the run
+  ✓ [OBSERVED] Final values: g_nav.mode = 3 (NAV_MODE_HOLD), g_nav.has_fix = 1, g_nav.speed_knots = 4.0000  — printed by the harness after the run
+  ✓ [OBSERVED] Hardware/OS calls: motor_set_steering(50); motor_set_steering(0); led_set_status(0)  — recorded by the stand-in (stub) functions during the run
+30.8 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts

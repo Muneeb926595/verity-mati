@@ -1,0 +1,9 @@
+[demo 1] Explain how GPS data travels through this application.
+[demo 2] What does ProcessGpsData() do?
+[demo 3] What is the purpose of currentHeading?
+[demo 4] What happens when GPS sends heading 270?
+[demo 5] What happens if GPS becomes unavailable?
+[demo 6] What could be affected if I change CalculateHeading()?
+[demo 7] open the evidence: nav/navigation.c:59
+wrote docs/DEMOS.md
+demos exit=0

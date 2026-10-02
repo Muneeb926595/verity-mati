@@ -1,0 +1,635 @@
+{
+ "question": "Explain how GPS data travels through this application.",
+ "answer": [
+  "The gps data enters the program at USART2_IRQHandler(), which reads DR (memory-mapped register, drivers/uart_isr.c:11).",
+  "From there it passes through: USART2_IRQHandler() \u2192 rb_push() \u2192 rb_pop() \u2192 gps_receiver_poll() \u2192 gps_receiver_process_line() \u2192 nmea_split() \u2192 handle_rmc() (uses atof()) \u2192 ProcessGpsData() \u2192 CalculateHeading() (uses wrap180(), wrap360()) \u2192 back in ProcessGpsData() \u2192 NavigationTick() \u2192 VehicleController_SetDirection() (uses wrap180(), clamp()).",
+  "Key steps: rb_push(): `rb->data[rb->head] = byte` (drivers/ring_buffer.c:17); rb_pop(): `*out = rb->data[rb->tail]` (drivers/ring_buffer.c:28); nmea_split(): `out->fields[field][pos++] = *p` (gps/nmea_parser.c:52); CalculateHeading(): `delta = wrap180(gps_heading - currentHeading)` (nav/navigation.c:40); ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)` (nav/navigation.c:59); VehicleController_SetDirection(): `double error = wrap180(target_heading - current_heading)` (control/vehicle_controller.c:12).",
+  "Finally it reaches motor_set_steering() (hardware/OS output (by name), control/vehicle_controller.c:19)."
+ ],
+ "flow": [
+  {
+   "label": "USART2_IRQHandler() reads DR",
+   "file": "drivers/uart_isr.c",
+   "line": 11,
+   "detail": "memory-mapped register"
+  },
+  {
+   "label": "rb_push()",
+   "file": "drivers/ring_buffer.c",
+   "line": 17,
+   "detail": "`rb->data[rb->head] = byte`"
+  },
+  {
+   "label": "rb_pop()",
+   "file": "drivers/ring_buffer.c",
+   "line": 28,
+   "detail": "`*out = rb->data[rb->tail]`"
+  },
+  {
+   "label": "gps_receiver_poll()",
+   "file": "gps/gps_receiver.c",
+   "line": 109,
+   "detail": "rb_pop() fills in gps_receiver_poll.byte; `s_line[s_line_len++] = (char)byte`; passes s_line to gps_receiver_process_line()"
+  },
+  {
+   "label": "gps_receiver_process_line()",
+   "file": "gps/gps_receiver.c",
+   "line": 92,
+   "detail": "passes line to nmea_split()"
+  },
+  {
+   "label": "nmea_split()",
+   "file": "gps/nmea_parser.c",
+   "line": 37,
+   "detail": "`const char *p = line + 1; /* skip '$' */`; `out->fields[field][pos++] = *p`"
+  },
+  {
+   "label": "handle_rmc() (uses atof())",
+   "file": "gps/gps_receiver.c",
+   "line": 70,
+   "detail": "uses atof(); `fix.heading_deg = atof(s->fields[7])`"
+  },
+  {
+   "label": "ProcessGpsData()",
+   "file": "nav/navigation.c",
+   "line": 59,
+   "detail": "passes fix->heading_deg to CalculateHeading()"
+  },
+  {
+   "label": "CalculateHeading() (uses wrap180(), wrap360())",
+   "file": "nav/navigation.c",
+   "line": 40,
+   "detail": "uses wrap180(); `delta = wrap180(gps_heading - currentHeading)`; returns `wrap360(currentHeading + HEADING_FILTER_ALPHA * delta)`"
+  },
+  {
+   "label": "back in ProcessGpsData()",
+   "file": "nav/navigation.c",
+   "line": 59,
+   "detail": "`currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)`"
+  },
+  {
+   "label": "NavigationTick()",
+   "file": "nav/navigation.c",
+   "line": 81,
+   "detail": "passes currentHeading to VehicleController_SetDirection()"
+  },
+  {
+   "label": "VehicleController_SetDirection() (uses wrap180(), clamp())",
+   "file": "control/vehicle_controller.c",
+   "line": 12,
+   "detail": "uses wrap180(); `double error = wrap180(target_heading - current_heading)`; `double command = clamp(error,`"
+  },
+  {
+   "label": "motor_set_steering()",
+   "file": "control/vehicle_controller.c",
+   "line": 19,
+   "detail": "hardware/OS output (by name)"
+  }
+ ],
+ "evidence": [
+  {
+   "id": "E19",
+   "kind": "flow",
+   "file": "control/vehicle_controller.c",
+   "line": 12,
+   "end_line": null,
+   "text": "double error = wrap180(target_heading - current_heading);",
+   "sym": "c:@F@wrap180#param:0",
+   "note": "uses wrap180()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E24",
+   "kind": "io",
+   "file": "control/vehicle_controller.c",
+   "line": 19,
+   "end_line": null,
+   "text": "motor_set_steering((int16_t)(command * 10.0));",
+   "sym": "c:@F@motor_set_steering",
+   "note": "output: hardware/OS output (by name)",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E3",
+   "kind": "flow",
+   "file": "drivers/ring_buffer.c",
+   "line": 17,
+   "end_line": null,
+   "text": "rb->data[rb->head] = byte;",
+   "sym": "c:@SA@ring_buffer_t@FI@data",
+   "note": "`rb->data[rb->head] = byte`",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E4",
+   "kind": "flow",
+   "file": "drivers/ring_buffer.c",
+   "line": 28,
+   "end_line": null,
+   "text": "*out = rb->data[rb->tail];",
+   "sym": "c:@F@rb_pop#param:1",
+   "note": "`*out = rb->data[rb->tail]`",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E1",
+   "kind": "flow",
+   "file": "drivers/uart_isr.c",
+   "line": 11,
+   "end_line": null,
+   "text": "uint8_t byte = (uint8_t)(USART2->DR & 0xFFu);",
+   "sym": "c:@F@USART2_IRQHandler#local:byte@11",
+   "note": "`uint8_t byte = (uint8_t)(USART2->DR & 0xFFu)`",
+   "status": "INFERENCE",
+   "status_label": "Inferred (likely, not certain)",
+   "also": [
+    "E23"
+   ]
+  },
+  {
+   "id": "E11",
+   "kind": "flow",
+   "file": "gps/gps_receiver.c",
+   "line": 70,
+   "end_line": null,
+   "text": "fix.heading_deg  = atof(s->fields[7]);",
+   "sym": "c:@F@atof#param:0",
+   "note": "uses atof()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E8",
+   "kind": "flow",
+   "file": "gps/gps_receiver.c",
+   "line": 92,
+   "end_line": null,
+   "text": "if (nmea_split(line, &sentence) != 0) {",
+   "sym": "c:@F@nmea_split#param:0",
+   "note": "passes line to nmea_split()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E5",
+   "kind": "flow",
+   "file": "gps/gps_receiver.c",
+   "line": 109,
+   "end_line": null,
+   "text": "while (rb_pop(&g_gps_rx, &byte) == 0) {",
+   "sym": "c:@F@gps_receiver_poll#local:byte@107",
+   "note": "rb_pop() fills in gps_receiver_poll.byte",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E9",
+   "kind": "flow",
+   "file": "gps/nmea_parser.c",
+   "line": 37,
+   "end_line": null,
+   "text": "const char *p = line + 1;    /* skip '$' */",
+   "sym": "c:@F@nmea_split#local:p@37",
+   "note": "`const char *p = line + 1; /* skip '$' */`",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E14",
+   "kind": "flow",
+   "file": "nav/navigation.c",
+   "line": 40,
+   "end_line": null,
+   "text": "delta = wrap180(gps_heading - currentHeading);",
+   "sym": "c:@F@wrap180#param:0",
+   "note": "uses wrap180()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E13",
+   "kind": "flow",
+   "file": "nav/navigation.c",
+   "line": 59,
+   "end_line": null,
+   "text": "currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);",
+   "sym": "c:@F@CalculateHeading#param:0",
+   "note": "passes fix->heading_deg to CalculateHeading()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code",
+   "also": [
+    "E17"
+   ]
+  },
+  {
+   "id": "E18",
+   "kind": "flow",
+   "file": "nav/navigation.c",
+   "line": 81,
+   "end_line": null,
+   "text": "VehicleController_SetDirection(currentHeading, target_heading);",
+   "sym": "c:@F@VehicleController_SetDirection#param:0",
+   "note": "passes currentHeading to VehicleController_SetDirection()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  }
+ ],
+ "status": "INFERENCE",
+ "status_label": "Inferred (likely, not certain)",
+ "status_counts": {
+  "INFERENCE": 6,
+  "CONFIRMED": 7
+ },
+ "sections": {
+  "reasoning": [
+   {
+    "text": "Data read from DR (memory-mapped register) flows to motor_set_steering() (hardware/OS output (by name)).",
+    "pred": "flows_to",
+    "args": [
+     "c:@S@__vr_regs_USART2@FI@DR",
+     "c:@F@motor_set_steering#param:0"
+    ],
+    "ev": [
+     "E1",
+     "E3",
+     "E4",
+     "E5",
+     "E8",
+     "E9",
+     "E11",
+     "E13",
+     "E14",
+     "E17",
+     "E18",
+     "E19"
+    ],
+    "status": "INFERENCE",
+    "why": "the path passes through struct fields (every instance of the struct is treated alike)",
+    "verified": true,
+    "check": "each step of the path was re-checked",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "USART2_IRQHandler(): `uint8_t byte = (uint8_t)(USART2->DR & 0xFFu)`.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@S@__vr_regs_USART2@FI@DR",
+     "c:@F@USART2_IRQHandler#local:byte@11",
+     "drivers/uart_isr.c",
+     11
+    ],
+    "ev": [
+     "E1"
+    ],
+    "status": "INFERENCE",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "rb_push(): `rb->data[rb->head] = byte`.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@rb_push#param:1",
+     "c:@SA@ring_buffer_t@FI@data",
+     "drivers/ring_buffer.c",
+     17
+    ],
+    "ev": [
+     "E3"
+    ],
+    "status": "INFERENCE",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "rb_pop(): `*out = rb->data[rb->tail]`.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@SA@ring_buffer_t@FI@data",
+     "c:@F@rb_pop#param:1",
+     "drivers/ring_buffer.c",
+     28
+    ],
+    "ev": [
+     "E4"
+    ],
+    "status": "INFERENCE",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "gps_receiver_poll(): rb_pop() fills in gps_receiver_poll.byte.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@rb_pop#param:1",
+     "c:@F@gps_receiver_poll#local:byte@107",
+     "gps/gps_receiver.c",
+     109
+    ],
+    "ev": [
+     "E5"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "gps_receiver_process_line(): passes line to nmea_split().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@gps_receiver_process_line#param:0",
+     "c:@F@nmea_split#param:0",
+     "gps/gps_receiver.c",
+     92
+    ],
+    "ev": [
+     "E8"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "nmea_split(): `const char *p = line + 1; /* skip '$' */`.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@nmea_split#param:0",
+     "c:@F@nmea_split#local:p@37",
+     "gps/nmea_parser.c",
+     37
+    ],
+    "ev": [
+     "E9"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "handle_rmc() (uses atof()): uses atof().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@SA@nmea_sentence_t@FI@fields",
+     "c:@F@atof#param:0",
+     "gps/gps_receiver.c",
+     70
+    ],
+    "ev": [
+     "E11"
+    ],
+    "status": "INFERENCE",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "ProcessGpsData(): passes fix->heading_deg to CalculateHeading().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@SA@gps_fix_t@FI@heading_deg",
+     "c:@F@CalculateHeading#param:0",
+     "nav/navigation.c",
+     59
+    ],
+    "ev": [
+     "E13"
+    ],
+    "status": "INFERENCE",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "CalculateHeading() (uses wrap180(), wrap360()): uses wrap180().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@CalculateHeading#param:0",
+     "c:@F@wrap180#param:0",
+     "nav/navigation.c",
+     40
+    ],
+    "ev": [
+     "E14"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "back in ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)`.",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@CalculateHeading#ret",
+     "c:@currentHeading",
+     "nav/navigation.c",
+     59
+    ],
+    "ev": [
+     "E17"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "NavigationTick(): passes currentHeading to VehicleController_SetDirection().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@currentHeading",
+     "c:@F@VehicleController_SetDirection#param:0",
+     "nav/navigation.c",
+     81
+    ],
+    "ev": [
+     "E18"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "VehicleController_SetDirection() (uses wrap180(), clamp()): uses wrap180().",
+    "pred": "flow_edge",
+    "args": [
+     "c:@F@VehicleController_SetDirection#param:0",
+     "c:@F@wrap180#param:0",
+     "control/vehicle_controller.c",
+     12
+    ],
+    "ev": [
+     "E19"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "value-flow step found",
+    "status_label": "Confirmed in the code"
+   }
+  ],
+  "execution_path": [
+   {
+    "label": "main()",
+    "file": "app/main.c",
+    "line": 10
+   },
+   {
+    "label": "NavigationTick()",
+    "file": "app/main.c",
+    "line": 25,
+    "ev": "E25",
+    "status": "CONFIRMED",
+    "note": ""
+   },
+   {
+    "label": "VehicleController_SetDirection()",
+    "file": "nav/navigation.c",
+    "line": 81,
+    "ev": "E26",
+    "status": "CONFIRMED",
+    "note": ""
+   }
+  ],
+  "related": [
+   {
+    "key": "c:@F@USART2_IRQHandler",
+    "label": "USART2_IRQHandler()",
+    "file": "drivers/uart_isr.c",
+    "line": 8,
+    "end_line": 14
+   },
+   {
+    "key": "c:@F@rb_push",
+    "label": "rb_push()",
+    "file": "drivers/ring_buffer.c",
+    "line": 10,
+    "end_line": 20
+   },
+   {
+    "key": "c:@F@rb_pop",
+    "label": "rb_pop()",
+    "file": "drivers/ring_buffer.c",
+    "line": 23,
+    "end_line": 31
+   },
+   {
+    "key": "c:@F@gps_receiver_poll",
+    "label": "gps_receiver_poll()",
+    "file": "gps/gps_receiver.c",
+    "line": 105,
+    "end_line": 118
+   },
+   {
+    "key": "c:@F@gps_receiver_process_line",
+    "label": "gps_receiver_process_line()",
+    "file": "gps/gps_receiver.c",
+    "line": 82,
+    "end_line": 102
+   },
+   {
+    "key": "c:@F@nmea_split",
+    "label": "nmea_split()",
+    "file": "gps/nmea_parser.c",
+    "line": 33,
+    "end_line": 58
+   },
+   {
+    "key": "c:gps_receiver.c@F@handle_rmc",
+    "label": "handle_rmc()",
+    "file": "gps/gps_receiver.c",
+    "line": 58,
+    "end_line": 79
+   },
+   {
+    "key": "c:@F@ProcessGpsData",
+    "label": "ProcessGpsData()",
+    "file": "nav/navigation.c",
+    "line": 45,
+    "end_line": 61
+   },
+   {
+    "key": "c:@F@CalculateHeading",
+    "label": "CalculateHeading()",
+    "file": "nav/navigation.c",
+    "line": 33,
+    "end_line": 42
+   },
+   {
+    "key": "c:@F@NavigationTick",
+    "label": "NavigationTick()",
+    "file": "nav/navigation.c",
+    "line": 64,
+    "end_line": 82
+   },
+   {
+    "key": "c:@F@VehicleController_SetDirection",
+    "label": "VehicleController_SetDirection()",
+    "file": "control/vehicle_controller.c",
+    "line": 10,
+    "end_line": 20
+   }
+  ],
+  "assumptions": [],
+  "verification": {
+   "report": {
+    "claims": 13,
+    "verified": 13,
+    "rejected": 0,
+    "stale_files": [],
+    "evidence": 26,
+    "evidence_ok": 26
+   },
+   "unknowns": [],
+   "notes": [],
+   "rejected": []
+  }
+ },
+ "run": null,
+ "route": {
+  "intent": "flow",
+  "mentions": [],
+  "topic": [
+   "gps"
+  ],
+  "inputs": {},
+  "by": "rules"
+ },
+ "meta": {
+  "seconds": 0.02,
+  "prose": {
+   "mode": "direct"
+  },
+  "template": [
+   "The gps data enters the program at USART2_IRQHandler(), which reads DR (memory-mapped register, drivers/uart_isr.c:11).",
+   "From there it passes through: USART2_IRQHandler() \u2192 rb_push() \u2192 rb_pop() \u2192 gps_receiver_poll() \u2192 gps_receiver_process_line() \u2192 nmea_split() \u2192 handle_rmc() (uses atof()) \u2192 ProcessGpsData() \u2192 CalculateHeading() (uses wrap180(), wrap360()) \u2192 back in ProcessGpsData() \u2192 NavigationTick() \u2192 VehicleController_SetDirection() (uses wrap180(), clamp()).",
+   "Key steps: rb_push(): `rb->data[rb->head] = byte` (drivers/ring_buffer.c:17); rb_pop(): `*out = rb->data[rb->tail]` (drivers/ring_buffer.c:28); nmea_split(): `out->fields[field][pos++] = *p` (gps/nmea_parser.c:52); CalculateHeading(): `delta = wrap180(gps_heading - currentHeading)` (nav/navigation.c:40); ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)` (nav/navigation.c:59); VehicleController_SetDirection(): `double error = wrap180(target_heading - current_heading)` (control/vehicle_controller.c:12).",
+   "Finally it reaches motor_set_steering() (hardware/OS output (by name), control/vehicle_controller.c:19)."
+  ],
+  "intent": "flow",
+  "model": null
+ },
+ "id": "88609fb8d5c3"
+}

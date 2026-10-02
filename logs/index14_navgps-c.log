@@ -1,0 +1,13 @@
+  ✓ Looking at your project files: Found 9 C, 10 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + CMSIS / vendor HAL; 
+build settings reconstructed from the source (no build needed); 1 missing 
+header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 10 C file(s); also checked 1 configuration 
+switch(es): ENABLE_DEAD_RECKONING
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 100% of function 
+definitions and 100% of direct calls
+  ✓ Connecting the pieces together: Traced 3 call(s) through function pointers 
+or tables; 2 entry point(s), 8 input/output site(s)
+  ✓ Preparing search: Indexed 119 symbols for search (keyword + meaning search)
+Ready. Indexed in 0.8 s.

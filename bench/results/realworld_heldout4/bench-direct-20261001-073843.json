@@ -1,0 +1,534 @@
+{
+ "summary": {
+  "cases": 12,
+  "passed": 12,
+  "mean_score": 1.0,
+  "symbol_identification": {
+   "cases": 11,
+   "passed": 11,
+   "accuracy": 1.0
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 194,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 194,
+   "claims": 194,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 45
+  },
+  "mean_seconds": 0.3
+ },
+ "results": [
+  {
+   "id": "soem-too-many-slaves",
+   "category": "scenario",
+   "q": "What happens when there are more slaves on the network than EC_MAXSLAVE?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.42,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`EC_MAXSLAVE` appears in the source (contrib/test/intime/ec_master/ec_master.c:48) but only inside code that none of the analysed builds compiles. Facts about it are therefore not available; the closest analysed code is described below.",
+    "This is decided in ecx_detect_slaves() (src/ec_config.c:76): it checks `wkc < EC_MAXSLAVE`; when that is NOT true it returns `EC_SLAVECOUNTEXCEEDED`, so the rest of ecx_detect_slaves() is skipped.",
+    "Its caller ecx_config_init() checks `wkc > 0` (src/ec_config.c:186) and then calls ecx_set_slaves_to_default() and calls ecx_APRDw() and calls ecx_APWRw()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-slavecount",
+   "category": "symbol",
+   "q": "Where is the slave count set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 32
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 32,
+     "total": 32
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is set in ecx_set_slaves_to_default():",
+    "ecx_set_slaves_to_default() (src/ec_config.c:90).",
+    "Step by step, it calls memset() (line 95); then it sets `b = 0x00` (line 96); then it calls ecx_BWR() (line 97); then it sets `w = htoes(0x0004)` (line 98); then it calls ecx_BWR() (line 99); then it calls ecx_BWR() (line 100); then it calls ecx_BWR() (line 101); then it calls ecx_BWR() (line 102); then it sets `b = 0x00` (line 103); then it calls ecx_BWR() (line 104); \u2026.",
+    "Related values are also set here: `context->slavecount = 0` in ecx_init_context() (src/ec_config.c:44); `context->slavecount = wkc` in ecx_detect_slaves() (src/ec_config.c:78); `context->slavelist[slave].Itype = etohs(val16)` in ecx_config_init() (src/ec_config.c:193); `context->slavelist[slave].configadr = configadr` in ecx_config_init() (src/ec_config.c:208); `context->slavelist[slave].aliasadr = etohs(aliasadr)` in ecx_config_init() (src/ec_config.c:210); `context->slavelist[slave].eep_8byte = 1` in ecx_config_init() (src/ec_config.c:215).",
+    "The value is computed just before: `wkc = ecx_BRD(&context->port, 0x0000, ECT_REG_TYPE, sizeof(w), &w, EC_TIMEOUTSAFE)` (src/ec_config.c:72); `val16 = ecx_APRDw(&context->port, ADPh, ECT_REG_PDICTL, EC_TIMEOUTRET3)` (src/ec_config.c:192); `configadr = etohs(configadr)` (src/ec_config.c:207)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-pusherror-callers",
+   "category": "callpath",
+   "q": "Who calls ecx_pusherror?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by ecx_SDOerror() at src/ec_coe.c:75; ecx_SDOinfoerror() at src/ec_coe.c:97; ecx_packeterror() at src/ec_main.c:161; ecx_mbxerror() at src/ec_main.c:181. It is also called by ecx_mbxemergencyerror() (src/ec_main.c:210), ecx_SoEerror() (src/ec_soe.c:56). The full chain from the program's start is: main() \u2192 ecatbringup() \u2192 ecx_SDOread() \u2192 ecx_packeterror() \u2192 ecx_pusherror()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-error-list-full",
+   "category": "scenario",
+   "q": "What happens when the error list is full?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 2.77,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in ecx_pusherror() (src/ec_main.c:93): it checks `context->elist.head == context->elist.tail`, and when that is true it records it (`context->elist.tail++`)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-sdo-abort",
+   "category": "scenario",
+   "q": "What happens when a slave answers an SDO read with an abort?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 28
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 28,
+     "total": 28
+    },
+    "_missing_evidence": {
+     "paragraphs": 8,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.25,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is decided in ecx_SDOread() (src/ec_coe.c:176): it checks `((aSDOp->MbxHeader.mbxtype & 0x0f) == ECT_MBXT_COE) && ((etohs(aSDOp->CANOpen) >> 12) == ECT_COES_SDORES) && (aSDOp->Index == SDOp->Index)`; when that is NOT true it runs lines 308\u2013318.",
+    "When it does not return there, ecx_SDOread() goes on to call ecx_dropmbx() with (`context`, `MbxIn`) (line 321); ecx_dropmbx() with (`context`, `MbxOut`) (line 322).",
+    "ecx_SDOerror() calls memset() (line 67); then it calls osal_current_time() and stores the result in `Ec.Time` (line 68); then it updates Ec (Slave, Index, SubIdx; lines 69\u201371); then it sets `context->ecaterror = TRUE` (line 72); then it updates Ec (Etype, AbortCode; lines 73\u201374); then it calls ecx_pusherror() (line 75).",
+    "Consequence: SDO2string() checks `ctx.ecaterror` (samples/slaveinfo/slaveinfo.c:167); with ecaterror = 1, `ctx.ecaterror` is true, so it returns early, so snprintf() are no longer called and calls ecx_elist2string().",
+    "ecx_packeterror() calls memset() (line 153); then it calls osal_current_time() and stores the result in `Ec.Time` (line 154); then it updates Ec (Slave, Index, SubIdx; lines 155\u2013157); then it sets `context->ecaterror = TRUE` (line 158); then it updates Ec (Etype, ErrorCode; lines 159\u2013160); then it calls ecx_pusherror() (line 161).",
+    "Consequence: SDO2string() checks `ctx.ecaterror` (samples/slaveinfo/slaveinfo.c:167); with ecaterror = 1, `ctx.ecaterror` is true, so it returns early, so snprintf() are no longer called and calls ecx_elist2string().",
+    "Its caller ecx_readPDOassign() checks `(wkc > 0) && (rdat > 0)` (src/ec_coe.c:727) and then calls ecx_SDOread() and calls ecx_SDOread() and calls ecx_SDOread().",
+    "Its caller ecx_readPDOassignCA() checks `(wkc > 0) && (context->PDOassign[Thread_n].n > 0)` (src/ec_coe.c:798) and then calls ecx_SDOread()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-no-reply",
+   "category": "scenario",
+   "q": "What happens when no reply to a frame arrives?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.06,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in ecx_waitinframe_red() (contrib/oshw/erika/nicdrv.c:419): it keeps calling ecx_inframe(), calling ecx_inframe(), calling osal_timer_is_expired() while `((wkc <= EC_NOFRAME) || (wkc2 <= EC_NOFRAME)) && !osal_timer_is_expired(timer)`; when the time runs out the loop ends and ecx_waitinframe_red() returns `wkc` (line 482), which still holds its starting value (`int wkc = EC_NOFRAME`, line 412) if no answer ever came.",
+    "Its caller ecx_srconfirm() calls it inside a loop and keeps retrying while `(wkc <= EC_NOFRAME) && !osal_timer_is_expired(&timer1)` (contrib/oshw/erika/nicdrv.c:521).",
+    "Its caller ecx_BRD() checks `wkc > 0` (src/ec_base.c:194) and then calls memcpy().",
+    "Its caller ecx_APRD() checks `wkc > 0` (src/ec_base.c:223) and then calls memcpy().",
+    "Its caller ecx_ARMW() checks `wkc > 0` (src/ec_base.c:251) and then calls memcpy().",
+    "Its caller ecx_FRMW() checks `wkc > 0` (src/ec_base.c:279) and then calls memcpy().",
+    "Its caller ecx_FPRD() checks `wkc > 0` (src/ec_base.c:324) and then calls memcpy()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-frame-send",
+   "category": "symbol",
+   "q": "How is an EtherCAT frame sent on the network?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 27
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 27,
+     "total": 27
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is done by ecx_outframe() (contrib/oshw/erika/nicdrv.c:218): it calls send() (socket send) at oshw/linux/nicdrv.c:290.",
+    "ecx_outframe() (contrib/oshw/erika/nicdrv.c:218) \u2014 Transmit buffer over socket (non blocking).",
+    "Step by step, it checks `!stacknumber` (line 223); if true it sets `stack = &(port->stack)`; then it sets `stack = &(port->redport->stack)` (line 226); then it sets `lp = (*stack->txbuflength)[idx]` (line 227); then it calls eth_send_packet (line 230); then it returns `1` (line 232); then it checks `!stacknumber` (line 252); if true it sets `ehp = (ec_etherheadert *)&(port->txbuf2)`, ``; then it checks `!stacknumber` (line 253); if true it sets `ehp = (ec_etherheadert *)&(port->txbuf2)`, ``; then it sets `stack = &(port->redport->stack)` (line 258); then it sets `stack = &(port->redport->stack)` (line 259); then it checks `!stacknumber` (line 260); if true it calls oshw_mac_send(), pcap_sendpacket() and sets ``, `port->redport->rxbufstat[idx] = EC_BUF_TX`, `eth_send_packet(port->dev_id, &(port->txbuf2), port->txbuflength2, 1)`; \u2026.",
+    "Other places that do the same kind of output: ecx_outframe_red() (send(), oshw/linux/nicdrv.c:327)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-statecheck",
+   "category": "symbol",
+   "q": "What does ecx_statecheck do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 27
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 27,
+     "total": 27
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "ecx_statecheck() (src/ec_main.c:1060) \u2014 Check actual slave state. This is a blocking function. To refresh the state of all slaves ecx_readstate() should be called.",
+    "Step by step, it checks `slave > context->slavecount` (line 1066); if true it returns `0` straight away; then it calls osal_timer_start() (line 1070); then it sets `configadr = context->slavelist[slave].configadr` (line 1071); then it repeats while `(state != reqstate) && (osal_timer_is_expired(&timer) == FALSE)` (line 1072); then it checks `slave < 1` (line 1074); if true it calls ecx_BRD() and sets `rval = etohs(rval)`; then it updates slstat (alstatus, alstatuscode; lines 1082\u20131083); then it calls ecx_FPRD() (line 1084); then it sets `rval = etohs(slstat.alstatus)` (line 1085); then it sets `context->slavelist[slave].ALstatuscode = etohs(slstat.alstatuscode)` (line 1086); then it sets `state = rval & 0x000f` (line 1088); \u2026.",
+    "It is called by ecx_config_init() at src/ec_config.c:340, only when `wkc > 0` is true, repeatedly inside `for (slave = 1; slave <= context->slavecount; slave++)`; ecx_map_coe_soe() at src/ec_config.c:509; ecx_reconfig_slave() at src/ec_config.c:1619, only when `ecx_FPWRw(&context->port, configadr, ECT_REG_ALCTL, htoes(EC_STATE_INIT), timeout) <= 0` is false (ECT_REG_ALCTL = 288, EC_STATE_INIT = 1); ecx_reconfig_slave() at src/ec_config.c:1634, only when `ecx_FPWRw(&context->port, configadr, ECT_REG_ALCTL, htoes(EC_STATE_INIT), timeout) <= 0` is false (ECT_REG_ALCTL = 288, EC_STATE_INIT = 1), only when `state == EC_STATE_INIT` is true (EC_STATE_INIT = 1). It is also called by ecx_reconfig_slave() (src/ec_config.c:1647). The full chain from the program's start is: ecatcheck() \u2192 ecx_statecheck().",
+    "The values it updates are used later by ecx_readstate() (uses ec_alstatus.alstatus, ec_alstatus.alstatuscode, ec_slave.ALstatuscode); ecatbringup() (uses ec_slave.ALstatuscode, ec_slave.state); eni_test() (uses ec_slave.ALstatuscode, ec_slave.state); teststarter() (uses ec_slave.ALstatuscode, ec_slave.state)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-poperror",
+   "category": "symbol",
+   "q": "What does ecx_poperror return when the error list is empty?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is decided in ecx_poperror() (src/ec_main.c:116): it checks `notEmpty`; when that is NOT true it records it (`context->ecaterror = FALSE`) and afterwards returns `notEmpty` (line 128).",
+    "Consequence: SDO2string() checks `ctx.ecaterror` (samples/slaveinfo/slaveinfo.c:167); with ecaterror = 0, `ctx.ecaterror` is false, so it no longer calls ecx_elist2string().",
+    "Its caller ecx_elist2string() checks `ecx_poperror(context, &Ec)` (src/ec_print.c:370) and then returns `ecx_err2string(Ec)` and calls ecx_err2string()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-srconfirm-callers",
+   "category": "callpath",
+   "q": "Who calls ecx_srconfirm?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 13
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 13,
+     "total": 13
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by ecx_BWR() at src/ec_base.c:166; ecx_BRD() at src/ec_base.c:193; ecx_APRD() at src/ec_base.c:222; ecx_ARMW() at src/ec_base.c:250. It is also called by ecx_FRMW() (src/ec_base.c:278), ecx_FPRD() (src/ec_base.c:323), ecx_APWR() (src/ec_base.c:367), ecx_FPWR() (src/ec_base.c:404), ecx_LRW() (src/ec_base.c:440), ecx_LRD() (src/ec_base.c:466), ecx_LWR() (src/ec_base.c:492), ecx_LRWDC() (src/ec_base.c:523), ecx_FPRD_multi() (src/ec_main.c:899). The full chain from the program's start is: main() \u2192 eepromtool() \u2192 ecx_BRD() \u2192 ecx_srconfirm()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-mbx-counter",
+   "category": "symbol",
+   "q": "How does the mailbox counter wrap around?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 22
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 22,
+     "total": 22
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "ec_nextmbxcnt() (src/ec_main.c:1104) \u2014 Get index of next mailbox counter value. Used for Mailbox Link Layer.",
+    "Step by step, it checks `cnt > 7` (line 1107); then it returns `cnt` (line 1112).",
+    "It is called by ecx_SDOread() at src/ec_coe.c:141, only when `!MbxOut` is false; ecx_SDOread() at src/ec_coe.c:228, only when `Framedatasize < SDOlen` is true, repeatedly inside `while (NotLast) /* segmented transfer */`, only when `!MbxOut` is false; ecx_SDOwrite() at src/ec_coe.c:369, only when `!MbxOut` is false, only when `(psize <= 4) && !CA` is true; ecx_SDOwrite() at src/ec_coe.c:428, only when `!MbxOut` is false, only when `(psize <= 4) && !CA` is false. It is also called by ecx_SDOwrite() (src/ec_coe.c:505), ecx_RxPDO() (src/ec_coe.c:608), ecx_TxPDO() (src/ec_coe.c:652), ecx_readODlist() (src/ec_coe.c:1071), ecx_readODdescription() (src/ec_coe.c:1198), ecx_readOEsingle() (src/ec_coe.c:1290), ecx_EOEsetIp() (src/ec_eoe.c:89), ecx_EOEgetIp() (src/ec_eoe.c:208), ecx_EOEsend() (src/ec_eoe.c:397), ecx_FOEread() (src/ec_foe.c:107), ecx_FOEread() (src/ec_foe.c:152), ecx_FOEwrite() (src/ec_foe.c:248), ecx_FOEwrite() (src/ec_foe.c:308), ecx_FOEwrite() (src/ec_foe.c:365), ecx_SoEread() (src/ec_soe.c:98), ecx_SoEwrite() (src/ec_soe.c:246). The full chain from the program's start is: mailbox_writer() \u2192 ecx_EOEsend() \u2192 ec_nextmbxcnt()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "soem-invented",
+   "category": "honesty",
+   "q": "What does ecx_reset_all_slaves do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 17
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 17,
+     "total": 17
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `ecx_reset_all_slaves` in this code (none of its 4214 indexed symbols has that name). The closest names are ecx_detect_slaves() (src/ec_config.c:58), ecx_set_slaves_to_default() (src/ec_config.c:90), ec_slave (include/soem/ec_main.h:120), described below.",
+    "ecx_detect_slaves() (src/ec_config.c:58).",
+    "Step by step, it sets `b = 0x00` (line 66); then it calls ecx_BWR() (line 67); then it sets `w = htoes(EC_STATE_INIT | EC_STATE_ACK)` (line 68); then it calls ecx_BWR() (line 69); then it calls ecx_BWR() (line 71); then it calls ecx_BRD() and stores the result in `wkc` (line 72); then it checks `wkc > 0` (line 73); if true it sets `context->slavecount = wkc`; if true it returns `EC_SLAVECOUNTEXCEEDED` straight away; then it checks `wkc < EC_MAXSLAVE` (line 76); if true it sets `context->slavecount = wkc`; then it returns `wkc` (line 87).",
+    "It is called by ecx_config_init() at src/ec_config.c:185 with (`context`). The full chain from the program's start is: main() \u2192 slaveinfo() \u2192 ecx_config_init() \u2192 ecx_detect_slaves().",
+    "The values it updates are used later by ecatcheck() (uses ecx_context.slavecount); ecatbringup() (uses ecx_context.slavecount); eeprom_read() (uses ecx_context.slavecount); eeprom_write() (uses ecx_context.slavecount)."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

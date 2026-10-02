@@ -1,0 +1,661 @@
+{
+ "summary": {
+  "cases": 15,
+  "passed": 5,
+  "mean_score": 0.522,
+  "symbol_identification": {
+   "cases": 15,
+   "passed": 6,
+   "accuracy": 0.556
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 1,
+   "passed": 0,
+   "accuracy": 0.0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 105,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 105,
+   "claims": 105,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 46
+  },
+  "mean_seconds": 0.0
+ },
+ "results": [
+  {
+   "id": "h-steer-decide",
+   "category": "dataflow",
+   "q": "How does the vehicle decide which way to steer?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.3333333333333333,
+     "missing": [
+      "bearing_deg",
+      "currentHeading"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.333,
+   "answer": [
+    "VehicleController_Hold() (control/vehicle_controller.c:23) \u2014 Centres the steering and signals that the route is no longer being followed.",
+    "Step by step, it sets `s_last_command_deg = 0.0` (line 25); then it calls motor_set_steering() (line 26); then it calls led_set_status() (line 27).",
+    "It is called by NavigationTick(). The full chain from the program's start is: main() \u2192 NavigationTick() \u2192 VehicleController_Hold().",
+    "The values it updates are used later by VehicleController_SetDirection() (uses s_last_command_deg)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-ringbuf-fill",
+   "category": "symbol",
+   "q": "Where is the ring buffer filled?",
+   "intent": "search",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "rb_push",
+      "USART2_IRQHandler"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "These parts of the code look most relevant: RING_BUFFER_H (constant, include/ring_buffer.h:2); ring_buffer_t (struct, include/ring_buffer.h:9); ring_buffer_t.data (field, include/ring_buffer.h:10); ring_buffer_t.head (field, include/ring_buffer.h:11); rb_init() (function, drivers/ring_buffer.c:3); g_gps_rx (global variable, drivers/uart_isr.c:5)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-tick-caller",
+   "category": "callpath",
+   "q": "What calls NavigationTick and how often?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "NAV_TICK_MS"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "It is called by main(). The full chain from the program's start is: main() \u2192 NavigationTick()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-speed-trace",
+   "category": "dataflow",
+   "q": "Trace the speed value from the GPS sentence to where it is used",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "handle_rmc",
+      "speed_knots",
+      "CalculateHeading"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "gps_receiver_process_line.sentence is a local variable of type `nmea_sentence_t`, defined in gps/gps_receiver.c:84.",
+    "Nothing in this code assigns gps_receiver_process_line.sentence after its declaration.",
+    "It is read by gps_receiver_process_line() (line 96).",
+    "In short: gps_receiver_process_line.sentence carries a value and consumed by gps_receiver_process_line()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-3-sats",
+   "category": "scenario",
+   "q": "What happens when the GPS reports only 3 satellites?",
+   "intent": "scenario",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "scenario": {
+     "ok": false,
+     "score": 0.0,
+     "why": "no run"
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "I could not find a function that takes these values as input, so I cannot simulate this scenario.",
+    "These parts of the code look most relevant: s_last_satellites (global variable, gps/gps_receiver.c:15); handle_gga() (function, gps/gps_receiver.c:47); GPS_MIN_SATELLITES (constant, include/nav_config.h:5); gps_fix_t.satellites (field, include/gps_types.h:13); handle_rmc() (function, gps/gps_receiver.c:58); gps_validate_fix() (function, gps/gps_validation.c:5)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-parse-coord",
+   "category": "symbol",
+   "q": "Which function parses NMEA coordinates?",
+   "intent": "search",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "nmea_parse_coord"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 18
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 18,
+     "total": 18
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "These parts of the code look most relevant: gps_receiver_process_line() (function, gps/gps_receiver.c:82); NMEA_PARSER_H (constant, gps/nmea_parser.h:2); nmea_sentence_t (struct, gps/nmea_parser.h:10); NMEA_MAX_FIELDS (constant, gps/nmea_parser.h:6); nmea_checksum_ok() (function, gps/nmea_parser.c:13); NMEA_MAX_LEN (constant, gps/nmea_parser.h:7).",
+    "gps_receiver_process_line() (gps/gps_receiver.c:82) \u2014 Parses one complete NMEA line and dispatches it by sentence type.",
+    "Step by step, it sets `g_gps_stats.sentences++` (line 87); then it checks `!nmea_checksum_ok(line)` (line 88); if true it sets `g_gps_stats.checksum_errors++`; if true it returns `-1` straight away; then it checks `nmea_split(line, &sentence) != 0` (line 92); if true it returns `-1` straight away; then it checks `strcmp(sentence.type, k_handlers[i].type) == 0` (line 96); if true it calls handle_gga(), handle_rmc() and returns `k_handlers[i].handler(&sentence)` straight away; then it sets `g_gps_stats.unknown_sentences++` (line 100); then it returns `0` (line 101)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-invalid-handler",
+   "category": "symbol",
+   "q": "What does nav_handle_invalid_fix do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "nav_handle_invalid_fix() (nav/navigation.c:22) \u2014 Counts consecutive bad fixes; too many switches navigation to degraded mode.",
+    "Step by step, it sets `g_nav.consecutive_invalid++` (line 24); then it checks `g_nav.consecutive_invalid >= MAX_INVALID_FIXES` (MAX_INVALID_FIXES = 5) (line 25); if true it sets `g_nav.mode = NAV_MODE_DEGRADED`.",
+    "It is called by ProcessGpsData(). The full chain from the program's start is: main() \u2192 gps_receiver_poll() \u2192 gps_receiver_process_line() \u2192 handle_rmc() \u2192 ProcessGpsData() \u2192 nav_handle_invalid_fix().",
+    "The values it updates are used later by NavigationTick() (uses nav_state_t.mode)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-bearing-called",
+   "category": "callpath",
+   "q": "Is bearing_deg ever called?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "bearing_deg() (nav/geo_math.c:31) \u2014 Initial great-circle bearing from point 1 to point 2, degrees true.",
+    "Step by step, it calls sin() and stores the result in `y` (line 36); then it calls cos() and stores the result in `x` (line 37); then it calls wrap360() (line 39); then it returns `wrap360(atan2(y, x) * 180.0 / PI)` (line 39).",
+    "It is called by NavigationTick(). The full chain from the program's start is: main() \u2192 NavigationTick() \u2192 bearing_deg()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-remove-wrap",
+   "category": "callpath",
+   "q": "What would break if I removed wrap360?",
+   "intent": "impact",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 13
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 13,
+     "total": 13
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Changing wrap360() (nav/geo_math.c:7) can affect three kinds of things: the code that calls it, the data that depends on its result, and the outputs that data reaches.",
+    "Called directly by: CalculateHeading(), wrap180(), bearing_deg(). Indirectly (through the call chain): ProcessGpsData(), VehicleController_SetDirection(), NavigationTick(), handle_rmc(), main(), gps_receiver_process_line(), gps_receiver_poll().",
+    "Its result is stored in CalculateHeading() result, wrap180() result, bearing_deg() result (nav/navigation.c:41, nav/geo_math.c:20, nav/geo_math.c:39).",
+    "Functions that use values derived from it: CalculateHeading(), NavigationTick(), VehicleController_SetDirection(), bearing_deg(), clamp(), wrap180().",
+    "Through that data it can ultimately change what is sent to motor_set_steering() (hardware/OS output (by name)) \u2014 a change in wrap360() can change the physical output.",
+    "It runs on this path from the program start: main() \u2192 NavigationTick() \u2192 bearing_deg() \u2192 wrap360()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-callback-var",
+   "category": "symbol",
+   "q": "What is g_fix_callback?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "ProcessGpsData"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "g_fix_callback is a global variable of type `gps_fix_callback_t`, defined in gps/gps_receiver.c:11.",
+    "It is set by gps_receiver_set_callback() (`g_fix_callback = cb`, line 43).",
+    "It is read by handle_rmc() (line 75).",
+    "In short: g_fix_callback carries a value produced by gps_receiver_set_callback() and consumed by handle_rmc()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-led-off",
+   "category": "callpath",
+   "q": "When does the LED turn off?",
+   "intent": "search",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "These parts of the code look most relevant: led_set_status() (function, hal/hal.h:9); main() (function, app/main.c:10); VehicleController_Hold() (function, control/vehicle_controller.c:23); MAX_TURN_RATE_DEG (constant, include/nav_config.h:10).",
+    "led_set_status() (hal/hal.h:9) \u2014 status LED."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-cs-quality",
+   "category": "scenario",
+   "q": "What happens when the GPS fix quality is too low?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "OnFix"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "Gps is an enum constant of type `Nav.FixQuality`, defined in src/Model/GpsFix.cs:9. Its value is 1.",
+    "Nothing in this code assigns Gps after its declaration.",
+    "It is read by GpsFix.Quality (line 33), NavOptions.MinQuality (line 18), SerialGpsSensor.HandleLine() (line 67).",
+    "In short: Gps carries a value and consumed by GpsFix.Quality, NavOptions.MinQuality, SerialGpsSensor.HandleLine()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-cs-bank",
+   "category": "dataflow",
+   "q": "How does the bank command reach the autopilot?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "SendBankCommand",
+      "Send"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "Tick.bank is a local variable of type `double`, defined in src/Control/NavLoop.cs:43.",
+    "It is set by NavLoop.Tick() (`double bank = _pid.Update(error, dt)`, line 43); NavLoop.Tick() (`bank = _options.MaxBankDeg`, line 46); NavLoop.Tick() (`bank = -_options.MaxBankDeg`, line 48); NavLoop.Tick() (`bank *= 0.5`, line 51).",
+    "It is read by NavLoop.Tick() (line 45).",
+    "In short: Tick.bank carries a value produced by NavLoop.Tick() and consumed by NavLoop.Tick(). NavLoop.Tick() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-cs-subscribe",
+   "category": "callpath",
+   "q": "Who subscribes to FixReceived?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "These parts of the code look most relevant: SerialGpsSensor.FixReceived (event, src/Sensors/SerialGpsSensor.cs:20); SerialGpsSensor.OnFixReceived() (method, src/Sensors/SerialGpsSensor.cs:73); GpsService.OnFix() (method, src/Services/GpsService.cs:29); GpsService.Dispose() (method, src/Services/GpsService.cs:45); GpsFixEventArgs (class, src/Model/GpsFix.cs:47); SerialGpsSensor.HandleLine() (method, src/Sensors/SerialGpsSensor.cs:40)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "h-cs-tick",
+   "category": "symbol",
+   "q": "What does NavLoop.Tick do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "SendBankCommand"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 15
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 15,
+     "total": 15
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "NavLoop.Tick() (src/Control/NavLoop.cs:25) \u2014 One control step; called by a timer at ~10 Hz.",
+    "Step by step, it checks `_lastTick == DateTime.MinValue` (line 27); then it sets `_lastTick = now` (line 28); then it checks `now - _state.LastFixUtc > _options.StaleFixTimeout` (line 33); if true it calls PidController.Reset() and sets `_state.Mode = NavMode.DeadReckoning`; then it checks `_state.Mode != NavMode.DeadReckoning` (line 35); if true it calls PidController.Reset() and sets `_state.Mode = NavMode.DeadReckoning`; then it calls GeoMath.Wrap180() and stores the result in `error` (line 42); then it calls PidController.Update() (line 43); then it checks `bank > _options.MaxBankDeg` (line 45); then it checks `bank < -_options.MaxBankDeg` (line 47); then it checks `_state.Mode == NavMode.DeadReckoning` (line 50); then it sets `LastCommandDeg = bank` (line 53); \u2026.",
+    "It is called by lambda(). The full chain from the program's start is: lambda() \u2192 NavLoop.Tick()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

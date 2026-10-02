@@ -1,0 +1,17 @@
+  ✓ Looking at your project files: Found 26 C, 29 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17; build settings 
+reconstructed from the source (no build needed); 1 missing header(s) replaced by
+stand-ins
+  ✓ Reading the C code: Read 29 C file(s); also checked 3 configuration 
+switch(es): CO_OVERRIDE_OD_WRITE_ORIGINAL, CO_OVERRIDE_OD_READ_ORIGINAL, 
+CO_BIG_ENDIAN; also read the code with all 29 optional feature(s) switched on
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 39% of function 
+definitions and 91% of direct calls
+  ✓ Connecting the pieces together: Traced 251 call(s) through function pointers
+or tables; 33 indirect call(s) could not be resolved; 11 entry point(s), 21 
+input/output site(s)
+  ✓ Preparing search: Indexed 1645 symbols for search (keyword + meaning search)
+Ready. Indexed in 116.0 s.
+  ! Configuration switch CO_DOXYGEN was not analysed as a separate build (it 
+affects 26 files; budget 24).

@@ -1,0 +1,29 @@
+# Verity benchmark — llm-embed mode (20261001-202801)
+
+Cases: 12 · passed: 9 · mean score: 0.833 · mean time per question: 12.48 s
+
+| metric | result |
+|---|---|
+| symbol identification | 8/11 passed · accuracy 0.818 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 7 of 82 (8.54%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 75/82 (91.46%) |
+| answer paragraphs without any evidence | 0 of 47 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| nm-slave-busy | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["SlaveDeviceBusy"]} |
+| nm-acknowledge | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-function | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-slave | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-timeout | scenario | failure_missing | ✓ | 1.0 |  |
+| nm-checksum | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wait-negative | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["ArgumentException"]} |
+| nm-validate-callers | callpath | callers | ✓ | 1.0 |  |
+| nm-exception-detect | symbol | explain | ✗ | 0.0 | symbols: {"missing": ["CreateResponse", "ExceptionOffset"]} |
+| nm-retries-set | symbol | where_computed | ✓ | 1.0 |  |
+| nm-crc-calc | symbol | where_computed | ✓ | 1.0 |  |
+| nm-invented | honesty | explain | ✓ | 1.0 |  |

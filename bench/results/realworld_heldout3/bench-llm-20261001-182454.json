@@ -1,0 +1,599 @@
+{
+ "summary": {
+  "cases": 13,
+  "passed": 12,
+  "mean_score": 0.962,
+  "symbol_identification": {
+   "cases": 12,
+   "passed": 11,
+   "accuracy": 0.958
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 202,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 202,
+   "claims": 202,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 73
+  },
+  "mean_seconds": 19.18
+ },
+ "results": [
+  {
+   "id": "co-hb-timeout",
+   "category": "scenario",
+   "q": "What happens when a monitored node's heartbeat times out?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 25.23,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a monitored node\u2019s heartbeat times out, `CO_HBconsumer_process()` detects the loss by checking `monitoredNode->timeoutTimer >= monitoredNode->time_us`. It then sets `monitoredNode->NMTstate = CO_NMT_UNKNOWN`, sets `monitoredNode->HBstate = CO_HBconsumer_TIMEOUT`, and calls `CO_error()`. Inside `CO_error()`, if `em == NULL` it returns immediately; otherwise it calculates `uint8_t index = errorBit >> 3` and `uint8_t bitmask = 1U << (errorBit & 0x7U)`.",
+    "Losing the data is detected in CO_HBconsumer_process() (301/CO_HBconsumer.c:356), which checks `monitoredNode->timeoutTimer >= monitoredNode->time_us`.",
+    "When that happens it sets `monitoredNode->NMTstate = CO_NMT_UNKNOWN`; sets `monitoredNode->HBstate = CO_HBconsumer_TIMEOUT`; calls CO_error() (which checks `em == NULL` (line 640); if true it stops there (returns), sets `uint8_t index = errorBit >> 3` (line 644), sets `uint8_t bitmask = 1U << (errorBit & 0x7U)` (line 645))."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-sync-length",
+   "category": "scenario",
+   "q": "What happens when a SYNC message has the wrong length?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 25
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 25,
+     "total": 25
+    },
+    "_missing_evidence": {
+     "paragraphs": 8,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 24.86,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a SYNC message has the wrong length, `CO_SYNC_process()` detects the error via `SYNC->receiveError != 0U`, calls `CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, SYNC->receiveError)`, resets `SYNC->receiveError` to 0, and then calls `CO_errorReset(SYNC->em, CO_EM_SYNC_TIME_OUT, 0)`.",
+    "Invalid data is caught in CO_SYNC_process() (301/CO_SYNC.c:389): it checks `SYNC->receiveError != 0U`, and when that is true it runs `CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, SYNC->receiveError)` and records it (`SYNC->receiveError = 0`).",
+    "When it does not return there, CO_SYNC_process() goes on to call CO_error() with (`CO_errorReset(SYNC->em, CO_EM_SYNC_TIME_OUT, 0)`) (line 403).",
+    "CO_error() checks `em == NULL` (line 640); if true it stops there (returns); then it sets `uint8_t index = errorBit >> 3` (line 644); then it sets `uint8_t bitmask = 1U << (errorBit & 0x7U)` (line 645); then it checks `index >= (CO_CONFIG_EM_ERR_STATUS_BITS_COUNT / 8U)` (line 648); if true it sets `index = CO_EM_WRONG_ERROR_REPORT >> 3`, `bitmask = 1U << (CO_EM_WRONG_ERROR_REPORT & 0x7U)`; then it sets `uint8_t* errorStatusBits = &em->errorStatusBits[index]` (line 655); then it sets `uint8_t errorStatusBitMasked = *errorStatusBits & bitmask` (line 656).",
+    "Consequence: OD_read_1003() checks `stream->subIndex <= em->fifoCount` (301/CO_Emergency.c:175); `stream->subIndex <= em->fifoCount` depends on runtime values, so it may return early and may call CO_setUint32().",
+    "Consequence: CO_EM_process() checks `(!em->CANtxBuff->bufferFull) && (fifoPpPtr != em->fifoWrPtr)` (301/CO_Emergency.c:575); `(!em->CANtxBuff->bufferFull) && (fifoPpPtr != em->fifoWrPtr)` depends on runtime values, so it may call memcpy() and may call CO_CANsend() and may run `CO_errorReport(em, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0)` and may run `CO_errorReset(em, CO_EM_EMERGENCY_BUFFER_FULL, 0)`.",
+    "Consequence: CO_EM_process() checks `em->fifoOverflow == 1U` (301/CO_Emergency.c:598); with em.fifoOverflow = 1, fifoOverflow = 1, `em->fifoOverflow == 1U` is true, so it runs `CO_errorReport(em, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0)`.",
+    "Bad input is also rejected in other places: CO_SYNC_init() rejects it when `(OD_1007_syncWindowLen != NULL) && (SYNC->OD_1007_window == NULL)` (301/CO_SYNC.c:232), reporting `*errInfo = OD_getIndex(OD_1007_syncWindowLen)`; CO_TPDOsend() rejects it when `(verifyLength > CO_PDO_MAX_SIZE) || (verifyLength != (OD_size_t)PDO->dataLength)` (301/CO_PDO.c:1324); CO_storageEeprom_init() rejects it when `(entry->addr == NULL) || (entry->len == 0U) || (entry->subIndexOD < 2U)` (storage/CO_storageEeprom.c:129), reporting `*storageInitError = i`."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-bus-off",
+   "category": "scenario",
+   "q": "What happens when the CAN controller goes bus-off?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 25
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 25,
+     "total": 25
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 26.92,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When the CAN controller goes bus\u2011off, `CO_EM_process()` detects the `CO_CAN_ERRTX_BUS_OFF` flag and calls `CO_error()` with `CO_EM_CAN_TX_BUS_OFF` and `CO_EMC_BUS_OFF_RECOVERED`. After that, the function continues to check other error bits and may send emergency messages via `CO_CANsend()`. The exact subsequent actions depend on runtime values such as `em->fifoCount`, `em->fifoWrPtr`, and `em->fifoOverflow`.",
+    "This is handled in CO_EM_process() (301/CO_Emergency.c:507): it checks `(CANerrStChanged & CO_CAN_ERRTX_BUS_OFF) != 0U`, and when that is true it calls CO_error(em, (CANerrSt & CO_CAN_ERRTX_BUS_OFF) != 0U, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, 0).",
+    "When it does not return there, CO_EM_process() goes on to call CO_error() with (`em`, `(CANerrSt & CO_CAN_ERRTX_OVERFLOW) != 0U`, `CO_EM_CAN_TX_OVERFLOW`) (line 511); CO_error() with (`em`, `(CANerrSt & CO_CAN_ERRTX_PDO_LATE) != 0U`, `CO_EM_TPDO_OUTSIDE_WINDOW`) (line 514); CO_error() with (`em`, `(CANerrSt & CO_CAN_ERRRX_PASSIVE) != 0U`, `CO_EM_CAN_RX_BUS_PASSIVE`) (line 517); CO_error() with (`em`, `(CANerrSt & CO_CAN_ERRRX_OVERFLOW) != 0U`, `CO_EM_CAN_RXB_OVERFLOW`) (line 520); CO_CANsend() with (`em->CANdevTx`, `em->CANtxBuff`) (line 582).",
+    "CO_error() checks `em == NULL` (line 640); if true it stops there (returns); then it sets `uint8_t index = errorBit >> 3` (line 644); then it sets `uint8_t bitmask = 1U << (errorBit & 0x7U)` (line 645); then it checks `index >= (CO_CONFIG_EM_ERR_STATUS_BITS_COUNT / 8U)` (line 648); if true it sets `index = CO_EM_WRONG_ERROR_REPORT >> 3`, `bitmask = 1U << (CO_EM_WRONG_ERROR_REPORT & 0x7U)`; then it sets `uint8_t* errorStatusBits = &em->errorStatusBits[index]` (line 655); then it sets `uint8_t errorStatusBitMasked = *errorStatusBits & bitmask` (line 656).",
+    "Consequence: OD_read_1003() checks `stream->subIndex <= em->fifoCount` (301/CO_Emergency.c:175); `stream->subIndex <= em->fifoCount` depends on runtime values, so it may return early and may call CO_setUint32().",
+    "Consequence: CO_EM_process() checks `(!em->CANtxBuff->bufferFull) && (fifoPpPtr != em->fifoWrPtr)` (301/CO_Emergency.c:575); `(!em->CANtxBuff->bufferFull) && (fifoPpPtr != em->fifoWrPtr)` depends on runtime values, so it may call memcpy() and may call CO_CANsend() and may run `CO_errorReport(em, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0)` and may run `CO_errorReset(em, CO_EM_EMERGENCY_BUFFER_FULL, 0)`.",
+    "Consequence: CO_EM_process() checks `em->fifoOverflow == 1U` (301/CO_Emergency.c:598); with em.fifoOverflow = 1, fifoOverflow = 1, `em->fifoOverflow == 1U` is true, so it runs `CO_errorReport(em, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0)`."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-crc-fn",
+   "category": "symbol",
+   "q": "Which function computes the CRC?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 9,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 16.11,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The function that computes the CRC is `crc16_ccitt()`.",
+    "crc16_ccitt() is compiled only when the build switches on optional features: `#if ((CO_CONFIG_CRC16)&CO_CONFIG_CRC16_ENABLE) != 0` (301/crc16-ccitt.c:23); `#if ((CO_CONFIG_CRC16)&CO_CONFIG_CRC16_EXTERNAL) == 0` (301/crc16-ccitt.c:24); by default `CO_CONFIG_CRC16` is `(0)` (301/crc16-ccitt.h:29). The default configuration of this code leaves it out, so the answer below describes a build with those features switched on.",
+    "It is computed in crc16_ccitt():",
+    "crc16_ccitt() (301/crc16-ccitt.c:71) \u2014 Calculate CRC sum on block of data.",
+    "Step by step, it repeats while `i < blockLength` (line 75); then it sets `uint8_t tmp = (uint8_t)((uint8_t)(crc >> 8U) ^ block[i])` (line 76); then it returns `crc` (line 79).",
+    "The result is stored in storeEeprom.entry by storeEeprom() (storage/CO_storageEeprom.c:38: `entry->crc = crc16_ccitt(entry->addr, entry->len, 0)`).",
+    "The result is stored in CO_storageEeprom_init.crc by CO_storageEeprom_init() (storage/CO_storageEeprom.c:163: `uint16_t crc = crc16_ccitt(entry->addr, entry->len, 0)`).",
+    "The result is stored in block_crc by validateAndWriteToOD() (301/CO_SDOserver.c:457: `SDO->block_crc = crc16_ccitt(SDO->buf, bufOffsetWrOrig, SDO->block_crc)`).",
+    "The result is stored in block_crc by readFromOd() (301/CO_SDOserver.c:585: `SDO->block_crc = crc16_ccitt(&SDO->buf[countRemain], countRd, SDO->block_crc)`)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-crc-callers",
+   "category": "callpath",
+   "q": "Who calls crc16_ccitt?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 14
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 14,
+     "total": 14
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 15.73,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "crc16_ccitt() is compiled only when the build switches on optional features: `#if ((CO_CONFIG_CRC16)&CO_CONFIG_CRC16_ENABLE) != 0` (301/crc16-ccitt.c:23); `#if ((CO_CONFIG_CRC16)&CO_CONFIG_CRC16_EXTERNAL) == 0` (301/crc16-ccitt.c:24); by default `CO_CONFIG_CRC16` is `(0)` (301/crc16-ccitt.h:29). The default configuration of this code leaves it out, so the answer below describes a build with those features switched on.",
+    "It is called by storeEeprom() at storage/CO_storageEeprom.c:38; CO_storageEeprom_init() at storage/CO_storageEeprom.c:163, only when `eepromOvf` is false, only when `signatureInEeprom != signatureOfEntry` is false, only when `!isAuto` is true; validateAndWriteToOD() at 301/CO_SDOserver.c:457, only when `SDO->block_crcEnabled && crcOperation > 0` is true; readFromOd() at 301/CO_SDOserver.c:585, only when `!SDO->finished && (countRemain < countMinimum)` is true, only when `(odRet != ODR_OK) && (odRet != ODR_PARTIAL)` is false (ODR_OK = 0, ODR_PARTIAL = -1), only when `calculateCrc && SDO->block_crcEnabled` is true. It is also called by CO_SDOserver_process() (301/CO_SDOserver.c:947), CO_SRDO_config() (304/CO_SRDO.c:515), CO_SRDO_config() (304/CO_SRDO.c:517), CO_SRDO_config() (304/CO_SRDO.c:518), CO_SRDO_config() (304/CO_SRDO.c:520), CO_SRDO_config() (304/CO_SRDO.c:522), CO_SRDO_config() (304/CO_SRDO.c:523), CO_SRDO_config() (304/CO_SRDO.c:526), CO_SRDO_config() (304/CO_SRDO.c:528). The full chain from the program's start is: main() \u2192 CO_process() \u2192 CO_SDOserver_process() \u2192 crc16_ccitt()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "co-nmt-state",
+   "category": "symbol",
+   "q": "Where is the NMT operating state set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 40
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 40,
+     "total": 40
+    },
+    "_missing_evidence": {
+     "paragraphs": 8,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 41.64,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The NMT operating state is set in `CO_NMT_init()` (CO_NMT_Heartbeat.c:95\u201196) where `NMT->operatingState = CO_NMT_INITIALIZING` and `NMT->operatingStatePrev = CO_NMT_INITIALIZING` are assigned. It is later updated in `CO_NMT_process()` (CO_NMT_Heartbeat.c:264) where `NMT->operatingState = NMTstateCpy` and `NMT->operatingStatePrev = NMTstateCpy` are set based on the current control bits.",
+    "It is set in CO_NMT_init():",
+    "CO_NMT_init() (301/CO_NMT_Heartbeat.c:72) \u2014 Initialize NMT and Heartbeat producer object.",
+    "Step by step, it sets `CO_ReturnError_t ret = CO_ERROR_NO` (line 79); then it checks `(NMT == NULL) || (OD_1017_ProducerHbTime == NULL) || (em == NULL) || (NMT_CANdevRx == NULL) || (HB_CANdevTx == NULL)` (line 82); if true it returns `CO_ERROR_ILLEGAL_ARGUMENT` straight away; then it calls memset(NMT, 0, sizeof(CO_NMT_t)) (line 92); then it updates NMT (operatingState, operatingStatePrev, nodeId, NMTcontrol, em, HBproducerTimer; lines 95\u2013100); then it calls OD_get_u16(OD_1017_ProducerHbTime, 0, &HBprodTime_ms, true) and stores the result in `odRet` (line 104); then it checks `odRet != ODR_OK` (ODR_OK = 0) (line 105); if true it returns `CO_ERROR_OD_PARAMETERS` straight away; then it checks `errInfo != NULL` (line 106); if true it calls OD_getIndex() and sets `*errInfo = OD_getIndex(OD_1017_ProducerHbTime)`; then it sets `NMT->HBproducerTime_us = (uint32_t)HBprodTime_ms * 1000U` (line 111); then it sets `NMT->OD_1017_extension.object = NMT` (line 113); then it sets `NMT->OD_1017_extension.read = OD_readOriginal` (line 114); \u2026.",
+    "The update itself: `NMT->operatingState = CO_NMT_INITIALIZING` (301/CO_NMT_Heartbeat.c:95); `NMT->operatingStatePrev = CO_NMT_INITIALIZING` (301/CO_NMT_Heartbeat.c:96); `NMT->NMTcontrol = NMTcontrol` (301/CO_NMT_Heartbeat.c:98).",
+    "The result is stored in CO_CANopenInit.err by CO_CANopenInit() (CANopen.c:1040: `err = CO_NMT_init(co->NMT, OD_GET(H1017, OD_H1017_PRODUCER_HB_TIME), em, nodeId, NMTcontrol, firstHBTime_ms,`).",
+    "Related values are also set here: `NMT->operatingState = NMTstateCpy` in CO_NMT_process() (301/CO_NMT_Heartbeat.c:264); `NMT->operatingStatePrev = NMTstateCpy` in CO_NMT_process() (301/CO_NMT_Heartbeat.c:205); `monitoredNode->NMTstate = CO_NMT_UNKNOWN` in CO_HBconsumer_initEntry() (301/CO_HBconsumer.c:194); `HBconsNode->NMTstate = (CO_NMT_internalState_t)data[0]` in CO_HBcons_receive() (301/CO_HBconsumer.c:45); `monitoredNode->NMTstate = CO_NMT_UNKNOWN` in CO_HBconsumer_process() (301/CO_HBconsumer.c:365); `monitoredNode->NMTstate = CO_NMT_UNKNOWN` in CO_HBconsumer_process() (301/CO_HBconsumer.c:408).",
+    "The value is computed just before: `NMTstateCpy = CO_NMT_OPERATIONAL` (301/CO_NMT_Heartbeat.c:239); `NMTstateCpy = (((uint16_t)NMT->NMTcontrol & (uint16_t)CO_NMT_STARTUP_TO_OPERATIONAL) != 0U) ? CO_NMT_OPERATIONAL : CO_NMT_PRE_OPERATIONAL` (301/CO_NMT_Heartbeat.c:195); `const uint8_t* data = CO_CANrxMsg_readData(msg)` (301/CO_HBconsumer.c:41)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-hb-send",
+   "category": "symbol",
+   "q": "When is the heartbeat message sent?",
+   "intent": "triggers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 11.43,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The heartbeat is sent by `CO_NMT_process()` when the condition `NNTinit || ((NMT->HBproducerTime_us != 0U) && ((NMT->HBproducerTimer == 0U) || (NMTstateCpy != NMT->operatingStatePrev)))` is true, and `CO_NMT_process()` itself is called by `CO_process()` only if `co->nodeIdUnconfigured` is false and `CO_GET_CNT(NMT) == 1U`. The call chain starts from `main()` \u2192 `CO_process()` \u2192 `CO_NMT_process()`.",
+    "CO_NMT_process() does it with `(void)CO_CANsend(NMT->HB_CANdevTx, NMT->HB_TXbuff)` (301/CO_NMT_Heartbeat.c:191), only when `NNTinit || ((NMT->HBproducerTime_us != 0U) && ((NMT->HBproducerTimer == 0U) || (NMTstateCpy != NMT->operatingStatePrev)))` is true.",
+    "CO_NMT_process() itself: It is called by CO_process() at CANopen.c:1368 with (`co->NMT`, `&NMTstate`, `timeDifference_us`, `timerNext_us`), only when `co->nodeIdUnconfigured` is false, only when `CO_GET_CNT(NMT) == 1U` is true. The full chain from the program's start is: main() \u2192 CO_process() \u2192 CO_NMT_process()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-err-operational",
+   "category": "scenario",
+   "q": "What happens to the NMT state when an error occurs while the node is operational?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 24.45,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When an error occurs while the node is operational, `CO_NMT_process()` sets `NMTstateCpy` to `CO_NMT_STOPPED` if the control bit `CO_NMT_ERR_TO_STOPPED` is set, otherwise it sets it to `CO_NMT_PRE_OPERATIONAL`. Then, if the control bit `CO_NMT_ERR_FREE_TO_OPERATIONAL` is set, the state is changed back to `CO_NMT_OPERATIONAL` only if `NMTstateCpy` is `CO_NMT_PRE_OPERATIONAL` and neither `busOff_HB` nor `errRegMasked` are true.",
+    "Invalid data is caught in CO_NMT_process() (301/CO_NMT_Heartbeat.c:234): it checks `(NMTstateCpy == CO_NMT_OPERATIONAL) && (busOff_HB || errRegMasked)`, and when that is true it sets `NMTstateCpy = (((uint16_t)NMT->NMTcontrol & (uint16_t)CO_NMT_ERR_TO_STOPPED) != 0U) ? CO_NMT_STOPPED : CO_NMT_PRE_OPERATIONAL` (CO_NMT_STOPPED = 4, CO_NMT_PRE_OPERATIONAL = 127) (line 235); then it checks `(((uint16_t)NMT->NMTcontrol & (uint16_t)CO_NMT_ERR_FREE_TO_OPERATIONAL) != 0U) && (NMTstateCpy == CO_NMT_PRE_OPERATIONAL) && (!busOff_HB && !errRegMasked)` (CO_NMT_PRE_OPERATIONAL = 127) (line 237)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-sdo-no-object",
+   "category": "scenario",
+   "q": "What happens when an SDO client requests an object that does not exist?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "CO_SDO_ST_ABORT"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 8,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 22.77,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "When an SDO client requests a non\u2011existent object, `OD_getSub()` returns `ODR_IDX_NOT_EXIST`. The caller then propagates this error up the call chain, ultimately causing `CO_SDOserver_process()` to return the error code via `OD_getSDOabCode()`.",
+    "This is handled in OD_getSub() (301/CO_ODinterface.c:182): it checks `(entry == NULL) || (entry->odObject == NULL)`, and when that is true it returns `ODR_IDX_NOT_EXIST`, so the rest of OD_getSub() is skipped.",
+    "OD_getSub()'s caller OD_get_value() checks `ret != ODR_OK` (301/CO_ODinterface.c:321) and then returns `ret`.",
+    "OD_getSub()'s caller OD_set_value() checks `ret != ODR_OK` (301/CO_ODinterface.c:343) and then returns `ret`.",
+    "OD_getSub()'s caller PDOconfigMap() checks `odRet != ODR_OK` (301/CO_PDO.c:115) and then returns `odRet`.",
+    "PDOconfigMap()'s caller PDO_initMapping() checks `odRet != ODR_OK` (301/CO_PDO.c:200) and then reports `*erroneousMap = map` to its caller.",
+    "PDOconfigMap()'s caller OD_write_PDO_mapping() checks `odRet != ODR_OK` (301/CO_PDO.c:294) and then returns `odRet`.",
+    "OD_getSub()'s caller CO_SDOserver_process() checks `odRet != ODR_OK` (301/CO_SDOserver.c:645) and then calls OD_getSDOabCode()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-fifo-full",
+   "category": "scenario",
+   "q": "What does CO_fifo_write do when the fifo is full?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 38
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 38,
+     "total": 38
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 10.53,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When the fifo is full, `CO_fifo_write()` breaks out of its write loop (line\u202f92) and returns the number of bytes actually written, which is zero if no data was written. It does not overwrite existing data or change the write pointer in that case.",
+    "CO_fifo_write() is compiled only when the build switches on optional features: `#if ((CO_CONFIG_FIFO)&CO_CONFIG_FIFO_ENABLE) != 0` (301/CO_fifo.c:25); by default `CO_CONFIG_FIFO` is `(0)` (301/CO_fifo.h:28). The default configuration of this code leaves it out, so the answer below describes a build with those features switched on.",
+    "CO_fifo_write() (301/CO_fifo.c:78) \u2014 Write data into CO_fifo_t object.",
+    "Step by step, it checks `(fifo == NULL) || (fifo->buf == NULL) || (buf == NULL)` (line 83); if true it returns `0` straight away; then it sets `bufDest = &fifo->buf[fifo->writePtr]` (line 87); then it repeats while `i > 0U` (line 88); then it sets `size_t writePtrNext = fifo->writePtr + 1U` (line 89); then it checks `(writePtrNext == fifo->readPtr) || ((writePtrNext == fifo->bufSize) && (fifo->readPtr == 0U))` (line 92); if true it leaves the loop (`break`); then it checks `crc != NULL` (line 99); if true it calls crc16_ccitt_single(); then it checks `writePtrNext == fifo->bufSize` (line 105); if true it sets `fifo->writePtr = 0`, `bufDest = &fifo->buf[0]`; otherwise it sets `fifo->writePtr++`; then it returns `count - i` (line 115).",
+    "It is called by CO_SDOclient_receive() at 301/CO_SDOclient.c:103, only when `SDO_C->state == CO_SDO_ST_UPLOAD_BLK_SUBBLOCK_SREQ` is true (CO_SDO_ST_UPLOAD_BLK_SUBBLOCK_SREQ = 100), only when `(seqno <= SDO_C->block_blksize) && (seqno == (SDO_C->block_seqno + 1U))` is true, only when `(data[0] & 0x80U) != 0U` is false; CO_SDOclientDownloadBufWrite() at 301/CO_SDOclient.c:419, only when `(SDO_C != NULL) && (buf != NULL)` is true; CO_SDOclientUpload() at 301/CO_SDOclient.c:1166, only when `countFifo == 0U` is false, only when `SDO_C->OD_IO.read != NULL` is true, only when `(odRet != ODR_OK) && (odRet != ODR_PARTIAL)` is false (ODR_OK = 0, ODR_PARTIAL = -1); CO_SDOclientUpload() at 301/CO_SDOclient.c:1239, only when `(SDO_C->CANrxData[0] & 0xF0U) == 0x40U` is true, only when `(index != SDO_C->index) || (subindex != SDO_C->subIndex)` is false, only when `(SDO_C->CANrxData[0] & 0x02U) != 0U` is true. It is also called by CO_SDOclientUpload() (301/CO_SDOclient.c:1281), CO_SDOclientUpload() (301/CO_SDOclient.c:1370), CO_SDOclientUpload() (301/CO_SDOclient.c:1401), CO_fifo_cpyTok2U8() (301/CO_fifo.c:845), CO_fifo_cpyTok2U16() (301/CO_fifo.c:874), CO_fifo_cpyTok2U32() (301/CO_fifo.c:903), CO_fifo_cpyTok2U64() (301/CO_fifo.c:932), CO_fifo_cpyTok2I8() (301/CO_fifo.c:961), CO_fifo_cpyTok2I16() (301/CO_fifo.c:990), CO_fifo_cpyTok2I32() (301/CO_fifo.c:1019), CO_fifo_cpyTok2I64() (301/CO_fifo.c:1048), CO_fifo_cpyTok2R32() (301/CO_fifo.c:1077), CO_fifo_cpyTok2R64() (301/CO_fifo.c:1106), CO_GTWA_write (309/CO_gateway_ascii.h:371), CO_GTWA_write (309/CO_gateway_ascii.h:371), CO_GTWA_write (309/CO_gateway_ascii.h:371). The full chain from the program's start is: main() \u2192 CO_process() \u2192 CO_GTWA_process() \u2192 CO_fifo_cpyTok2I16() \u2192 CO_fifo_write().",
+    "The values it updates are used later by CO_fifo_read() (uses writePtr); CO_fifo_altBegin() (uses writePtr); CO_fifo_altRead() (uses writePtr); CO_fifo_CommSearch() (uses writePtr)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-rx-callback",
+   "category": "callpath",
+   "q": "What can CANrx_callback point to?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 21
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 21,
+     "total": 21
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 17.64,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`CO_CANrx_t.CANrx_callback` can point to any of the functions listed in fact\u202f4, such as `CO_EM_receive()`, `CO_GFC_receive()`, `CO_HBcons_receive()`, `CO_LSSmaster_receive()`, `CO_LSSslave_receive()`, `CO_NMT_receive()`, `CO_ngm_receive()`, `CO_ngs_receive()`, `CO_PDO_receive()`, `CO_SDOclient_receive()`, `CO_SDO_receive()`, `CO_SRDO_receive_inverted()`, `CO_SRDO_receive_normal()`, `CO_SYNC_receive()`, or `CO_TIME_receive()`.",
+    "CO_CANrx_t.CANrx_callback is a field of type `void (*)(void *, void *)`, defined in example/CO_driver_target.h:62.",
+    "It is set by CO_CANmodule_init() (`rxArray[i].CANrx_callback = NULL`, line 65); CO_CANrxBufferInit() (`buffer->CANrx_callback = CANrx_callback`, line 110).",
+    "It is read by CO_CANinterrupt() (line 309).",
+    "CO_CANrx_t.CANrx_callback holds a function: at run time it points to CO_EM_receive(), CO_GFC_receive(), CO_HBcons_receive(), CO_LSSmaster_receive(), CO_LSSslave_receive(), CO_NMT_receive(), CO_ngm_receive(), CO_ngs_receive(), CO_PDO_receive(), CO_SDOclient_receive(), CO_SDO_receive(), CO_SRDO_receive_inverted(), CO_SRDO_receive_normal(), CO_SYNC_receive(), CO_TIME_receive() (registered at 301/CO_NMT_Heartbeat.c:129, 301/CO_HBconsumer.c:213, 301/CO_PDO.c:560, 301/CO_PDO.c:682, 301/CO_SYNC.c:101, 301/CO_SYNC.c:285, 301/CO_TIME.c:125, 301/CO_SDOserver.c:171, 305/CO_LSSslave.c:209, 301/CO_Emergency.c:459, 301/CO_Node_Guarding.c:158, 301/CO_Node_Guarding.c:285, 301/CO_SDOclient.c:347, 304/CO_GFC.c:111, 305/CO_LSSmaster.c:139, 304/CO_SRDO.c:624, 304/CO_SRDO.c:632); it is called by CO_CANinterrupt().",
+    "In short: CO_CANrx_t.CANrx_callback carries a value produced by CO_CANmodule_init(), CO_CANrxBufferInit() and consumed by CO_CANinterrupt()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-sdo-rxdata",
+   "category": "dataflow",
+   "q": "Where does the data in CANrxData come from?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 11.92,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`CANrxData` is filled by the functions `CO_PDO_receive()` and `CO_SDO_receive()`. In `CO_PDO_receive()` the array `RPDO->CANrxData[bufNo]` is set with a `memcpy` from the `data` argument passed to the function. In `CO_SDO_receive()` the array `SDO->CANrxData` is set with a `memcpy` from the `data` argument passed to that function.",
+    "`CANrxData` is a field of 2 different structs: CO_RPDO_t.CANrxData is filled by CO_PDO_receive() (`(void)memcpy(RPDO->CANrxData[bufNo], data, CO_PDO_MAX_SIZE)`, 301/CO_PDO.c:500); CO_SDOserver_t.CANrxData is filled by CO_SDO_receive() (`(void)memcpy(SDO->CANrxData, data, DLC)`, 301/CO_SDOserver.c:133).",
+    "CO_RPDO_t.CANrxData (field, 301/CO_PDO.h:213) \u2014 \"CO_PDO_MAX_SIZE data bytes of the received message.\".",
+    "It is assigned by `(void)memcpy(RPDO->CANrxData[bufNo], data, CO_PDO_MAX_SIZE)` in CO_PDO_receive() (301/CO_PDO.c:500).",
+    "Tracing back further, the value originates at CO_PDO_receive.data (literal or unmodelled source) and travels: CO_PDO_receive() \u2192 CO_RPDO_t.CANrxData.",
+    "Values supplied from outside this code also feed it: OD_read_PDO_commParam.count (parameter of an entry point (supplied by the caller/runtime))."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "co-invented",
+   "category": "honesty",
+   "q": "What does CO_NMT_resetAllNodes do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.15,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `CO_NMT_resetAllNodes` in this code (none of its 3794 indexed symbols has that name). The closest names are CO_HBconsumer_t.numberOfMonitoredNodes (301/CO_HBconsumer.h:112), CO_t.HBconsMonitoredNodes (CANopen.h:260), CO_NMT_RESET_NODE (301/CO_NMT_Heartbeat.h:86), described below.",
+    "CO_HBconsumer_t.numberOfMonitoredNodes is a field of type `uint8_t`, defined in 301/CO_HBconsumer.h:112 \u2014 the code describes it as: \"Actual number of monitored nodes, size-of-the-above-array or number-of-array-elements-in-OD-0x1016, whichever is smaller.\".",
+    "It is set by CO_HBconsumer_init() (`HBcons->numberOfMonitoredNodes = ((OD_1016_HBcons->subEntriesCount - 1U) < monitoredNodesCount)`, line 123).",
+    "It is read by OD_write_1016() (line 86), CO_HBconsumer_init() (line 127), CO_HBconsumer_initEntry() (line 173), CO_HBconsumer_process() (line 312).",
+    "In short: CO_HBconsumer_t.numberOfMonitoredNodes carries a value produced by CO_HBconsumer_init() and consumed by CO_HBconsumer_init(), CO_HBconsumer_initEntry(), CO_HBconsumer_process(). CO_HBconsumer_init() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

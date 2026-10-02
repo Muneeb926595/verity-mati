@@ -1,0 +1,622 @@
+{
+ "summary": {
+  "cases": 14,
+  "passed": 14,
+  "mean_score": 1.0,
+  "symbol_identification": {
+   "cases": 13,
+   "passed": 13,
+   "accuracy": 1.0
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 136,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 136,
+   "claims": 136,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 63
+  },
+  "mean_seconds": 13.27
+ },
+ "results": [
+  {
+   "id": "mb-bad-crc",
+   "category": "scenario",
+   "q": "What happens when an RTU frame has a bad CRC?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 20.99,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Invalid data is caught in _modbus_rtu_check_integrity() (src/modbus-rtu.c:387): it checks `crc_calculated != crc_received`, and when that is true it checks `ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL` (MODBUS_ERROR_RECOVERY_PROTOCOL = 4) (line 395); if true it calls _modbus_rtu_flush(); then it sets `errno = EMBBADCRC` (line 398); then it returns `-1` (line 399), so the rest of _modbus_rtu_check_integrity() is skipped.",
+    "Consequence: main() checks `errno == EMBBADCRC` (tests/unit-test-server.c:149); `errno == EMBBADCRC` depends on runtime values, so it may call close() and may call __darwin_fd_clr() and may call modbus_read_registers() and may call malloc() and may call memset().",
+    "Consequence: _modbus_tcp_select() checks `errno == EINTR` (src/modbus-tcp.c:887); `errno == EINTR` depends on runtime values, so it may return early and may call __builtin_bzero and may call __darwin_fd_set().",
+    "_modbus_rtu_flush() sets `modbus_rtu_t *ctx_rtu = ctx->backend_data` (line 1211); then it sets `ctx_rtu->w_ser.n_bytes = 0` (line 1212); then it calls PurgeComm(ctx_rtu->w_ser.fd, PURGE_RXCLEAR) (line 1213); then it returns `(PurgeComm(ctx_rtu->w_ser.fd, PURGE_RXCLEAR) == FALSE)` (line 1213).",
+    "Consequence: win32_ser_select() checks `ReadFile(ws->fd, &ws->buf, max_len, &ws->n_bytes, NULL)` (src/modbus-rtu.c:208); `ReadFile(ws->fd, &ws->buf, max_len, &ws->n_bytes, NULL)` depends on runtime values, so it may return early."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-crc-fn",
+   "category": "symbol",
+   "q": "Which function computes the CRC?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 5.3,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The CRC is computed by the function `crc16()`.",
+    "It is computed in crc16():",
+    "crc16() (src/modbus-rtu.c:119).",
+    "Step by step, it sets `uint8_t crc_hi = 0xFF` (line 121); then it sets `uint8_t crc_lo = 0xFF` (line 122); then it repeats while `buffer_length--` (line 126); then it sets `i = crc_lo ^ *buffer++` (line 127); then it sets `crc_lo = crc_hi ^ table_crc_hi[i]` (line 128); then it sets `crc_hi = table_crc_lo[i]` (line 129); then it returns `(crc_hi << 8 | crc_lo)` (line 132).",
+    "The result is stored in _modbus_rtu_send_msg_pre.crc by _modbus_rtu_send_msg_pre() (src/modbus-rtu.c:143: `uint16_t crc = crc16(req, req_length)`).",
+    "The result is stored in _modbus_rtu_check_integrity.crc_calculated by _modbus_rtu_check_integrity() (src/modbus-rtu.c:383: `crc_calculated = crc16(msg, msg_length - 2)`)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "mb-crc-callers",
+   "category": "callpath",
+   "q": "Who calls crc16?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 8.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by _modbus_rtu_send_msg_pre() at src/modbus-rtu.c:143 with (`req`, `req_length`); _modbus_rtu_check_integrity() at src/modbus-rtu.c:383 with (`msg`, `msg_length - 2`). The full chain from the program's start is: main() \u2192 modbus_write_and_read_registers() \u2192 send_msg() \u2192 _modbus_rtu_send_msg_pre() \u2192 crc16()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-integrity-callers",
+   "category": "callpath",
+   "q": "Who calls _modbus_rtu_check_integrity?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 10.94,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by _modbus_receive_msg() (through the dispatch table _modbus_backend.check_integrity) at src/modbus.c:546 (_modbus_rtu_check_integrity() is listed in the table _modbus_rtu_backend at src/modbus-rtu.c:1286) with (`ctx`, `msg`, `msg_length`) \u2014 `int msg_length = 0` (line 372), only when `!ctx->backend->is_connected(ctx)` is false, only when `ctx->s < 0 || ctx->s >= FD_SETSIZE` is false. The full chain from the program's start is: main() \u2192 modbus_write_and_read_registers() \u2192 _modbus_receive_msg() \u2192 _modbus_rtu_check_integrity()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-timeout",
+   "category": "scenario",
+   "q": "What happens when the slave does not answer before the response timeout?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 19.81,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Losing the data is detected in _modbus_rtu_select() (src/modbus-rtu.c:1226), which checks `s_rc == 0`.",
+    "When that happens it sets `errno = ETIMEDOUT`; returns.",
+    "_modbus_rtu_select() also stops early when `s_rc < 0` (line 1231) \u2014 so without fresh valid data it does not reach those calls either.",
+    "_modbus_rtu_select()'s caller _modbus_receive_msg() checks `rc == -1` (src/modbus.c:430) and then returns `-1` and sets `errno = saved_errno` and calls WSAGetLastError() and calls modbus_close() and calls modbus_connect().",
+    "_modbus_receive_msg()'s caller _modbus_rtu_receive() checks `rc == 0` (src/modbus-rtu.c:334); when _modbus_receive_msg() fails that is false, so it skips `ctx_rtu->confirmation_to_ignore = TRUE`.",
+    "_modbus_receive_msg()'s caller modbus_proxy() checks `backend_rsp_length == -1` (src/modbus.c:1379) and then returns `-1` and calls modbus_reply_exception().",
+    "_modbus_receive_msg()'s caller read_io_status() checks `rc == -1` (src/modbus.c:1467) and then returns `-1`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-bad-baud",
+   "category": "scenario",
+   "q": "What does modbus_new_rtu do when the baud rate is not positive?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 31
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 31,
+     "total": 31
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 8.44,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When `baud <= 0`, `modbus_new_rtu()` prints an error message, sets `errno = EINVAL`, and returns `NULL`.",
+    "modbus_new_rtu() (src/modbus-rtu.c:1298) \u2014 clang-format on.",
+    "Step by step, it checks `device == NULL || *device == 0` (line 1305); if true it calls fprintf() and sets `errno = EINVAL` and returns `NULL` straight away; then it checks `baud <= 0` (line 1312); if true it calls fprintf() and sets `errno = EINVAL` and returns `NULL` straight away; then it checks `data_bit < 5 || data_bit > 8` (line 1319); if true it calls fprintf() and sets `errno = EINVAL` and returns `NULL` straight away; then it checks `stop_bit != 1 && stop_bit != 2` (line 1326); if true it calls fprintf() and sets `errno = EINVAL` and returns `NULL` straight away; then it calls malloc(sizeof(modbus_t)) and stores the result in `ctx` (line 1332); then it checks `ctx == NULL` (line 1333); if true it returns `NULL` straight away; then it calls _modbus_init_common(ctx) (line 1337); then it sets `ctx->backend = &_modbus_rtu_backend` (line 1338); then it calls malloc(sizeof(modbus_rtu_t)) and stores the result in `ctx->backend_data` (line 1339); then it checks `ctx->backend_data == NULL` (line 1340); if true it calls modbus_free() and sets `errno = ENOMEM` and returns `NULL` straight away; \u2026.",
+    "It is called by main() at tests/bandwidth-client.c:76, only when `use_backend == TCP` is false (TCP = 0); main() at tests/bandwidth-server-one.c:56, only when `use_backend == TCP` is false (TCP = 0); main() at tests/unit-test-client.c:125, only when `use_backend == TCP` is false (TCP = 0), only when `use_backend == TCP_PI` is false (TCP_PI = 1); main() at tests/unit-test-client.c:793, only when `ctx == NULL` is false, only when `modbus_connect(ctx) == -1` is false, only when `test_server(ctx, use_backend) == -1` is false. The full chain from the program's start is: main() \u2192 modbus_new_rtu().",
+    "The values it updates are used later by send_msg() (uses _modbus.backend, errno); _modbus_receive_msg() (uses _modbus.backend, errno); modbus_proxy() (uses _modbus.backend, errno); _modbus_rtu_send() (uses _modbus.backend_data, win32_ser.fd)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "mb-slave-set",
+   "category": "symbol",
+   "q": "Where is the slave address stored?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 14
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 14,
+     "total": 14
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 23.07,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is stored in _modbus_set_slave():",
+    "_modbus_set_slave() (src/modbus-rtu.c:78) \u2014 Define the slave ID of the remote device to talk in master mode or set the internal slave ID in slave mode.",
+    "Step by step, it sets `int max_slave = (ctx->quirks & MODBUS_QUIRK_MAX_SLAVE) ? 255 : 247` (MODBUS_QUIRK_MAX_SLAVE = 2) (line 80); then it checks `slave >= 0 && slave <= max_slave` (line 83); if true it sets `ctx->slave = slave`; otherwise it sets `errno = EINVAL` and returns `-1`; then it returns `0` (line 90).",
+    "The update itself: `ctx->slave = slave` (src/modbus-rtu.c:84).",
+    "Related values are also set here: `ctx->slave = slave` in _modbus_set_slave() (src/modbus-tcp.c:93); `ctx->slave = slave` in _modbus_set_slave() (src/modbus-tcp.c:97); `ctx->slave = -1` in _modbus_init_common() (src/modbus.c:1982); `ctx->slave = MODBUS_TCP_SLAVE` in modbus_new_tcp() (src/modbus-tcp.c:1009); `ctx->slave = MODBUS_TCP_SLAVE` in modbus_new_tcp_pi() (src/modbus-tcp.c:1059); `sft.slave = raw_req[0]` in modbus_send_raw_request_tid() (src/modbus.c:252)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-illegal-address",
+   "category": "scenario",
+   "q": "What happens when a request asks for an illegal data address?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 18.94,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a request asks for an illegal data address, `modbus_reply()` detects it at line 903 and calls `response_exception()` with `MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS`. The exception response is built, the function code is modified by adding 0x80, the exception code is appended, and the response length is returned.",
+    "Invalid data is caught in modbus_reply() (src/modbus.c:903): it checks `mapping_address < 0 || (mapping_address + nb) > nb_bits`, and when that is true it calls response_exception(ctx, &sft, MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS, rsp, FALSE, \u2026).",
+    "When it does not return there, modbus_reply() goes on to call response_exception() with (`ctx`, `&sft`, `MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS`) (line 945); response_exception() with (`ctx`, `&sft`, `MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS`) (line 968); response_exception() with (`ctx`, `&sft`, `MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE`) (line 982); response_exception() with (`ctx`, `&sft`, `MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE`) (line 1004); response_exception() with (`ctx`, `&sft`, `MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS`) (line 1020).",
+    "response_exception() checks `ctx->debug` (line 774); if true it calls __builtin_va_start(), vfprintf(), __builtin_va_end(); then it checks `to_flush` (line 783); if true it calls _sleep_response_timeout(), modbus_flush(); then it sets `sft->function = sft->function + 0x80` (line 789); then it calls one of _modbus_rtu_build_response_basis(), _modbus_tcp_build_response_basis() through _modbus_backend.build_response_basis \u2014 which one depends on the data at run time (line 790); then it sets `rsp[rsp_length++] = exception_code` (line 791); then it returns `rsp_length` (line 793)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "mb-read-registers",
+   "category": "symbol",
+   "q": "What does modbus_read_registers do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 15
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 15,
+     "total": 15
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "modbus_read_registers() (src/modbus.c:1596) \u2014 Reads the holding registers of remote device and put the data into an array.",
+    "Step by step, it checks `ctx == NULL || dest == NULL` (line 1600); if true it sets `errno = EINVAL` and returns `-1` straight away; then it checks `nb < 1 || nb > MODBUS_MAX_READ_REGISTERS` (MODBUS_MAX_READ_REGISTERS = 125) (line 1605); if true it sets `errno = EMBXILVAL` and returns `-1` straight away; then it calls read_registers(ctx, MODBUS_FC_READ_HOLDING_REGISTERS, addr, nb, dest) and stores the result in `status` (line 1616); then it returns `status` (line 1617).",
+    "It is called by main() at tests/bandwidth-client.c:135, only when `modbus_connect(ctx) == -1` is false, repeatedly inside `for (i = 0; i < n_loop; i++)`; main() at tests/proxy-test-client.c:233, only when `ctx == NULL` is false, only when `modbus_connect(ctx) == -1` is false; main() at tests/random-test-client.c:152, repeatedly inside `while (nb_loop++ < LOOP)`, repeatedly inside `for (addr = ADDRESS_START; addr < ADDRESS_END; addr++)`, only when `rc != 1` is false; main() at tests/random-test-client.c:178, repeatedly inside `while (nb_loop++ < LOOP)`, repeatedly inside `for (addr = ADDRESS_START; addr < ADDRESS_END; addr++)`, only when `rc != nb` is false. The full chain from the program's start is: main() \u2192 modbus_read_registers().",
+    "The values it updates are used later by _modbus_tcp_select() (uses errno); _error_print() (uses errno); send_msg() (uses errno); _modbus_receive_msg() (uses errno)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-too-many-registers",
+   "category": "scenario",
+   "q": "What does modbus_read_registers return when too many registers are requested?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 15.87,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When too many registers are requested, `modbus_read_registers()` returns `-1`.",
+    "This is handled in modbus_read_registers() (src/modbus.c:1605): it checks `nb < 1 || nb > MODBUS_MAX_READ_REGISTERS`, and when that is true it records it (`errno = EMBXILVAL`) and returns `-1`, so the rest of modbus_read_registers() is skipped.",
+    "Because it returns early, these do not happen in this case: read_registers() \u2014 the previous values stay in place.",
+    "Consequence: main() checks `errno == EMBBADCRC` (tests/unit-test-server.c:149); `errno == EMBBADCRC` depends on runtime values, so it may call close() and may call __darwin_fd_clr() and may call modbus_read_registers() and may call malloc() and may call memset().",
+    "Consequence: _modbus_tcp_select() checks `errno == EINTR` (src/modbus-tcp.c:887); `errno == EINTR` depends on runtime values, so it may return early and may call __builtin_bzero and may call __darwin_fd_set()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "mb-timeout-set",
+   "category": "symbol",
+   "q": "Where is the response timeout set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 14
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 14,
+     "total": 14
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 23.51,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is set in modbus_set_response_timeout():",
+    "modbus_set_response_timeout() (src/modbus.c:2067).",
+    "Step by step, it checks `ctx == NULL || (to_sec == 0 && to_usec == 0) || to_usec > 999999` (line 2069); if true it sets `errno = EINVAL` and returns `-1` straight away; then it sets `ctx->response_timeout.tv_sec = to_sec` (line 2074); then it sets `ctx->response_timeout.tv_usec = to_usec` (line 2075); then it returns `0` (line 2076).",
+    "The update itself: `ctx->response_timeout.tv_sec = to_sec` (src/modbus.c:2074); `ctx->response_timeout.tv_usec = to_usec` (src/modbus.c:2075).",
+    "Related values are also set here: `ctx->response_timeout.tv_usec = _RESPONSE_TIMEOUT` in _modbus_init_common() (src/modbus.c:1990); `ctx->response_timeout.tv_sec = 0` in _modbus_init_common() (src/modbus.c:1989); `ctx->byte_timeout.tv_sec = to_sec` in modbus_set_byte_timeout() (src/modbus.c:2100); `ctx->byte_timeout.tv_usec = to_usec` in modbus_set_byte_timeout() (src/modbus.c:2101); `ctx->indication_timeout.tv_sec = to_sec` in modbus_set_indication_timeout() (src/modbus.c:2127); `ctx->indication_timeout.tv_usec = to_usec` in modbus_set_indication_timeout() (src/modbus.c:2128)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-serial-write",
+   "category": "symbol",
+   "q": "How is a request sent over the serial line?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 7.47,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "A request is sent by the function `_modbus_rtu_send()` in `src/modbus-rtu.c`. It obtains the context `modbus_rtu_t *ctx_rtu = ctx->backend_data` at line 269 and then calls `WriteFile(ctx_rtu->w_ser.fd, req, req_length, &n_bytes, NULL)` at line 271.",
+    "This is done by _modbus_rtu_send() (src/modbus-rtu.c:266): it calls WriteFile() (Win32 file/serial write) at src/modbus-rtu.c:271.",
+    "_modbus_rtu_send() (src/modbus-rtu.c:266).",
+    "Step by step, it sets `modbus_rtu_t *ctx_rtu = ctx->backend_data` (line 269); then it returns `(WriteFile(ctx_rtu->w_ser.fd, req, req_length, &n_bytes, NULL))` (line 271)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "mb-backend-select",
+   "category": "callpath",
+   "q": "What can ctx->backend->select point to?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 11.07,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "_modbus_backend.select is a field of type `int (*)(modbus_t *, fd_set *, struct timeval *, int)`, defined in src/modbus-private.h:92.",
+    "Nothing in this code assigns _modbus_backend.select after its declaration.",
+    "It is read by _modbus_receive_msg() (line 429).",
+    "_modbus_backend.select holds a function: at run time it points to _modbus_rtu_select(), _modbus_tcp_select(); it is called by _modbus_receive_msg().",
+    "In short: _modbus_backend.select carries a value and consumed by _modbus_receive_msg()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "mb-invented",
+   "category": "honesty",
+   "q": "What does modbus_reset_crc_table do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.26,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `modbus_reset_crc_table` in this code (none of its 1267 indexed symbols has that name). The closest names are table_crc_hi (src/modbus-rtu.c:33), table_crc_lo (src/modbus-rtu.c:55), crc16() (src/modbus-rtu.c:119), described below.",
+    "table_crc_hi is a global variable of type `const uint8_t[256]`, defined in src/modbus-rtu.c:33 \u2014 the code describes it as: \"Table of CRC values for high-order byte\".",
+    "Nothing in this code assigns table_crc_hi after its declaration.",
+    "It is read by crc16() (line 128).",
+    "Following where its value goes: table_crc_hi \u2192 crc16() \u2192 _modbus_rtu_check_integrity() \u2192 fprintf() \u2014 so it ultimately influences fprintf(), which is an output (file/console log).",
+    "In short: table_crc_hi carries a value and consumed by crc16(), feeding fprintf()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

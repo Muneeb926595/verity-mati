@@ -1,0 +1,16 @@
+  ✓ Looking at your project files: Found 10 C, 24 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + GCC / Clang; build 
+settings reconstructed from the source (no build needed); 47 missing header(s) 
+replaced by stand-ins
+  ✓ Reading the C code: Read 24 C file(s); also checked 4 configuration 
+switch(es): portLU_PRINTF_SPECIFIER_REQUIRED, FREERTOS_TASKS_C_ADDITIONS_INIT, 
+WORKAROUND_PMU_CM001, portALT_GET_RUN_TIME_COUNTER_VALUE; also read the code 
+with all 62 optional feature(s) switched on
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 88% of function 
+definitions and 92% of direct calls
+  ✓ Connecting the pieces together: Traced 14 call(s) through function pointers 
+or tables; 2 matched by signature only; 4 indirect call(s) could not be 
+resolved; 6 entry point(s), 1 input/output site(s)
+  ✓ Preparing search: Indexed 1919 symbols for search (keyword + meaning search)
+Ready. Indexed in 82.6 s.

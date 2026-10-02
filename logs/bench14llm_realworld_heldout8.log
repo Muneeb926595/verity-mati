@@ -1,0 +1,42 @@
+[bench] PASS np-stream-full             score=1.00 24.1s
+[bench] PASS np-end-of-stream           score=1.00 18.3s
+[bench] PASS np-missing-required        score=1.00 19.4s
+[bench] PASS np-varint-overflow         score=1.00 23.6s
+[bench] PASS np-wrong-wire-type         score=1.00 18.4s
+[bench] FAIL np-max-depth               score=0.50 19.4s
+[bench] PASS np-array-max               score=1.00 18.2s
+[bench] PASS np-zero-tag                score=1.00 18.5s
+[bench] PASS np-read-callers            score=1.00 19.8s
+[bench] PASS np-bytes-written           score=1.00 11.3s
+[bench] PASS np-errmsg                  score=1.00 13.5s
+[bench] PASS np-invented                score=1.00 0.1s
+# Verity benchmark — llm-embed mode (20261001-202530)
+
+Cases: 12 · passed: 11 · mean score: 0.958 · mean time per question: 17.04 s
+
+| metric | result |
+|---|---|
+| symbol identification | 10/11 passed · accuracy 0.955 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 86 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 86/86 (100.00%) |
+| answer paragraphs without any evidence | 0 of 45 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| np-stream-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-end-of-stream | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-missing-required | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-varint-overflow | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-wrong-wire-type | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-max-depth | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["PB_MESSAGE_NESTING_MAX"]} |
+| np-array-max | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-zero-tag | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-read-callers | callpath | callers | ✓ | 1.0 |  |
+| np-bytes-written | symbol | where_computed | ✓ | 1.0 |  |
+| np-errmsg | symbol | where_computed | ✓ | 1.0 |  |
+| np-invented | honesty | explain | ✓ | 1.0 |  |
+

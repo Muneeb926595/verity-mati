@@ -1,0 +1,43 @@
+[bench] PASS soem-too-many-slaves       score=1.00 0.8s
+[bench] PASS soem-slavecount            score=1.00 0.0s
+[bench] PASS soem-pusherror-callers     score=1.00 0.0s
+[bench] PASS soem-error-list-full       score=1.00 4.5s
+[bench] PASS soem-sdo-abort             score=1.00 0.6s
+[bench] PASS soem-no-reply              score=1.00 0.1s
+[bench] PASS soem-frame-send            score=1.00 0.0s
+[bench] PASS soem-statecheck            score=1.00 0.0s
+[bench] PASS soem-poperror              score=1.00 0.1s
+[bench] PASS soem-srconfirm-callers     score=1.00 0.0s
+[bench] PASS soem-mbx-counter           score=1.00 0.0s
+[bench] PASS soem-invented              score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-180028)
+
+Cases: 12 · passed: 12 · mean score: 1.0 · mean time per question: 0.52 s
+
+| metric | result |
+|---|---|
+| symbol identification | 11/11 passed · accuracy 1.000 |
+| file line references | 1/1 passed · accuracy 1.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 179 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 179/179 (100.00%) |
+| answer paragraphs without any evidence | 0 of 47 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| soem-too-many-slaves | scenario | failure_invalid | ✓ | 1.0 |  |
+| soem-slavecount | symbol | where_computed | ✓ | 1.0 |  |
+| soem-pusherror-callers | callpath | callers | ✓ | 1.0 |  |
+| soem-error-list-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| soem-sdo-abort | scenario | failure_invalid | ✓ | 1.0 |  |
+| soem-no-reply | scenario | failure_missing | ✓ | 1.0 |  |
+| soem-frame-send | symbol | which_fn | ✓ | 1.0 |  |
+| soem-statecheck | symbol | explain | ✓ | 1.0 |  |
+| soem-poperror | symbol | failure_invalid | ✓ | 1.0 |  |
+| soem-srconfirm-callers | callpath | callers | ✓ | 1.0 |  |
+| soem-mbx-counter | symbol | explain | ✓ | 1.0 |  |
+| soem-invented | honesty | explain | ✓ | 1.0 |  |
+

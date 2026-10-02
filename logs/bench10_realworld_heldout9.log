@@ -1,0 +1,42 @@
+[bench] PASS nm-slave-busy              score=1.00 0.3s
+[bench] FAIL nm-acknowledge             score=0.50 0.1s
+[bench] PASS nm-wrong-function          score=1.00 0.1s
+[bench] PASS nm-wrong-slave             score=1.00 0.1s
+[bench] PASS nm-timeout                 score=1.00 0.0s
+[bench] PASS nm-checksum                score=1.00 0.1s
+[bench] FAIL nm-wait-negative           score=0.50 0.0s
+[bench] PASS nm-validate-callers        score=1.00 0.0s
+[bench] FAIL nm-exception-detect        score=0.50 0.0s
+[bench] PASS nm-retries-set             score=1.00 0.0s
+[bench] PASS nm-crc-calc                score=1.00 0.0s
+[bench] PASS nm-invented                score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-181301)
+
+Cases: 12 · passed: 9 · mean score: 0.875 · mean time per question: 0.06 s
+
+| metric | result |
+|---|---|
+| symbol identification | 8/11 passed · accuracy 0.864 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 11 of 97 (11.34%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 86/97 (88.66%) |
+| answer paragraphs without any evidence | 0 of 42 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| nm-slave-busy | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-acknowledge | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["Acknowledge"]} |
+| nm-wrong-function | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-slave | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-timeout | scenario | failure_missing | ✓ | 1.0 |  |
+| nm-checksum | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wait-negative | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["ArgumentException"]} |
+| nm-validate-callers | callpath | callers | ✓ | 1.0 |  |
+| nm-exception-detect | symbol | explain | ✗ | 0.5 | symbols: {"missing": ["ExceptionOffset"]} |
+| nm-retries-set | symbol | where_computed | ✓ | 1.0 |  |
+| nm-crc-calc | symbol | where_computed | ✓ | 1.0 |  |
+| nm-invented | honesty | explain | ✓ | 1.0 |  |
+

@@ -1,0 +1,545 @@
+{
+ "summary": {
+  "cases": 12,
+  "passed": 11,
+  "mean_score": 0.958,
+  "symbol_identification": {
+   "cases": 11,
+   "passed": 10,
+   "accuracy": 0.955
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 114,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 114,
+   "claims": 114,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 54
+  },
+  "mean_seconds": 0.2
+ },
+ "results": [
+  {
+   "id": "lfs-verify-mismatch",
+   "category": "scenario",
+   "q": "What happens when the data read back after programming does not match?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 18
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 18,
+     "total": 18
+    },
+    "_missing_evidence": {
+     "paragraphs": 17,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.36,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in lfs_bd_flush() (lfs.c:199): it checks `res != LFS_CMP_EQ`, and when that is true it returns `LFS_ERR_CORRUPT`, so the rest of lfs_bd_flush() is skipped.",
+    "Because it returns early, these do not happen in this case: lfs_cache_zero() \u2014 the previous values stay in place.",
+    "Its caller lfs_bd_sync() checks `err` (lfs.c:217) and then returns `err`.",
+    "Its caller lfs_dir_commitcrc() checks `err` (lfs.c:1774) and then returns `err`.",
+    "Its caller lfs_file_sync_() checks `err` (lfs.c:3447) and then returns `err`.",
+    "Its caller lfs_bd_prog() checks `err` (lfs.c:253) and then returns `err`.",
+    "Its caller lfs_dir_commitprog() checks `err` (lfs.c:1611) and then returns `err`.",
+    "Its caller lfs_ctz_extend() checks `err` (lfs.c:2967) and then returns `err`.",
+    "Its caller lfs_file_relocate() checks `err` (lfs.c:3311) and then returns `err`.",
+    "Its caller lfs_file_flushedwrite() checks `err` (lfs.c:3636) and then returns `err`.",
+    "Its caller lfs_file_flush() checks `err` (lfs.c:3400) and then returns `err`.",
+    "Its caller lfs_dir_orphaningcommit() checks `err` (lfs.c:2423) and then returns `err`.",
+    "Its caller lfs_file_read_() checks `err` (lfs.c:3569) and then returns `err`.",
+    "Its caller lfs_file_write_() checks `err` (lfs.c:3671) and then returns `err`.",
+    "Its caller lfs_file_seek_() checks `err` (lfs.c:3751) and then returns `err`.",
+    "Its caller lfs_file_truncate_() checks `err` (lfs.c:3798) and then returns `err`.",
+    "Bad input is also rejected in other places: lfs_dir_find() rejects it when `namelen == 2 && memcmp(name, \"..\", 2) == 0` (lfs.c:1514); lfs_emubd_prog() rejects it when `bd->cfg->badblock_behavior == LFS_EMUBD_BADBLOCK_PROGERROR` (bd/lfs_emubd.c:359); lfs_emubd_read() rejects it when `bd->cfg->erase_cycles && b->wear >= bd->cfg->erase_cycles && bd->cfg->badblock_behavior == LFS_EMUBD_BADBLOCK_READERROR` (bd/lfs_emubd.c:304)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-no-space",
+   "category": "scenario",
+   "q": "What happens when the file system runs out of free blocks?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "LFS_ERR_NOSPC"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.99,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "This is handled in lfs_mount_() (lfs.c:4608): it checks `lfs->cfg->block_count && superblock.block_count != lfs->cfg->block_count`, and when that is true it records it (`err = LFS_ERR_INVAL`) and jumps to `cleanup` (line 4650), where it calls lfs_unmount_(), skipping the rest of lfs_mount_().",
+    "Because it returns early, these do not happen in this case: lfs_dir_getgstate(), lfs_gstate_iszero(), lfs_tag_isvalid(), lfs_alloc_drop() \u2014 the previous values stay in place."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-name-too-long",
+   "category": "scenario",
+   "q": "What does lfs_mkdir do when the name is too long?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in lfs_mkdir_() (lfs.c:2643): it checks `nlen > lfs->name_max`, and when that is true it returns `LFS_ERR_NAMETOOLONG`, so the rest of lfs_mkdir_() is skipped.",
+    "Because it returns early, these do not happen in this case: lfs_alloc_ckpoint(), lfs_dir_alloc(), lfs_dir_fetch(), lfs_pair_tole32() \u2014 the previous values stay in place."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-bad-version",
+   "category": "scenario",
+   "q": "What happens when mounting finds an unsupported on-disk version?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.89,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in lfs_mount_() (lfs.c:4541): it checks `major_version != lfs_fs_disk_version_major(lfs) || minor_version > lfs_fs_disk_version_minor(lfs)`, and when that is true it records it (`err = LFS_ERR_INVAL`) and jumps to `cleanup` (line 4650), where it calls lfs_unmount_(), skipping the rest of lfs_mount_().",
+    "Because it returns early, these do not happen in this case: lfs_fs_disk_version_minor(), lfs_fs_prepsuperblock(), lfs_min(), lfs_dir_getgstate() \u2014 the previous values stay in place."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-crc-fn",
+   "category": "symbol",
+   "q": "Which function computes the CRC?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 15
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 15,
+     "total": 15
+    },
+    "_missing_evidence": {
+     "paragraphs": 9,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is computed in lfs_crc():",
+    "lfs_crc() (lfs_util.c:17) \u2014 Software CRC implementation with small lookup table.",
+    "Step by step, it sets `const uint8_t *data = buffer` (line 25); then it repeats while `i < size` (line 27); then it returns `crc` (line 32).",
+    "The result is stored in lfs_emubd_crc_.crc_ by lfs_emubd_crc_() (bd/lfs_emubd.c:557: `crc_ = lfs_crc(crc_, b->data, cfg->block_size)`).",
+    "The result is stored in lfs_emubd_crc_.crc_ by lfs_emubd_crc_() (bd/lfs_emubd.c:563: `crc_ = lfs_crc(crc_, &erase_value, 1)`).",
+    "The result is stored in lfs_emubd_bdcrc.crc_ by lfs_emubd_bdcrc() (bd/lfs_emubd.c:592: `crc_ = lfs_crc(crc_, &i_crc, sizeof(uint32_t))`).",
+    "The result is stored in lfs_bd_crc.crc by lfs_bd_crc() (lfs.c:170: `*crc = lfs_crc(*crc, &dat, diff)`).",
+    "Related values are also set here: `fcrc->crc = lfs_fromle32(fcrc->crc)` in lfs_fcrc_fromle32() (lfs.c:464); `fcrc->crc = lfs_tole32(fcrc->crc)` in lfs_fcrc_tole32() (lfs.c:470); `commit->crc = lfs_crc(commit->crc, buffer, size)` in lfs_dir_commitprog() (lfs.c:1615); `commit->crc = lfs_crc(commit->crc, &ccrc.tag, sizeof(lfs_tag_t))` in lfs_dir_commitcrc() (lfs.c:1747); `commit->crc = 0xffffffff` in lfs_dir_commitcrc() (lfs.c:1767).",
+    "The value is computed just before: `} ccrc` (lfs.c:1742)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-erase-callers",
+   "category": "callpath",
+   "q": "Who calls lfs_bd_erase?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by lfs_dir_compact() at lfs.c:1996 with (`lfs`, `dir->pair[1]`), only when `tired && lfs_pair_cmp(dir->pair, (const lfs_block_t[2]){0, 1}) != 0` is false, repeatedly inside `while (true)`; lfs_ctz_extend() at lfs.c:2935 with (`lfs`, `nblock`), repeatedly inside `while (true)`, only when `err` is false; lfs_file_relocate() at lfs.c:3278 with (`lfs`, `nblock`), repeatedly inside `while (true)`, only when `err` is false."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-prog-target",
+   "category": "callpath",
+   "q": "What can lfs->cfg->prog point to?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 27
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 27,
+     "total": 27
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "lfs_config.prog is a field of type `int (*)(const struct lfs_config *, lfs_block_t, lfs_off_t, const void *, lfs_size_t)`, defined in lfs.h:171 \u2014 the code describes it as: \"Program a region in a block. The block must have previously been erased. Negative error codes are propagated to the user. May return LFS_ERR_CORRUPT if the block should be considered bad.\".",
+    "Nothing in this code assigns lfs_config.prog after its declaration.",
+    "It is read by lfs_bd_flush() (line 182), lfs_init() (line 4229).",
+    "lfs_config.prog holds a function: at run time it points to lfs_emubd_prog(), lfs_emubd_read(); it is called by lfs_bd_flush().",
+    "In short: lfs_config.prog carries a value and consumed by lfs_bd_flush(), lfs_init()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-block-count",
+   "category": "symbol",
+   "q": "Where is the block count set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is written here: `lfs->block_count = cfg->block_count;  // May be 0` in lfs_init() (lfs.c:4208); `fsinfo->block_count = lfs->block_count` in lfs_fs_stat_() (lfs.c:4691); `superblock->block_count = lfs_fromle32(superblock->block_count)` in lfs_superblock_fromle32() (lfs.c:490); `superblock->block_count = lfs_tole32(superblock->block_count)` in lfs_superblock_tole32() (lfs.c:500); `lfs->block_count = superblock.block_count` in lfs_mount_() (lfs.c:4616); `lfs->block_count = block_count` in lfs_fs_grow_() (lfs.c:5283)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-flush-callers",
+   "category": "callpath",
+   "q": "Who calls lfs_bd_flush?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by lfs_bd_sync() at lfs.c:216 with (`lfs`, `pcache`, `rcache`, `validate`); lfs_bd_prog() at lfs.c:252 with (`lfs`, `pcache`, `rcache`, `validate`), repeatedly inside `while (size > 0)`, only when `block == pcache->block && off >= pcache->off && off < pcache->off + lfs->cfg->cache_size` is true, only when `pcache->size == lfs->cfg->cache_size` is true; lfs_file_flush() at lfs.c:3399 with (`lfs`, `&file->cache`, `&lfs->rcache`, `true`), only when `file->flags & LFS_F_WRITING` is true (LFS_F_WRITING = 262144), only when `!(file->flags & LFS_F_INLINE)` is true (LFS_F_INLINE = 16777216), repeatedly inside `while (true)`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-sync",
+   "category": "symbol",
+   "q": "What does lfs_bd_sync do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "lfs_bd_sync() (lfs.c:212).",
+    "Step by step, it calls lfs_cache_drop() (line 214); then it calls lfs_bd_flush() and stores the result in `err` (line 216); then it checks `err` (line 217); if true it returns `err` straight away; then it calls lfs_emubd_sync() through lfs_config.sync (line 221); then it calls __builtin_expect (line 222); then it returns `err` (line 223).",
+    "It is called by lfs_dir_commitcrc() at lfs.c:1773 with (`lfs`, `&lfs->pcache`, `&lfs->rcache`, `false`), repeatedly inside `while (commit->off < end)`, only when `err` is false, only when `noff >= end || noff >= lfs->pcache.off + lfs->cfg->cache_size` is true; lfs_file_sync_() at lfs.c:3446 with (`lfs`, `&lfs->pcache`, `&lfs->rcache`, `false`), only when `err` is false, only when `(file->flags & LFS_F_DIRTY) && !lfs_pair_isnull(file->m.pair)` is true (LFS_F_DIRTY = 65536), only when `!(file->flags & LFS_F_INLINE)` is true (LFS_F_INLINE = 16777216)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-cache-drop",
+   "category": "symbol",
+   "q": "Where is the read cache invalidated?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is invalidated in lfs_cache_drop():",
+    "lfs_cache_drop() (lfs.c:31) \u2014 Caching block device operations ///.",
+    "Step by step, it sets `rcache->block = LFS_BLOCK_NULL` (line 35).",
+    "Related values are also set here: `lfs->rcache.buffer = lfs->cfg->read_buffer` in lfs_init() (lfs.c:4281); `lfs->rcache.buffer = lfs_malloc(lfs->cfg->cache_size)` in lfs_init() (lfs.c:4283); `lfs->pcache.buffer = lfs->cfg->prog_buffer` in lfs_init() (lfs.c:4292); `lfs->pcache.buffer = lfs_malloc(lfs->cfg->cache_size)` in lfs_init() (lfs.c:4294); `bd->readed += size` in lfs_emubd_read() (bd/lfs_emubd.c:320); `file->cache.buffer = NULL` in lfs_file_opencfg_() (lfs.c:3087)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "lfs-invented",
+   "category": "honesty",
+   "q": "What does lfs_defragment_blocks do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 15
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 15,
+     "total": 15
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `lfs_defragment_blocks` in this code (none of its 2843 indexed symbols has that name). The closest names are lfs_emubd.blocks (bd/lfs_emubd.h:149), lfs_fsinfo.block_count (lfs.h:320), lfs_emubd_wear() (bd/lfs_emubd.c:645), described below.",
+    "lfs_emubd.blocks is a field of type `lfs_emubd_block_t **`, defined in bd/lfs_emubd.h:149 \u2014 the code describes it as: \"array of copy-on-write blocks\".",
+    "It is set by lfs_emubd_create() (`bd->blocks = malloc(bd->cfg->erase_count * sizeof(lfs_emubd_block_t*))`, line 120); lfs_emubd_create() (`memset(bd->blocks, 0, bd->cfg->erase_count * sizeof(lfs_emubd_block_t*))`, line 125); lfs_emubd_powerloss() (`bd->blocks[bd->ooo_block] = lfs_emubd_incblock(bd->ooo_data)`, line 226); lfs_emubd_powerloss() (`bd->blocks[bd->ooo_block] = ooo_data`, line 257); lfs_emubd_copy() (`copy->blocks = malloc(bd->cfg->erase_count * sizeof(lfs_emubd_block_t*))`, line 713); lfs_emubd_copy() (`copy->blocks[i] = lfs_emubd_incblock(bd->blocks[i])`, line 720).",
+    "It is read by lfs_emubd_create() (line 121), lfs_emubd_destroy() (line 195), lfs_emubd_powerloss() (line 225), lfs_emubd_read() (line 301), lfs_emubd_erase() (line 443), lfs_emubd_crc_() (line 555).",
+    "Following where its value goes: lfs_emubd.blocks \u2192 lfs_emubd_powerloss() \u2192 write() \u2014 so it ultimately influences write(), which is an output (file/device write).",
+    "lfs_emubd.blocks holds a function: at run time it points to memset(); it is called by lfs_emubd_create().",
+    "In short: lfs_emubd.blocks carries a value produced by lfs_emubd_copy(), lfs_emubd_create(), lfs_emubd_powerloss() and consumed by lfs_emubd_copy(), lfs_emubd_crc_(), lfs_emubd_create(), feeding write(). lfs_emubd_copy(), lfs_emubd_create(), lfs_emubd_powerloss() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

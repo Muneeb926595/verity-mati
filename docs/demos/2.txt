@@ -1,0 +1,70 @@
+Your question
+  What does ProcessGpsData() do?
+
+Answer
+  ProcessGpsData() validates a GPS fix, updates navigation state, calculates a heading, and sets the
+  mode to tracking. If the fix is invalid it calls nav_handle_invalid_fix() and returns. It is
+  invoked via the callback chain from main to handle_rmc().
+
+  ProcessGpsData() (nav/navigation.c:45) — Entry point for every decoded GPS fix (registered as the
+  GPS receiver callback in main).
+
+  Step by step, it calls gps_validate_fix(fix) and stores the result in `status` (line 47); then it
+  checks `status != GPS_OK` (GPS_OK = 0) (line 49); if true it calls nav_handle_invalid_fix() and
+  stops there (returns); then it updates g_nav (consecutive_invalid, latitude, longitude,
+  speed_knots, last_fix_ms, has_fix; lines 53–58); then it calls CalculateHeading(fix->heading_deg,
+  fix->speed_knots) and stores the result in `currentHeading` (line 59); then it sets `g_nav.mode =
+  NAV_MODE_TRACKING` (line 60).
+
+  It is called by handle_rmc() (through the function pointer g_fix_callback) at
+  gps/gps_receiver.c:76 (ProcessGpsData() is registered at app/main.c:16) with (`&fix`), only when
+  `s->field_count < 8` is false, only when `g_fix_callback != 0` is true. The full chain from the
+  program's start is: main() → gps_receiver_poll() → gps_receiver_process_line() → handle_rmc() →
+  ProcessGpsData().
+
+  The values it updates are used later by NavigationTick() (uses currentHeading,
+  nav_state_t.has_fix, nav_state_t.last_fix_ms, nav_state_t.latitude); nav_handle_invalid_fix()
+  (uses nav_state_t.consecutive_invalid); CalculateHeading() (uses currentHeading).
+
+Evidence
+  [E16] app/main.c:16  gps_receiver_set_callback(ProcessGpsData);
+  [E15] gps/gps_receiver.c:76  g_fix_callback(&fix);
+  [E18] nav/navigation.c:24  g_nav.consecutive_invalid++;
+  [E19] nav/navigation.c:38  return currentHeading;
+  [E1] nav/navigation.c:45  void ProcessGpsData(const gps_fix_t *fix)
+  [E2] nav/navigation.c:47  gps_status_t status = gps_validate_fix(fix);
+  [E4] nav/navigation.c:49  if (status != GPS_OK) {
+  [E5] nav/navigation.c:50  nav_handle_invalid_fix(status);
+  [E6] nav/navigation.c:53  g_nav.consecutive_invalid = 0;
+  [E7] nav/navigation.c:54  g_nav.latitude    = fix->latitude;
+  [E8] nav/navigation.c:55  g_nav.longitude   = fix->longitude;
+  [E9] nav/navigation.c:56  g_nav.speed_knots = fix->speed_knots;
+  [E10] nav/navigation.c:57  g_nav.last_fix_ms = fix->timestamp_ms;
+  [E11] nav/navigation.c:58  g_nav.has_fix     = 1;
+  [E12] nav/navigation.c:59  currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);
+  [E14] nav/navigation.c:60  g_nav.mode = NAV_MODE_TRACKING;
+  [E17] nav/navigation.c:68  if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) {
+
+Certainty: Inferred (likely, not certain)  confirmed: 17, inference: 1
+
+Verification
+  18 of 18 statements re-checked against the code
+  ✓ [CONFIRMED] ProcessGpsData() is defined in nav/navigation.c:45.
+  ✓ [CONFIRMED] ProcessGpsData() calls gps_validate_fix() at line 47.
+  ✓ [CONFIRMED] ProcessGpsData() writes ProcessGpsData.status at line 47.
+  ✓ [CONFIRMED] ProcessGpsData() branches on `status != GPS_OK` at line 49.
+  ✓ [CONFIRMED] ProcessGpsData() calls nav_handle_invalid_fix() at line 50.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.consecutive_invalid at line 53.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.latitude at line 54.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.longitude at line 55.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.speed_knots at line 56.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.last_fix_ms at line 57.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.has_fix at line 58.
+  ✓ [CONFIRMED] ProcessGpsData() calls CalculateHeading() at line 59.
+  ✓ [CONFIRMED] ProcessGpsData() writes currentHeading at line 59.
+  ✓ [CONFIRMED] ProcessGpsData() writes nav_state_t.mode at line 60.
+  ✓ [INFERENCE] handle_rmc() calls ProcessGpsData() through the function pointer g_fix_callback at gps/gps_receiver.c:76 (ProcessGpsData() is registered at app/main.c:16).  — call goes through the function pointer g_fix_callback; the target was found by following where it is assigned/subscribed
+  ✓ [CONFIRMED] NavigationTick() reads nav_state_t.has_fix (line 68).
+  ✓ [CONFIRMED] nav_handle_invalid_fix() reads nav_state_t.consecutive_invalid (line 24).
+  ✓ [CONFIRMED] CalculateHeading() reads currentHeading (line 38).
+12.2 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts

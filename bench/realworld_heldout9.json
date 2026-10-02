@@ -1,0 +1,124 @@
+{
+ "_doc": "NINTH HELD-OUT real project (Phase 4 final measurement), the second real C# one: NModbus (samples/realworld/nmodbus, ~13.9K lines of C#; industrial Modbus RTU/ASCII/TCP/UDP master and slave library, shipped tree incl. unit and integration tests). Questions written from facts verified in the source AFTER all Phase 4 fixes and BEFORE Verity was ever run on it. First runs kept in bench/results/realworld_heldout9/first-run-*.",
+ "projects": {
+  "nmodbus": "samples/realworld/nmodbus"
+ },
+ "cases": [
+  {
+   "id": "nm-slave-busy",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when the slave answers that it is busy?",
+   "must_mention": [
+    "UnicastMessage",
+    "SlaveDeviceBusy"
+   ]
+  },
+  {
+   "id": "nm-acknowledge",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when the slave responds with an ACKNOWLEDGE exception?",
+   "must_mention": [
+    "UnicastMessage",
+    "Acknowledge"
+   ]
+  },
+  {
+   "id": "nm-wrong-function",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when a response has an unexpected function code?",
+   "must_mention": [
+    "ValidateResponse",
+    "IOException"
+   ]
+  },
+  {
+   "id": "nm-wrong-slave",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when the response comes from a different slave address?",
+   "must_mention": [
+    "ValidateResponse",
+    "SlaveAddress"
+   ]
+  },
+  {
+   "id": "nm-timeout",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when a request times out?",
+   "must_mention": [
+    "UnicastMessage",
+    "_retries"
+   ]
+  },
+  {
+   "id": "nm-checksum",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when a response has a bad checksum?",
+   "must_mention": [
+    "IOException",
+    "Checksum"
+   ]
+  },
+  {
+   "id": "nm-wait-negative",
+   "project": "nmodbus",
+   "category": "scenario",
+   "q": "What happens when WaitToRetryMilliseconds is set to a negative value?",
+   "must_mention": [
+    "WaitToRetryMilliseconds",
+    "ArgumentException"
+   ]
+  },
+  {
+   "id": "nm-validate-callers",
+   "project": "nmodbus",
+   "category": "callpath",
+   "q": "Who calls ValidateResponse?",
+   "must_mention": [
+    "UnicastMessage"
+   ]
+  },
+  {
+   "id": "nm-exception-detect",
+   "project": "nmodbus",
+   "category": "symbol",
+   "q": "How does the transport decide that a response is a slave exception?",
+   "must_mention": [
+    "CreateResponse",
+    "ExceptionOffset"
+   ]
+  },
+  {
+   "id": "nm-retries-set",
+   "project": "nmodbus",
+   "category": "symbol",
+   "q": "Where is the number of retries set?",
+   "must_mention": [
+    "Retries"
+   ]
+  },
+  {
+   "id": "nm-crc-calc",
+   "project": "nmodbus",
+   "category": "symbol",
+   "q": "Which function calculates the CRC?",
+   "must_mention": [
+    "CalculateCrc"
+   ]
+  },
+  {
+   "id": "nm-invented",
+   "project": "nmodbus",
+   "category": "honesty",
+   "q": "What does ModbusMaster.Reconnect do?",
+   "must_not_claim_defined": [
+    "Reconnect"
+   ]
+  }
+ ]
+}

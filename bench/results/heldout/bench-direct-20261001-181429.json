@@ -1,0 +1,98 @@
+{
+ "summary": {
+  "cases": 1,
+  "passed": 1,
+  "mean_score": 1.0,
+  "symbol_identification": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 21,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 21,
+   "claims": 21,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 3
+  },
+  "mean_seconds": 0.15
+ },
+ "results": [
+  {
+   "id": "h-cs-tick",
+   "category": "symbol",
+   "q": "What does NavLoop.Tick do?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 21
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 21,
+     "total": 21
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.15,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "NavLoop.Tick() (src/Control/NavLoop.cs:25) \u2014 One control step; called by a timer at ~10 Hz.",
+    "Step by step, it sets `double dt = _lastTick == DateTime.MinValue ? 0.0 : (now - _lastTick).TotalSeconds` (line 27); then it sets `_lastTick = now` (line 28); then it checks `_state.Mode == NavMode.Initializing` (line 30); if true it stops there (returns); then it checks `now - _state.LastFixUtc > _options.StaleFixTimeout` (line 33); then it checks `_state.Mode != NavMode.DeadReckoning` (line 35); if true it calls PidController.Reset() and sets `_state.Mode = NavMode.DeadReckoning`; then it calls GeoMath.Wrap180(_state.TargetHeading - _state.CurrentHeading) and stores the result in `error` (line 42); then it calls PidController.Update(error, dt) (line 43); then it checks `bank > _options.MaxBankDeg` (line 45); if true it sets `bank = _options.MaxBankDeg`; then it checks `bank < -_options.MaxBankDeg` (line 47); if true it sets `bank = -_options.MaxBankDeg`; then it checks `_state.Mode == NavMode.DeadReckoning` (line 50); then it calls AutopilotLink.SendBankCommand(bank) (line 54); \u2026.",
+    "It is called by lambda() at src/Program.cs:38 with (`DateTime.UtcNow`). The full chain from the program's start is: lambda() \u2192 NavLoop.Tick()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

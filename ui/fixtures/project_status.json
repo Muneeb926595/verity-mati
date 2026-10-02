@@ -1,0 +1,135 @@
+{
+ "path": "/Users/emumba/Desktop/mati/samples/navgps-c",
+ "name": "navgps-c",
+ "id": "navgps-c-6a23171a71",
+ "state": "complete",
+ "label": "Ready",
+ "ready": true,
+ "languages": [
+  "c"
+ ],
+ "counts": {
+  "file": 19,
+  "symbol": 193,
+  "call": 59,
+  "flow": 155,
+  "occ": 472,
+  "branch": 38,
+  "entry": 2,
+  "io": 8
+ },
+ "fidelity": {
+  "F2": {
+   "files": 18,
+   "loc": 499
+  },
+  "F3": {
+   "files": 1,
+   "loc": 12
+  }
+ },
+ "stale": [],
+ "indexed_at": 1790796239.9815931,
+ "summary": {
+  "phases": {
+   "scan": {
+    "state": "done",
+    "detail": "Found 9 C, 10 header and 0 C# files",
+    "seconds": 0.0,
+    "files": 19,
+    "languages": [
+     "c"
+    ]
+   },
+   "plan": {
+    "state": "done",
+    "detail": "C: neutral C17 + CMSIS / vendor HAL; build settings reconstructed from the source (no build needed); 1 missing header(s) replaced by stand-ins",
+    "seconds": 0.03
+   },
+   "c": {
+    "state": "done",
+    "detail": "Read 10 C file(s); also checked 1 configuration switch(es): ENABLE_DEAD_RECKONING",
+    "seconds": 0.77,
+    "files": 10,
+    "failed": 0,
+    "fidelity": {
+     "F3": 1,
+     "F2": 9
+    },
+    "variants": {
+     "ENABLE_DEAD_RECKONING": {
+      "added": 22,
+      "removed": 7
+     }
+    }
+   },
+   "cs": {
+    "state": "skipped",
+    "detail": "No C# code in this project",
+    "seconds": 0.0
+   },
+   "check": {
+    "state": "done",
+    "detail": "cppcheck agrees on 100% of function definitions and 100% of direct calls",
+    "seconds": 0.18,
+    "function_agreement": 1.0,
+    "call_agreement": 1.0
+   },
+   "link": {
+    "state": "done",
+    "detail": "Traced 3 call(s) through function pointers or tables; 2 entry point(s), 8 input/output site(s)",
+    "seconds": 0.0,
+    "stats": {
+     "resolved": {
+      "flow": 1,
+      "table": 2
+     },
+     "unresolved": 0,
+     "io": 8,
+     "entries": 2,
+     "calls": 59
+    }
+   },
+   "search": {
+    "state": "done",
+    "detail": "Indexed 120 symbols for search (keyword + meaning search)",
+    "seconds": 5.58,
+    "stats": {
+     "cards": 120,
+     "embedded": 120,
+     "vectors": "on"
+    }
+   }
+  },
+  "warnings": [],
+  "state": "complete",
+  "seconds": 6.57
+ },
+ "jobs": [],
+ "profile": {
+  "packs": [
+   "neutral",
+   "cmsis"
+  ],
+  "label": "neutral C17 + CMSIS / vendor HAL",
+  "capture": "reconstructed",
+  "data_model": "ILP32",
+  "missing_headers": [
+   "stm32f4xx.h"
+  ],
+  "free_macros": {
+   "ENABLE_DEAD_RECKONING": {
+    "lines": 1,
+    "files": [
+     "nav/navigation.c"
+    ],
+    "first": "nav/navigation.c:69"
+   }
+  },
+  "defines": {}
+ },
+ "crosscheck": {
+  "function_agreement": 1.0,
+  "call_agreement": 1.0
+ }
+}

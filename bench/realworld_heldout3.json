@@ -1,0 +1,33 @@
+{
+  "_doc": "THIRD HELD-OUT real project: CANopenNode (samples/realworld/CANopenNode, ~27K lines; an industrial CANopen stack; uncompiled — the microcontroller driver is only the blank template in example/). Questions written from facts verified in the source AFTER all Phase 2 fixes and BEFORE Verity was ever run on it. First run kept in bench/results/realworld_heldout3/first-run.* — never tune the first-run record; once fixed against, the suite is tuned-on.",
+  "projects": {"canopen": "samples/realworld/CANopenNode"},
+  "cases": [
+    {"id": "co-hb-timeout", "project": "canopen", "category": "scenario",
+     "q": "What happens when a monitored node's heartbeat times out?", "must_mention": ["CO_HBconsumer_process", "CO_HBconsumer_TIMEOUT"]},
+    {"id": "co-sync-length", "project": "canopen", "category": "scenario",
+     "q": "What happens when a SYNC message has the wrong length?", "must_mention": ["receiveError", "CO_EM_SYNC_LENGTH"]},
+    {"id": "co-bus-off", "project": "canopen", "category": "scenario",
+     "q": "What happens when the CAN controller goes bus-off?", "must_mention": ["CO_CAN_ERRTX_BUS_OFF", "CO_EM_CAN_TX_BUS_OFF"]},
+    {"id": "co-crc-fn", "project": "canopen", "category": "symbol",
+     "q": "Which function computes the CRC?", "must_mention": ["crc16_ccitt"]},
+    {"id": "co-crc-callers", "project": "canopen", "category": "callpath",
+     "q": "Who calls crc16_ccitt?", "must_mention": ["validateAndWriteToOD", "readFromOd", "CO_SDOserver_process"]},
+    {"id": "co-nmt-state", "project": "canopen", "category": "symbol",
+     "q": "Where is the NMT operating state set?", "must_mention": ["CO_NMT_process"], "must_cite": ["301/CO_NMT_Heartbeat.c:264"]},
+    {"id": "co-hb-send", "project": "canopen", "category": "symbol",
+     "q": "When is the heartbeat message sent?", "must_mention": ["CO_NMT_process", "CO_CANsend"]},
+    {"id": "co-err-operational", "project": "canopen", "category": "scenario",
+     "q": "What happens to the NMT state when an error occurs while the node is operational?",
+     "must_mention": ["CO_NMT_process", "CO_NMT_ERR_TO_STOPPED"]},
+    {"id": "co-sdo-no-object", "project": "canopen", "category": "scenario",
+     "q": "What happens when an SDO client requests an object that does not exist?", "must_mention": ["CO_SDOserver_process", "CO_SDO_ST_ABORT"]},
+    {"id": "co-fifo-full", "project": "canopen", "category": "scenario",
+     "q": "What does CO_fifo_write do when the fifo is full?", "must_mention": ["count - i"]},
+    {"id": "co-rx-callback", "project": "canopen", "category": "callpath",
+     "q": "What can CANrx_callback point to?", "must_mention": ["CO_SYNC_receive", "CO_SDO_receive", "CO_NMT_receive"]},
+    {"id": "co-sdo-rxdata", "project": "canopen", "category": "dataflow",
+     "q": "Where does the data in CANrxData come from?", "must_mention": ["CO_SDO_receive"]},
+    {"id": "co-invented", "project": "canopen", "category": "honesty",
+     "q": "What does CO_NMT_resetAllNodes do?", "must_not_claim_defined": ["CO_NMT_resetAllNodes"]}
+  ]
+}

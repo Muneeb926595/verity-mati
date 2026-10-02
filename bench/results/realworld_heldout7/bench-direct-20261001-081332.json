@@ -1,0 +1,526 @@
+{
+ "summary": {
+  "cases": 12,
+  "passed": 8,
+  "mean_score": 0.75,
+  "symbol_identification": {
+   "cases": 11,
+   "passed": 7,
+   "accuracy": 0.727
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 65,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 65,
+   "claims": 65,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 34
+  },
+  "mean_seconds": 0.08
+ },
+ "results": [
+  {
+   "id": "m2-ping-timeout",
+   "category": "scenario",
+   "q": "What happens when the broker does not answer a ping in time?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "OnConnectionClosing"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.29,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "This is handled in MqttMsgPingReq.Parse() (M2Mqtt/Messages/MqttMsgPingReq.cs:66): it checks `(fixedHeaderFirstByte & MSG_FLAG_BITS_MASK) != MQTT_MSG_PINGREQ_FLAG_BITS`, and when that is true it calls MqttClientException.MqttClientException() and throws `new MqttClientException(MqttClientErrorCode.InvalidFlagBits)`, so the rest of MqttMsgPingReq.Parse() is skipped and the exception goes to its caller.",
+    "Because it returns early, these do not happen in this case: MqttMsgBase.DecodeVariableByte() \u2014 the previous values stay in place.",
+    "MqttClientException.MqttClientException() sets `ErrorCode = errorCode` (line 33)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-send-fail",
+   "category": "scenario",
+   "q": "What happens when sending on the network channel fails?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.14,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in MqttClient.Send() (M2Mqtt/MqttClient.cs:1052): when the code in its try block throws `Exception`, it calls Debug.WriteLine and calls MqttCommunicationException.MqttCommunicationException() and throws `new MqttCommunicationException(e)`, so the rest of MqttClient.Send() is skipped and the exception goes to its caller.",
+    "MqttCommunicationException.MqttCommunicationException() calls Exception.#ctor (line 38)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-connect-fail",
+   "category": "scenario",
+   "q": "What happens when the client cannot connect to the broker?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "MqttConnectionException"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.27,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "This is handled in MqttMsgDisconnect.Parse() (M2Mqtt/Messages/MqttMsgDisconnect.cs:71): it checks `((protocolVersion == MqttProtocolVersion.Version_3_1_1) || (protocolVersion == MqttProtocolVersion.Version_5)) && ((fixedHeaderFirstByte & MSG_FLAG_BITS_MASK) != MQTT_MSG_DISCONNECT_FLAG_BITS)`, and when that is true it calls MqttClientException.MqttClientException() and throws `new MqttClientException(MqttClientErrorCode.InvalidFlagBits)`, so the rest of MqttMsgDisconnect.Parse() is skipped and the exception goes to its caller.",
+    "Because it returns early, these do not happen in this case: MqttMsgBase.DecodeVariableByte(), MqttMsgBase.ReceiveExactly(), EncodeDecodeHelper.GetPropertySize(), EncodeDecodeHelper.DecodeUint() \u2014 the previous values stay in place.",
+    "MqttClientException.MqttClientException() sets `ErrorCode = errorCode` (line 33)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-keepalive-zero",
+   "category": "scenario",
+   "q": "What happens when the keep alive period is zero?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "KeepAliveThread",
+      "_keepAlivePeriod != 0"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.1,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "This is handled in MqttMsgConnect.GetBytes() (M2Mqtt/Messages/MqttMsgConnect.cs:443): it checks `KeepAlivePeriod > MAX_KEEP_ALIVE`, and when that is true it calls MqttClientException.MqttClientException() and throws `new MqttClientException(MqttClientErrorCode.KeepAliveWrong)`, so the rest of MqttMsgConnect.GetBytes() is skipped and the exception goes to its caller.",
+    "Because it returns early, these do not happen in this case: MqttClientException.MqttClientException(), String.IsNullOrEmpty, Encoding.GetBytes, EncodeDecodeHelper.EncodeArray() \u2014 the previous values stay in place.",
+    "MqttClientException.MqttClientException() sets `ErrorCode = errorCode` (line 33)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-msgid-wrap",
+   "category": "symbol",
+   "q": "How does the message id wrap around?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "GetMessageId",
+      "MaxValue"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "MessageId.get() (M2Mqtt/MqttClient.cs:2807).",
+    "Nothing in this code calls MessageId.get() directly (it may be called by a library, the OS or hardware)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-ping-callers",
+   "category": "callpath",
+   "q": "Who calls Ping?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by MqttClient.KeepAliveThread() at M2Mqtt/MqttClient.cs:1733, repeatedly inside `_isRunning`, only when `_isRunning` is true, only when `delta >= _keepAlivePeriod` is true. The full chain from the program's start is: MqttClient.KeepAliveThread() \u2192 MqttClient.Ping()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-inflight-callers",
+   "category": "callpath",
+   "q": "Who calls EnqueueInflight?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by MqttClient.Subscribe() at M2Mqtt/MqttClient.cs:796; MqttClient.Unsubscribe() at M2Mqtt/MqttClient.cs:815; MqttClient.Publish() at M2Mqtt/MqttClient.cs:922; MqttClient.ReceiveThread() at M2Mqtt/MqttClient.cs:1529, repeatedly inside `_isRunning`, only when `readBytes > 0` is true, in the case `msgType == MqttMessageType.Publish`. The full chain from the program's start is: MqttClient.ReceiveThread() \u2192 MqttClient.EnqueueInflight()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-threads",
+   "category": "symbol",
+   "q": "What threads does the client start?",
+   "intent": "entries",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.04,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The code has 4 threads: MqttClient.ReceiveThread() \u2014 thread: System.Threading.Thread..ctor, registered at M2Mqtt/MqttClient.cs:515; MqttClient.ProcessInflightThread() \u2014 thread: System.Threading.Thread..ctor, registered at M2Mqtt/MqttClient.cs:586; MqttClient.KeepAliveThread() \u2014 thread: System.Threading.Thread..ctor, registered at M2Mqtt/MqttClient.cs:574; MqttClient.DispatchEventThread() \u2014 thread: System.Threading.Thread..ctor, registered at M2Mqtt/MqttClient.cs:579.",
+    "MqttClient.ReceiveThread() sets `byte[] fixedHeaderFirstByte = new byte[1]` (line 1436); then it sets `MqttMessageType msgType = MqttMessageType.Connect` (line 1437); then it repeats while `_isRunning` (line 1439); then it calls IMqttNetworkChannel.Receive() (line 1444); then it checks `readBytes > 0` (line 1446); if true it calls Debug.WriteLine and sets `msgType = (MqttMessageType)((fixedHeaderFirstByte[0] & MqttMsgBase.MSG_TYPE_MASK) >> MqttMsgBase.MSG_TYPE_OFFSET)`; otherwise it calls MqttCommunicationException.MqttCommunicationException(), MqttClient.OnConnectionClosing(), MqttClient.StopReceivingIfNotDispatching(), EventWaitHandle.Set.",
+    "MqttClient.ProcessInflightThread() sets `MqttMsgContext msgContext = null` (line 1918); then it sets `MqttMsgBase msgInflight = null` (line 1919); then it sets `MqttMsgBase msgReceived = null` (line 1920); then it sets `InternalEvent internalEvent = null` (line 1921); then it sets `long timeout = Timeout.Infinite` (line 1923).",
+    "MqttClient.KeepAliveThread() sets `long wait = _keepAlivePeriod` (line 1713); then it calls AutoResetEvent.#ctor (line 1716); then it repeats while `_isRunning` (line 1720); then it calls WaitHandle.WaitOne (line 1723); then it checks `_isRunning` (line 1725); if true it sets `delta = Environment.TickCount64 - _lastCommTime`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-lastcomm",
+   "category": "symbol",
+   "q": "Where is _lastCommTime updated?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "MqttClient._lastCommTime is a field of type `long`, defined in M2Mqtt/MqttClient.cs:71.",
+    "It is set by MqttClient.Connect() (`_lastCommTime = 0`, line 481); MqttClient.Send() (`_lastCommTime = Environment.TickCount64`, line 1050); MqttClient.SendReceive() (`_lastCommTime = Environment.TickCount64`, line 1098).",
+    "It is read by MqttClient.KeepAliveThread() (line 1727).",
+    "In short: MqttClient._lastCommTime carries a value produced by MqttClient.Connect(), MqttClient.Send(), MqttClient.SendReceive() and consumed by MqttClient.KeepAliveThread()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-isconnected",
+   "category": "symbol",
+   "q": "Where is IsConnected set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.0,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "MqttClient.IsConnected is a property of type `bool`, defined in M2Mqtt/MqttClient.cs:187 \u2014 the code describes it as: \"Connection status between client and broker\".",
+    "It is set by MqttClient.Connect() (`IsConnected = true`, line 591); MqttClient.Connect() (`IsConnected = false`, line 602); MqttClient.Close() (`IsConnected = false`, line 738); MqttClient.OnConnectionClosing() (`IsConnected = false`, line 963); MqttClient.ReceiveThread() (`IsConnected = true`, line 1476).",
+    "It is read by Program.Main() (line 90).",
+    "In short: MqttClient.IsConnected carries a value produced by MqttClient.Close(), MqttClient.Connect(), MqttClient.OnConnectionClosing() and consumed by Program.Main()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-varbyte",
+   "category": "symbol",
+   "q": "How is the remaining length encoded?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 26
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 26,
+     "total": 26
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The best match is MqttMsgBase.EncodeVariableByte() (M2Mqtt/Messages/MqttMsgBase.cs:128).",
+    "MqttMsgBase.EncodeVariableByte() (M2Mqtt/Messages/MqttMsgBase.cs:128) \u2014 Encode remaining length and insert it into message buffer.",
+    "Step by step, it repeats while `remainingLength > 0` (line 131); then it sets `digit = remainingLength % 128` (line 133); then it checks `remainingLength > 0` (line 135); if true it sets `digit |= 0x80`.",
+    "It is called by MqttMsgAuthentication.GetBytes() at M2Mqtt/Messages/MqttMsgAuthentication.cs:132, only when `protocolVersion != MqttProtocolVersion.Version_5` is false; MqttMsgAuthentication.GetBytes() at M2Mqtt/Messages/MqttMsgAuthentication.cs:134, only when `protocolVersion != MqttProtocolVersion.Version_5` is false; MqttMsgConnack.GetBytes() at M2Mqtt/Messages/MqttMsgConnack.cs:423; MqttMsgConnack.GetBytes() at M2Mqtt/Messages/MqttMsgConnack.cs:443, only when `protocolVersion == MqttProtocolVersion.Version_5` is true. It is also called by MqttMsgConnect.GetBytes() (M2Mqtt/Messages/MqttMsgConnect.cs:565), MqttMsgConnect.GetBytes() (M2Mqtt/Messages/MqttMsgConnect.cs:611), MqttMsgConnect.GetBytes() (M2Mqtt/Messages/MqttMsgConnect.cs:677), MqttMsgDisconnect.GetBytes() (M2Mqtt/Messages/MqttMsgDisconnect.cs:198), MqttMsgDisconnect.GetBytes() (M2Mqtt/Messages/MqttMsgDisconnect.cs:200), MqttMsgPuback.GetBytes() (M2Mqtt/Messages/MqttMsgPuback.cs:124), MqttMsgPuback.GetBytes() (M2Mqtt/Messages/MqttMsgPuback.cs:137), MqttMsgPubcomp.GetBytes() (M2Mqtt/Messages/MqttMsgPubcomp.cs:126), MqttMsgPubcomp.GetBytes() (M2Mqtt/Messages/MqttMsgPubcomp.cs:139), MqttMsgPublish.GetBytes() (M2Mqtt/Messages/MqttMsgPublish.cs:253), MqttMsgPublish.GetBytes() (M2Mqtt/Messages/MqttMsgPublish.cs:278), MqttMsgPublish.GetBytes() (M2Mqtt/Messages/MqttMsgPublish.cs:317), MqttMsgPubrec.GetBytes() (M2Mqtt/Messages/MqttMsgPubrec.cs:125), MqttMsgPubrec.GetBytes() (M2Mqtt/Messages/MqttMsgPubrec.cs:138), MqttMsgPubrel.GetBytes() (M2Mqtt/Messages/MqttMsgPubrel.cs:137), MqttMsgPubrel.GetBytes() (M2Mqtt/Messages/MqttMsgPubrel.cs:150) and 9 more call sites. The full chain from the program's start is: MqttClient.ProcessInflightThread() \u2192 MqttClient.Send() \u2192 MqttMsgSuback.GetBytes() \u2192 MqttMsgBase.EncodeVariableByte().",
+    "Other candidates: EncodeDecodeHelper.EncodeLength() (M2Mqtt/Utility/EncodeDecodeHelper.cs:133)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "m2-invented",
+   "category": "honesty",
+   "q": "What does ReconnectAsync do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.04,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `ReconnectAsync` in this code (none of its 2312 indexed symbols has that name).",
+    "I could not find code related to this question in the indexed project."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

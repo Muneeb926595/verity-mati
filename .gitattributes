@@ -1,0 +1,13 @@
+# No line-ending conversion: a checkout on Windows is byte-for-byte the same as on macOS and Linux. The tests and the
+# benchmark compare exact source text, and the sample projects must parse identically everywhere.
+* -text
+# cmd.exe needs CRLF in batch files, whatever an editor saves
+*.cmd text eol=crlf
+*.bat text eol=crlf
+# ...except in the sample projects, which stay exactly as their authors wrote them
+samples/** -text
+
+# GitHub language statistics: the real-world samples are third-party code, the results and UI bundle are generated
+samples/realworld/** linguist-vendored
+bench/results/** linguist-generated
+ui/dist/** linguist-generated

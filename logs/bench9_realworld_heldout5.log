@@ -1,0 +1,47 @@
+[bench] PASS ucos-q-full                score=1.00 0.4s
+[bench] PASS ucos-mem-empty             score=1.00 0.2s
+[bench] PASS ucos-sem-timeout           score=1.00 0.1s
+[bench] PASS ucos-prio-exist            score=1.00 0.2s
+[bench] PASS ucos-no-tcb                score=1.00 0.2s
+[bench] PASS ucos-pend-isr              score=1.00 0.0s
+[bench] PASS ucos-mutex-pcp             score=1.00 0.2s
+[bench] PASS ucos-ostime                score=1.00 0.0s
+[bench] PASS ucos-cpu-usage             score=1.00 0.0s
+[bench] PASS ucos-prio-high             score=1.00 0.0s
+[bench] PASS ucos-tick-callers          score=1.00 0.0s
+[bench] PASS ucos-sched-callers         score=1.00 0.0s
+[bench] PASS ucos-threads               score=1.00 0.0s
+[bench] PASS ucos-invented              score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-180030)
+
+Cases: 14 · passed: 14 · mean score: 1.0 · mean time per question: 0.09 s
+
+| metric | result |
+|---|---|
+| symbol identification | 13/13 passed · accuracy 1.000 |
+| file line references | 1/1 passed · accuracy 1.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 105 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 105/105 (100.00%) |
+| answer paragraphs without any evidence | 0 of 34 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| ucos-q-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-mem-empty | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-sem-timeout | scenario | failure_missing | ✓ | 1.0 |  |
+| ucos-prio-exist | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-no-tcb | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-pend-isr | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-mutex-pcp | scenario | failure_invalid | ✓ | 1.0 |  |
+| ucos-ostime | symbol | where_computed | ✓ | 1.0 |  |
+| ucos-cpu-usage | symbol | where_computed | ✓ | 1.0 |  |
+| ucos-prio-high | dataflow | origin | ✓ | 1.0 |  |
+| ucos-tick-callers | callpath | callers | ✓ | 1.0 |  |
+| ucos-sched-callers | callpath | callers | ✓ | 1.0 |  |
+| ucos-threads | symbol | entries | ✓ | 1.0 |  |
+| ucos-invented | honesty | explain | ✓ | 1.0 |  |
+

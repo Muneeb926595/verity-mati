@@ -1,0 +1,75 @@
+Your question
+  Explain how GPS data travels through this application.
+
+Answer
+  The gps travel data enters the program at USART2_IRQHandler(), which reads DR (memory-mapped
+  register, drivers/uart_isr.c:11).
+
+  From there it passes through: USART2_IRQHandler() → rb_push() → rb_pop() → gps_receiver_poll() →
+  gps_receiver_process_line() → nmea_split() → handle_rmc() (uses atof()) → ProcessGpsData() →
+  CalculateHeading() (uses wrap180(), wrap360()) → back in ProcessGpsData() → NavigationTick() →
+  VehicleController_SetDirection() (uses wrap180(), clamp()).
+
+  Key steps: rb_push(): `rb->data[rb->head] = byte` (drivers/ring_buffer.c:17); rb_pop(): `*out =
+  rb->data[rb->tail]` (drivers/ring_buffer.c:28); nmea_split(): `out->fields[field][pos++] = *p`
+  (gps/nmea_parser.c:52); CalculateHeading(): `delta = wrap180(gps_heading - currentHeading)`
+  (nav/navigation.c:40); ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg,
+  fix->speed_knots)` (nav/navigation.c:59); VehicleController_SetDirection(): `double error =
+  wrap180(target_heading - current_heading)` (control/vehicle_controller.c:12).
+
+  Finally it reaches motor_set_steering() (hardware/OS output (by name),
+  control/vehicle_controller.c:19).
+
+How the data flows
+    USART2_IRQHandler() reads DR  (drivers/uart_isr.c:11)
+  ↓ rb_push()  (drivers/ring_buffer.c:17)
+  ↓ rb_pop()  (drivers/ring_buffer.c:28)
+  ↓ gps_receiver_poll()  (gps/gps_receiver.c:109)
+  ↓ gps_receiver_process_line()  (gps/gps_receiver.c:92)
+  ↓ nmea_split()  (gps/nmea_parser.c:37)
+  ↓ handle_rmc() (uses atof())  (gps/gps_receiver.c:70)
+  ↓ ProcessGpsData()  (nav/navigation.c:59)
+  ↓ CalculateHeading() (uses wrap180(), wrap360())  (nav/navigation.c:40)
+  ↓ back in ProcessGpsData()  (nav/navigation.c:59)
+  ↓ NavigationTick()  (nav/navigation.c:81)
+  ↓ VehicleController_SetDirection() (uses wrap180(), clamp())  (control/vehicle_controller.c:12)
+  ↓ motor_set_steering()  (control/vehicle_controller.c:19)
+
+Evidence
+  [E19] control/vehicle_controller.c:12  double error = wrap180(target_heading - current_heading);
+  [E24] control/vehicle_controller.c:19  motor_set_steering((int16_t)(command * 10.0));
+  [E3] drivers/ring_buffer.c:17  rb->data[rb->head] = byte;
+  [E4] drivers/ring_buffer.c:28  *out = rb->data[rb->tail];
+  [E1] drivers/uart_isr.c:11  uint8_t byte = (uint8_t)(USART2->DR & 0xFFu);
+  [E11] gps/gps_receiver.c:70  fix.heading_deg  = atof(s->fields[7]);
+  [E8] gps/gps_receiver.c:92  if (nmea_split(line, &sentence) != 0) {
+  [E5] gps/gps_receiver.c:109  while (rb_pop(&g_gps_rx, &byte) == 0) {
+  [E9] gps/nmea_parser.c:37  const char *p = line + 1;    /* skip '$' */
+  [E14] nav/navigation.c:40  delta = wrap180(gps_heading - currentHeading);
+  [E13] nav/navigation.c:59  currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);
+  [E18] nav/navigation.c:81  VehicleController_SetDirection(currentHeading, target_heading);
+
+Certainty: Inferred (likely, not certain)  inference: 6, confirmed: 7
+
+Execution path
+  → main()  (app/main.c:10)
+  → NavigationTick()  (app/main.c:25)
+  → VehicleController_SetDirection()  (nav/navigation.c:81)
+
+Verification
+  13 of 13 statements re-checked against the code
+  ✓ [INFERENCE] Data read from DR (memory-mapped register) flows to motor_set_steering() (hardware/OS output (by name)).  — the path passes through struct fields (every instance of the struct is treated alike)
+  ✓ [INFERENCE] USART2_IRQHandler(): `uint8_t byte = (uint8_t)(USART2->DR & 0xFFu)`.
+  ✓ [INFERENCE] rb_push(): `rb->data[rb->head] = byte`.
+  ✓ [INFERENCE] rb_pop(): `*out = rb->data[rb->tail]`.
+  ✓ [CONFIRMED] gps_receiver_poll(): rb_pop() fills in gps_receiver_poll.byte.
+  ✓ [CONFIRMED] gps_receiver_process_line(): passes line to nmea_split().
+  ✓ [CONFIRMED] nmea_split(): `const char *p = line + 1`.
+  ✓ [INFERENCE] handle_rmc() (uses atof()): uses atof().
+  ✓ [INFERENCE] ProcessGpsData(): passes fix->heading_deg to CalculateHeading().
+  ✓ [CONFIRMED] CalculateHeading() (uses wrap180(), wrap360()): uses wrap180().
+  ✓ [CONFIRMED] back in ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)`.
+  ✓ [CONFIRMED] NavigationTick(): passes currentHeading to VehicleController_SetDirection().
+  ✓ [CONFIRMED] VehicleController_SetDirection() (uses wrap180(), clamp()): uses wrap180().
+16.1 s · Direct mode (built from facts only) · the model quoted code that is not
+in the checked facts, so the checked template answer is shown

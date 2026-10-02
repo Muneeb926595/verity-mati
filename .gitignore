@@ -1,0 +1,48 @@
+# Verity: what stays out of Git. Setup (scripts/setup.sh, scripts\windows\setup.cmd) recreates all of it inside this
+# folder, so a fresh clone plus setup gives a working install.
+
+# Downloaded or built by setup
+/models/
+/tools/
+/.venv/
+/vendor/
+/workers/roslyn/bin/
+/workers/roslyn/.build/
+/workers/roslyn/obj/
+/desktop/target/
+/desktop/src-tauri/target/
+/desktop/src-tauri/gen/schemas/
+node_modules/
+# ui/dist is committed on purpose: with the prebuilt UI, Node.js is not needed to use Verity
+
+# Runtime state: indexes, settings with local paths, engine logs, model-server pid files
+/data/
+
+# Logs written by setup and the system analysis (the historical benchmark logs in logs/ are kept)
+/logs/setup-*.log
+/logs/system-analysis-*
+/logs/cppcheck-msi.log
+
+# Python and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Partial downloads and scratch files
+*.part
+*.bad
+*.tmp
+
+# Local secrets and environment
+.env
+.env.*
+
+# OS and editor files (sample projects keep their own folders such as samples/realworld/lwip/.vscode)
+.DS_Store
+Thumbs.db
+desktop.ini
+/.vscode/
+/.idea/
+*.swp

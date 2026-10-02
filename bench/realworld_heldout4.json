@@ -1,0 +1,30 @@
+{
+  "_doc": "FOURTH HELD-OUT real project: SOEM, the Simple Open EtherCAT Master (samples/realworld/SOEM, ~25K lines; industrial fieldbus master with Linux and Windows (wpcap) ports; uncompiled — the CMake-generated ec_options.h is missing). Questions written from facts verified in the source AFTER all Phase 3 (CANopenNode) fixes and BEFORE Verity was ever run on it. First run kept in bench/results/realworld_heldout4/first-run.*.",
+  "projects": {"soem": "samples/realworld/SOEM"},
+  "cases": [
+    {"id": "soem-too-many-slaves", "project": "soem", "category": "scenario",
+     "q": "What happens when there are more slaves on the network than EC_MAXSLAVE?", "must_mention": ["ecx_detect_slaves", "EC_SLAVECOUNTEXCEEDED"]},
+    {"id": "soem-slavecount", "project": "soem", "category": "symbol",
+     "q": "Where is the slave count set?", "must_mention": ["ecx_detect_slaves"], "must_cite": ["src/ec_config.c:78"]},
+    {"id": "soem-pusherror-callers", "project": "soem", "category": "callpath",
+     "q": "Who calls ecx_pusherror?", "must_mention": ["ecx_SDOerror", "ecx_packeterror", "ecx_mbxerror"]},
+    {"id": "soem-error-list-full", "project": "soem", "category": "scenario",
+     "q": "What happens when the error list is full?", "must_mention": ["ecx_pusherror", "tail"]},
+    {"id": "soem-sdo-abort", "project": "soem", "category": "scenario",
+     "q": "What happens when a slave answers an SDO read with an abort?", "must_mention": ["ecx_SDOread", "ecx_SDOerror"]},
+    {"id": "soem-no-reply", "project": "soem", "category": "scenario",
+     "q": "What happens when no reply to a frame arrives?", "must_mention": ["ecx_srconfirm", "EC_NOFRAME"]},
+    {"id": "soem-frame-send", "project": "soem", "category": "symbol",
+     "q": "How is an EtherCAT frame sent on the network?", "must_mention": ["ecx_outframe"]},
+    {"id": "soem-statecheck", "project": "soem", "category": "symbol",
+     "q": "What does ecx_statecheck do?", "must_mention": ["osal_timer_is_expired", "ALstatuscode"]},
+    {"id": "soem-poperror", "project": "soem", "category": "symbol",
+     "q": "What does ecx_poperror return when the error list is empty?", "must_mention": ["ecaterror"]},
+    {"id": "soem-srconfirm-callers", "project": "soem", "category": "callpath",
+     "q": "Who calls ecx_srconfirm?", "must_mention": ["ecx_BRD", "ecx_FPRD"]},
+    {"id": "soem-mbx-counter", "project": "soem", "category": "symbol",
+     "q": "How does the mailbox counter wrap around?", "must_mention": ["ec_nextmbxcnt"]},
+    {"id": "soem-invented", "project": "soem", "category": "honesty",
+     "q": "What does ecx_reset_all_slaves do?", "must_not_claim_defined": ["ecx_reset_all_slaves"]}
+  ]
+}

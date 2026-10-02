@@ -1,0 +1,11 @@
+  ✓ Looking at your project files: Found 4 C, 1 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + TI C2000/MSP430; build 
+settings reconstructed from the source (no build needed); 1 missing header(s) 
+replaced by stand-ins
+  ✓ Reading the C code: Read 4 C file(s)
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 100% of function 
+definitions and 100% of direct calls
+  ✓ Connecting the pieces together: 3 entry point(s), 35 input/output site(s)
+  ✓ Preparing search: Indexed 21 symbols for search (keyword + meaning search)
+Ready. Indexed in 2.0 s.

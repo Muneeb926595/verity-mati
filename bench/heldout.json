@@ -1,0 +1,21 @@
+{
+  "_doc": "Held-out questions written after the main suite passed, phrased differently, NOT used for tuning. Results are reported as measured on the first run.",
+  "projects": {"c": "samples/navgps-c", "cs": "samples/navgps-cs"},
+  "cases": [
+    {"id": "h-steer-decide", "project": "c", "category": "dataflow", "q": "How does the vehicle decide which way to steer?", "must_mention": ["VehicleController_SetDirection", "bearing_deg", "currentHeading"]},
+    {"id": "h-ringbuf-fill", "project": "c", "category": "symbol", "q": "Where is the ring buffer filled?", "must_mention": ["rb_push", "USART2_IRQHandler"]},
+    {"id": "h-tick-caller", "project": "c", "category": "callpath", "q": "What calls NavigationTick and how often?", "must_mention": ["main", "NAV_TICK_MS"]},
+    {"id": "h-speed-trace", "project": "c", "category": "dataflow", "q": "Trace the speed value from the GPS sentence to where it is used", "must_mention": ["handle_rmc", "speed_knots", "CalculateHeading"]},
+    {"id": "h-3-sats", "project": "c", "category": "scenario", "q": "What happens when the GPS reports only 3 satellites?", "must_mention": ["GPS_MIN_SATELLITES"], "run_state_any": {"g_nav.consecutive_invalid": "1"}},
+    {"id": "h-parse-coord", "project": "c", "category": "symbol", "q": "Which function parses NMEA coordinates?", "must_mention": ["nmea_parse_coord"]},
+    {"id": "h-invalid-handler", "project": "c", "category": "symbol", "q": "What does nav_handle_invalid_fix do?", "must_mention": ["consecutive_invalid", "MAX_INVALID_FIXES", "NAV_MODE_DEGRADED"]},
+    {"id": "h-bearing-called", "project": "c", "category": "callpath", "q": "Is bearing_deg ever called?", "must_mention": ["NavigationTick"]},
+    {"id": "h-remove-wrap", "project": "c", "category": "callpath", "q": "What would break if I removed wrap360?", "must_mention": ["CalculateHeading", "wrap180", "bearing_deg"]},
+    {"id": "h-callback-var", "project": "c", "category": "symbol", "q": "What is g_fix_callback?", "must_mention": ["gps_receiver_set_callback", "ProcessGpsData"]},
+    {"id": "h-led-off", "project": "c", "category": "callpath", "q": "When does the LED turn off?", "must_mention": ["led_set_status", "VehicleController_Hold"]},
+    {"id": "h-cs-quality", "project": "cs", "category": "scenario", "q": "What happens when the GPS fix quality is too low?", "must_mention": ["OnFix", "MinQuality"]},
+    {"id": "h-cs-bank", "project": "cs", "category": "dataflow", "q": "How does the bank command reach the autopilot?", "must_mention": ["SendBankCommand", "Send"]},
+    {"id": "h-cs-subscribe", "project": "cs", "category": "callpath", "q": "Who subscribes to FixReceived?", "must_mention": ["OnFix"]},
+    {"id": "h-cs-tick", "project": "cs", "category": "symbol", "q": "What does NavLoop.Tick do?", "must_mention": ["SendBankCommand", "Mode"]}
+  ]
+}

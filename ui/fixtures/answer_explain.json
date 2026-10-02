@@ -1,0 +1,613 @@
+{
+ "question": "What does ProcessGpsData() do?",
+ "answer": [
+  "ProcessGpsData() (nav/navigation.c:45) \u2014 Entry point for every decoded GPS fix (registered as the GPS receiver callback in main).",
+  "Step by step, it calls gps_validate_fix() and stores the result in `status` (line 47); then it checks `status != GPS_OK` (GPS_OK = 0) (line 49); if true it calls nav_handle_invalid_fix() and stops there (returns); then it updates g_nav (consecutive_invalid, latitude, longitude, speed_knots, last_fix_ms, has_fix; lines 53\u201358); then it calls CalculateHeading() and stores the result in `currentHeading` (line 59); then it sets `g_nav.mode = NAV_MODE_TRACKING` (line 60).",
+  "It is called by handle_rmc() (through the function pointer g_fix_callback). The full chain from the program's start is: main() \u2192 gps_receiver_poll() \u2192 gps_receiver_process_line() \u2192 handle_rmc() \u2192 ProcessGpsData().",
+  "The values it updates are used later by NavigationTick() (uses currentHeading, nav_state_t.has_fix, nav_state_t.last_fix_ms, nav_state_t.latitude); nav_handle_invalid_fix() (uses nav_state_t.consecutive_invalid); CalculateHeading() (uses currentHeading)."
+ ],
+ "flow": [],
+ "evidence": [
+  {
+   "id": "E15",
+   "kind": "flow",
+   "file": "app/main.c",
+   "line": 16,
+   "end_line": null,
+   "text": "gps_receiver_set_callback(ProcessGpsData);",
+   "sym": "c:@F@ProcessGpsData",
+   "note": "function address stored here",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E14",
+   "kind": "call",
+   "file": "gps/gps_receiver.c",
+   "line": 76,
+   "end_line": null,
+   "text": "g_fix_callback(&fix);",
+   "sym": "c:@F@ProcessGpsData",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E17",
+   "kind": "read",
+   "file": "nav/navigation.c",
+   "line": 24,
+   "end_line": null,
+   "text": "g_nav.consecutive_invalid++;",
+   "sym": "c:@SA@nav_state_t@FI@consecutive_invalid",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E18",
+   "kind": "read",
+   "file": "nav/navigation.c",
+   "line": 38,
+   "end_line": null,
+   "text": "return currentHeading;",
+   "sym": "c:@currentHeading",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E1",
+   "kind": "def",
+   "file": "nav/navigation.c",
+   "line": 45,
+   "end_line": 61,
+   "text": "void ProcessGpsData(const gps_fix_t *fix)",
+   "sym": "c:@F@ProcessGpsData",
+   "note": "definition of ProcessGpsData()",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E2",
+   "kind": "call",
+   "file": "nav/navigation.c",
+   "line": 47,
+   "end_line": null,
+   "text": "gps_status_t status = gps_validate_fix(fix);",
+   "sym": "c:@F@gps_validate_fix",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E3",
+   "kind": "branch",
+   "file": "nav/navigation.c",
+   "line": 49,
+   "end_line": null,
+   "text": "if (status != GPS_OK) {",
+   "sym": "c:@F@ProcessGpsData",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E4",
+   "kind": "call",
+   "file": "nav/navigation.c",
+   "line": 50,
+   "end_line": null,
+   "text": "nav_handle_invalid_fix(status);",
+   "sym": "c:navigation.c@F@nav_handle_invalid_fix",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E5",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 53,
+   "end_line": null,
+   "text": "g_nav.consecutive_invalid = 0;",
+   "sym": "c:@SA@nav_state_t@FI@consecutive_invalid",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E6",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 54,
+   "end_line": null,
+   "text": "g_nav.latitude    = fix->latitude;",
+   "sym": "c:@SA@nav_state_t@FI@latitude",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E7",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 55,
+   "end_line": null,
+   "text": "g_nav.longitude   = fix->longitude;",
+   "sym": "c:@SA@nav_state_t@FI@longitude",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E8",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 56,
+   "end_line": null,
+   "text": "g_nav.speed_knots = fix->speed_knots;",
+   "sym": "c:@SA@nav_state_t@FI@speed_knots",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E9",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 57,
+   "end_line": null,
+   "text": "g_nav.last_fix_ms = fix->timestamp_ms;",
+   "sym": "c:@SA@nav_state_t@FI@last_fix_ms",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E10",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 58,
+   "end_line": null,
+   "text": "g_nav.has_fix     = 1;",
+   "sym": "c:@SA@nav_state_t@FI@has_fix",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E11",
+   "kind": "call",
+   "file": "nav/navigation.c",
+   "line": 59,
+   "end_line": null,
+   "text": "currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots);",
+   "sym": "c:@F@CalculateHeading",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code",
+   "also": [
+    "E12"
+   ]
+  },
+  {
+   "id": "E13",
+   "kind": "write",
+   "file": "nav/navigation.c",
+   "line": 60,
+   "end_line": null,
+   "text": "g_nav.mode = NAV_MODE_TRACKING;",
+   "sym": "c:@SA@nav_state_t@FI@mode",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  },
+  {
+   "id": "E16",
+   "kind": "read",
+   "file": "nav/navigation.c",
+   "line": 68,
+   "end_line": null,
+   "text": "if (g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS) {",
+   "sym": "c:@SA@nav_state_t@FI@has_fix",
+   "note": "",
+   "status": "CONFIRMED",
+   "status_label": "Confirmed in the code"
+  }
+ ],
+ "status": "INFERENCE",
+ "status_label": "Inferred (likely, not certain)",
+ "status_counts": {
+  "CONFIRMED": 16,
+  "INFERENCE": 1
+ },
+ "sections": {
+  "reasoning": [
+   {
+    "text": "ProcessGpsData() is defined in nav/navigation.c:45.",
+    "pred": "defined",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "nav/navigation.c",
+     45
+    ],
+    "ev": [
+     "E1"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "definition found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() calls gps_validate_fix() at line 47.",
+    "pred": "calls",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@F@gps_validate_fix",
+     "nav/navigation.c",
+     47
+    ],
+    "ev": [
+     "E2"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "call site found in the index",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() branches on `status != GPS_OK` at line 49.",
+    "pred": "branch",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "nav/navigation.c",
+     49
+    ],
+    "ev": [
+     "E3"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "decision point found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() calls nav_handle_invalid_fix() at line 50.",
+    "pred": "calls",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:navigation.c@F@nav_handle_invalid_fix",
+     "nav/navigation.c",
+     50
+    ],
+    "ev": [
+     "E4"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "call site found in the index",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.consecutive_invalid at line 53.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@consecutive_invalid",
+     "nav/navigation.c",
+     53
+    ],
+    "ev": [
+     "E5"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.latitude at line 54.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@latitude",
+     "nav/navigation.c",
+     54
+    ],
+    "ev": [
+     "E6"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.longitude at line 55.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@longitude",
+     "nav/navigation.c",
+     55
+    ],
+    "ev": [
+     "E7"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.speed_knots at line 56.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@speed_knots",
+     "nav/navigation.c",
+     56
+    ],
+    "ev": [
+     "E8"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.last_fix_ms at line 57.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@last_fix_ms",
+     "nav/navigation.c",
+     57
+    ],
+    "ev": [
+     "E9"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.has_fix at line 58.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@has_fix",
+     "nav/navigation.c",
+     58
+    ],
+    "ev": [
+     "E10"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() calls CalculateHeading() at line 59.",
+    "pred": "calls",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@F@CalculateHeading",
+     "nav/navigation.c",
+     59
+    ],
+    "ev": [
+     "E11"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "call site found in the index",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes currentHeading at line 59.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@currentHeading",
+     "nav/navigation.c",
+     59
+    ],
+    "ev": [
+     "E12"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "ProcessGpsData() writes nav_state_t.mode at line 60.",
+    "pred": "writes",
+    "args": [
+     "c:@F@ProcessGpsData",
+     "c:@SA@nav_state_t@FI@mode",
+     "nav/navigation.c",
+     60
+    ],
+    "ev": [
+     "E13"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "write reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "handle_rmc() calls ProcessGpsData() through the function pointer g_fix_callback at gps/gps_receiver.c:76 (ProcessGpsData() is registered at app/main.c:16).",
+    "pred": "calls",
+    "args": [
+     "c:gps_receiver.c@F@handle_rmc",
+     "c:@F@ProcessGpsData",
+     "gps/gps_receiver.c",
+     76
+    ],
+    "ev": [
+     "E14",
+     "E15"
+    ],
+    "status": "INFERENCE",
+    "why": "call goes through the function pointer g_fix_callback; the target was found by following where that pointer is assigned",
+    "verified": true,
+    "check": "call site found in the index",
+    "status_label": "Inferred (likely, not certain)"
+   },
+   {
+    "text": "NavigationTick() reads nav_state_t.has_fix (line 68).",
+    "pred": "reads",
+    "args": [
+     "c:@F@NavigationTick",
+     "c:@SA@nav_state_t@FI@has_fix",
+     "nav/navigation.c",
+     68
+    ],
+    "ev": [
+     "E16"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "read reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "nav_handle_invalid_fix() reads nav_state_t.consecutive_invalid (line 24).",
+    "pred": "reads",
+    "args": [
+     "c:navigation.c@F@nav_handle_invalid_fix",
+     "c:@SA@nav_state_t@FI@consecutive_invalid",
+     "nav/navigation.c",
+     24
+    ],
+    "ev": [
+     "E17"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "read reference found",
+    "status_label": "Confirmed in the code"
+   },
+   {
+    "text": "CalculateHeading() reads currentHeading (line 38).",
+    "pred": "reads",
+    "args": [
+     "c:@F@CalculateHeading",
+     "c:@currentHeading",
+     "nav/navigation.c",
+     38
+    ],
+    "ev": [
+     "E18"
+    ],
+    "status": "CONFIRMED",
+    "why": "",
+    "verified": true,
+    "check": "read reference found",
+    "status_label": "Confirmed in the code"
+   }
+  ],
+  "execution_path": [],
+  "related": [
+   {
+    "key": "c:@F@ProcessGpsData",
+    "label": "ProcessGpsData()",
+    "file": "nav/navigation.c",
+    "line": 45,
+    "end_line": 61
+   },
+   {
+    "key": "c:@F@gps_validate_fix",
+    "label": "gps_validate_fix()",
+    "file": "gps/gps_validation.c",
+    "line": 5,
+    "end_line": 18
+   },
+   {
+    "key": "c:navigation.c@F@nav_handle_invalid_fix",
+    "label": "nav_handle_invalid_fix()",
+    "file": "nav/navigation.c",
+    "line": 22,
+    "end_line": 29
+   },
+   {
+    "key": "c:@F@CalculateHeading",
+    "label": "CalculateHeading()",
+    "file": "nav/navigation.c",
+    "line": 33,
+    "end_line": 42
+   }
+  ],
+  "assumptions": [],
+  "verification": {
+   "report": {
+    "claims": 17,
+    "verified": 17,
+    "rejected": 0,
+    "stale_files": [],
+    "evidence": 18,
+    "evidence_ok": 18
+   },
+   "unknowns": [],
+   "notes": [],
+   "rejected": []
+  }
+ },
+ "run": null,
+ "route": {
+  "intent": "explain",
+  "mentions": [
+   {
+    "text": "ProcessGpsData()",
+    "candidates": [
+     "c:@F@ProcessGpsData"
+    ],
+    "explicit": true
+   }
+  ],
+  "topic": [
+   "process",
+   "gps"
+  ],
+  "inputs": {},
+  "by": "rules"
+ },
+ "meta": {
+  "seconds": 0.0,
+  "prose": {
+   "mode": "direct"
+  },
+  "template": [
+   "ProcessGpsData() (nav/navigation.c:45) \u2014 Entry point for every decoded GPS fix (registered as the GPS receiver callback in main).",
+   "Step by step, it calls gps_validate_fix() and stores the result in `status` (line 47); then it checks `status != GPS_OK` (GPS_OK = 0) (line 49); if true it calls nav_handle_invalid_fix() and stops there (returns); then it updates g_nav (consecutive_invalid, latitude, longitude, speed_knots, last_fix_ms, has_fix; lines 53\u201358); then it calls CalculateHeading() and stores the result in `currentHeading` (line 59); then it sets `g_nav.mode = NAV_MODE_TRACKING` (line 60).",
+   "It is called by handle_rmc() (through the function pointer g_fix_callback). The full chain from the program's start is: main() \u2192 gps_receiver_poll() \u2192 gps_receiver_process_line() \u2192 handle_rmc() \u2192 ProcessGpsData().",
+   "The values it updates are used later by NavigationTick() (uses currentHeading, nav_state_t.has_fix, nav_state_t.last_fix_ms, nav_state_t.latitude); nav_handle_invalid_fix() (uses nav_state_t.consecutive_invalid); CalculateHeading() (uses currentHeading)."
+  ],
+  "intent": "explain",
+  "model": null
+ },
+ "id": "fcee5020dd52"
+}

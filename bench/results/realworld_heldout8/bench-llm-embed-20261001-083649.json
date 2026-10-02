@@ -1,0 +1,535 @@
+{
+ "summary": {
+  "cases": 12,
+  "passed": 9,
+  "mean_score": 0.75,
+  "symbol_identification": {
+   "cases": 11,
+   "passed": 8,
+   "accuracy": 0.727
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 140,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 140,
+   "claims": 140,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 45
+  },
+  "mean_seconds": 13.6
+ },
+ "results": [
+  {
+   "id": "np-stream-full",
+   "category": "scenario",
+   "q": "What happens when the output buffer is full while encoding?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 12
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 12,
+     "total": 12
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 18.89,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When `count > 0 && stream->callback != NULL` is true, pb_write() checks if `stream->bytes_written + count < stream->bytes_written || stream->bytes_written + count > stream->max_size`; if that condition is true it evaluates `PB_RETURN_ERROR(stream, \"stream full\")` and returns. Then it checks `!stream->callback(stream, buf, count)` and may call `write_callback()` or `buf_write()` depending on runtime data, and if that fails it evaluates `PB_RETURN_ERROR(stream, \"io error\")`.",
+    "This is handled in pb_write() (pb_encode.c:95): it checks `count > 0 && stream->callback != NULL`, and when that is true it checks `stream->bytes_written + count < stream->bytes_written || stream->bytes_written + count > stream->max_size` (line 97); then it evaluates `PB_RETURN_ERROR(stream, \"stream full\")` (line 100); then it returns (line 100); then it checks `!stream->callback(stream, buf, count)` (line 107); then it calls one of write_callback(), buf_write() through pb_ostream_s.callback \u2014 which one depends on the data at run time (line 107); then it evaluates `PB_RETURN_ERROR(stream, \"io error\")` (line 108).",
+    "buf_write() sets `pb_byte_t *dest = (pb_byte_t*)stream->state` (line 55); then it sets `stream->state = dest + count` (line 56); then it checks `buf != NULL` (line 64); if true it calls memcpy(); then it returns `true` (line 69)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-end-of-stream",
+   "category": "scenario",
+   "q": "What happens when the decoder needs more bytes than are left in the input?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 15.35,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in pb_read() (pb_decode.c:103): it checks `stream->bytes_left < count`, and when that is true it records it (`PB_RETURN_ERROR(stream, \"end-of-stream\")`).",
+    "When it does not return there, pb_read() goes on to call read_callback() with (`stream`, `buf`, `count`) (line 107); buf_read() with (`stream`, `buf`, `count`) (line 107).",
+    "Its caller pb_skip_varint() checks `!pb_read(stream, &byte, 1)` (pb_decode.c:261) and then returns `false`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "np-missing-required",
+   "category": "scenario",
+   "q": "What happens when a decoded message is missing a required field?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "pb_decode_inner",
+      "missing required field"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 11.65,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When a required field is missing, the decoder detects the problem in `decode_static_field()` and sets an error. It then returns `false`, skipping the rest of the field processing (no `memset()`, no `pb_field_iter_begin()`, and no further decoding).",
+    "Losing the data is detected in decode_static_field() (pb_decode.c:510), which checks `wire_type == PB_WT_STRING && PB_LTYPE(field->type) <= PB_LTYPE_LAST_PACKABLE` (PB_WT_STRING = 2).",
+    "When that happens it sets `field->pData = (char*)field->pField + field->data_size * (*size)`; sets `field->pData = (char*)field->pData + field->data_size`; sets `PB_RETURN_ERROR(stream, \"array overflow\")`; calls pb_make_string_substream() (which checks `!pb_decode_varint32(stream, &size)` (line 389); if true it returns `false` straight away, sets `*substream = *stream` (line 392), checks `substream->bytes_left < size` (line 393)); calls decode_basic_field() (which chooses a case based on `PB_LTYPE(field->type)` (line 428), checks `wire_type != PB_WT_VARINT && wire_type != PB_WT_PACKED` (PB_WT_VARINT = 0, PB_WT_PACKED = 255) (line 431), evaluates `PB_RETURN_ERROR(stream, \"wrong wire type\")` (line 432)); calls pb_close_string_substream() (which checks `substream->bytes_left` (line 409), checks `!pb_read(substream, NULL, substream->bytes_left)` (line 410); if true it returns `false` straight away, updates stream (state, errmsg; lines 414\u2013417)); returns, so decode_basic_field(), memset(), pb_field_iter_begin() no longer run.",
+    "Note that this only triggers when all of these hold: `wire_type == PB_WT_STRING`; `PB_LTYPE(field->type) <= PB_LTYPE_LAST_PACKABLE`. For example, when `wire_type == PB_WT_STRING` is false this path is not taken.",
+    "decode_static_field() also stops early when `!pb_make_string_substream(stream, &substream)` (line 519), which skips decode_basic_field(), pb_close_string_substream(); or when `!pb_close_string_substream(stream, &substream)` (line 535), which skips decode_basic_field(), memset(), pb_field_iter_begin() \u2014 so without fresh valid data it does not reach those calls either."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-varint-overflow",
+   "category": "scenario",
+   "q": "What happens when a varint is too long?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.2,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a varint is too long, `pb_decode_varint()` records an error with `PB_RETURN_ERROR(stream, \"varint overflow\")`. The caller `pb_decode_svarint()` then returns `false`, and its caller `pb_dec_varint()` also returns `false`.",
+    "This is handled in pb_decode_varint() (pb_decode.c:244): it checks `bitpos >= 63 && (byte & 0xFE) != 0`, and when that is true it records it (`PB_RETURN_ERROR(stream, \"varint overflow\")`).",
+    "Its caller pb_decode_svarint() checks `!pb_decode_varint(stream, &value)` (pb_decode.c:1415) and then returns `false`.",
+    "Its caller pb_dec_varint() checks `!pb_decode_svarint(stream, &svalue)` (pb_decode.c:1514) and then returns `false`."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-wrong-wire-type",
+   "category": "scenario",
+   "q": "What happens when a field arrives with the wrong wire type?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 13
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 13,
+     "total": 13
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 12.13,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a field arrives with the wrong wire type, `decode_basic_field()` records an error via `PB_RETURN_ERROR(stream, \"wrong wire type\")`. The function then stops processing that field and the error is propagated to the caller. No further decoding of that field occurs.",
+    "Invalid data is caught in decode_basic_field() (pb_decode.c:431): it checks `wire_type != PB_WT_VARINT && wire_type != PB_WT_PACKED`, and when that is true it records it (`PB_RETURN_ERROR(stream, \"wrong wire type\")`).",
+    "When it does not return there, decode_basic_field() goes on to call pb_dec_bool() with (`stream`, `field`) (line 434); pb_dec_varint() with (`stream`, `field`) (line 442); pb_decode_fixed32() with (`stream`, `field->pData`) (line 448); pb_decode_fixed64() with (`stream`, `field->pData`) (line 464); pb_dec_bytes() with (`stream`, `field`) (line 471).",
+    "Bad input is also rejected in other places: decode_static_field() rejects it when `wire_type == PB_WT_STRING && PB_LTYPE(field->type) <= PB_LTYPE_LAST_PACKABLE` (pb_decode.c:510); decode_callback_field() rejects it when `wire_type == PB_WT_STRING` (pb_decode.c:799), reporting `*(pb_size_t*)field->pSize = field->tag`; pb_message_set_to_defaults() rejects it when `!decode_field(&defstream, wire_type, iter)` (pb_decode.c:1031)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-max-depth",
+   "category": "scenario",
+   "q": "What happens when messages are nested too deeply?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "pb_make_string_substream",
+      "PB_MESSAGE_NESTING_MAX"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 16
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 16,
+     "total": 16
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 13.99,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When a message is nested too deeply, `decode_static_field()` attempts to set defaults for the sub\u2011message via `pb_message_set_to_defaults()`. If that call fails, it returns the error \"failed to set defaults\" and stops decoding the nested message.",
+    "This is handled in decode_static_field() (pb_decode.c:571): it checks `pb_field_iter_begin(&submsg_iter, field->submsg_desc, field->pData)`, and when that is true it checks `!pb_message_set_to_defaults(&submsg_iter)` (line 573); then it evaluates `PB_RETURN_ERROR(stream, \"failed to set defaults\")` (line 574); then it returns (line 574).",
+    "When it does not return there, decode_static_field() goes on to call decode_basic_field() with (`stream`, `wire_type`, `field`) (line 580).",
+    "pb_message_set_to_defaults() sets `pb_wire_type_t wire_type = PB_WT_VARINT` (line 1013); then it checks `iter->descriptor->default_value` (line 1016); if true it calls pb_istream_from_buffer() and sets `defstream = pb_istream_from_buffer(iter->descriptor->default_value, (size_t)-1)`; then it checks `!pb_decode_tag(&defstream, &wire_type, &tag, &eof)` (line 1019); if true it returns `false` straight away; then it repeats while `pb_field_iter_next(iter)` (line 1023); then it checks `!pb_field_set_to_default(iter)` (line 1025); if true it returns `false` straight away; then it checks `tag != 0 && iter->tag == tag` (line 1028)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-array-max",
+   "category": "scenario",
+   "q": "What happens when an array has more items than its maximum size during encoding?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 14.42,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When an array has more items than its maximum size during encoding, `encode_array()` records an error by calling `PB_RETURN_ERROR(stream, \"array max size exceeded\")` and returns without proceeding further.",
+    "This is handled in encode_array() (pb_encode.c:150): it checks `PB_ATYPE(field->type) != PB_ATYPE_POINTER && count > field->array_size`, and when that is true it records it (`PB_RETURN_ERROR(stream, \"array max size exceeded\")`).",
+    "When it does not return there, encode_array() goes on to call pb_encode_tag() with (`stream`, `PB_WT_STRING`, `field->tag`) (line 157); pb_enc_varint() with (`&sizestream`, `field`) (line 175); pb_encode_varint() with (`stream`, `(pb_uint64_t)size`) (line 183); pb_write() with (`stream`, `NULL`, `size`) (line 187); pb_enc_fixed() with (`stream`, `field`) (line 194)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-zero-tag",
+   "category": "scenario",
+   "q": "What happens when the decoder reads a tag of zero?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 16.06,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When `pb_decode_inner()` reads a tag of zero, it checks `tag == 0`; if true, it then checks `flags & PB_DECODE_NULLTERMINATED` and executes `PB_RETURN_ERROR(stream, \"zero tag\")`, returning immediately with an error.",
+    "This is handled in pb_decode_inner() (pb_decode.c:1088): it checks `tag == 0`, and when that is true it checks `flags & PB_DECODE_NULLTERMINATED` (line 1090); then it evaluates `PB_RETURN_ERROR(stream, \"zero tag\")` (line 1097); then it returns (line 1097).",
+    "When it does not return there, pb_decode_inner() goes on to call pb_field_iter_find() with (`&iter`, `tag`) (line 1101); pb_field_iter_find_extension() with (`&iter`) (line 1106); decode_extension() with (`stream`, `tag`, `wire_type`) (line 1122); pb_skip_field() with (`stream`, `wire_type`) (line 1133); decode_field() with (`stream`, `wire_type`, `&iter`) (line 1169)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-read-callers",
+   "category": "callpath",
+   "q": "Who calls pb_read?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 15
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 15,
+     "total": 15
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 18.09,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by pb_read() at pb_decode.c:93, only when `count == 0` is false, only when `buf == NULL && stream->callback != buf_read` is true, repeatedly inside `while (count > 16)`; pb_read() at pb_decode.c:99, only when `count == 0` is false, only when `buf == NULL && stream->callback != buf_read` is true; pb_skip_varint() at pb_decode.c:261, repeatedly inside `do-while`; pb_skip_string() at pb_decode.c:278, only when `!pb_decode_varint32(stream, &length)` is false, only when `(size_t)length != length` is false. It is also called by pb_skip_field() (pb_decode.c:326), pb_skip_field() (pb_decode.c:328), read_raw_value() (pb_decode.c:354), read_raw_value() (pb_decode.c:361), read_raw_value() (pb_decode.c:365), pb_close_string_substream() (pb_decode.c:410), pb_decode_fixed32() (pb_decode.c:1433), pb_decode_fixed64() (pb_decode.c:1456), pb_dec_bytes() (pb_decode.c:1590), pb_dec_string() (pb_decode.c:1632), pb_dec_fixed_length_bytes() (pb_decode.c:1715). The full chain from the program's start is: main() \u2192 listdir() \u2192 pb_decode_ex() \u2192 pb_close_string_substream() \u2192 pb_read()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "np-bytes-written",
+   "category": "symbol",
+   "q": "Where is bytes_written updated?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 10.48,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "`pb_ostream_s.bytes_written` is set by `pb_ostream_from_buffer()` (line\u202f86), by `pb_write()` (line\u202f112), and by `pb_encode_submessage()` (lines\u202f768 and\u202f775). It is read by `main()` (line\u202f32), `pb_write()` (line\u202f97), `encode_array()` (line\u202f180), `pb_get_encoded_size()` (line\u202f573), and `pb_encode_submessage()` (line\u202f750). The value flows from `pb_ostream_s.bytes_written` through `pb_encode_submessage()` \u2192 `pb_write()` \u2192 `write_callback()` \u2192 `send()` and ultimately influences the socket send.",
+    "pb_ostream_s.bytes_written is a field of type `size_t`, defined in pb_encode.h:51 \u2014 the code describes it as: \"Number of bytes written so far.\".",
+    "It is set by pb_ostream_from_buffer() (`stream.bytes_written = 0`, line 86); pb_write() (`stream->bytes_written += count`, line 112); pb_encode_submessage() (`substream.bytes_written = 0`, line 768); pb_encode_submessage() (`stream->bytes_written += substream.bytes_written`, line 775).",
+    "It is read by main() (line 32), pb_write() (line 97), encode_array() (line 180), pb_get_encoded_size() (line 573), pb_encode_submessage() (line 750).",
+    "Following where its value goes: pb_ostream_s.bytes_written \u2192 pb_encode_submessage() \u2192 pb_write() \u2192 write_callback() \u2192 send() \u2014 so it ultimately influences send(), which is an output (socket send).",
+    "In short: pb_ostream_s.bytes_written carries a value produced by pb_encode_submessage(), pb_ostream_from_buffer(), pb_write() and consumed by encode_array(), main(), pb_encode_submessage(), feeding send(). pb_encode_submessage(), pb_write() both reads and updates it, so it also keeps state between calls."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-errmsg",
+   "category": "symbol",
+   "q": "Where is the stream error message errmsg set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "PB_SET_ERROR"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 26
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 26,
+     "total": 26
+    },
+    "_missing_evidence": {
+     "paragraphs": 6,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 19.8,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "The stream\u2019s `errmsg` field is set in the function `pb_encode_submessage()` (lines 745 and 778 of `pb_encode.c`) by assigning it from a substream\u2019s `errmsg`. It is also cleared to `NULL` in `pb_decode_tag()` (line 308 of `pb_decode.c`).",
+    "It is set in pb_message_set_to_defaults():",
+    "pb_message_set_to_defaults() (pb_decode.c:1009).",
+    "Step by step, it sets `pb_wire_type_t wire_type = PB_WT_VARINT` (line 1013); then it checks `iter->descriptor->default_value` (line 1016); if true it calls pb_istream_from_buffer() and sets `defstream = pb_istream_from_buffer(iter->descriptor->default_value, (size_t)-1)`; then it checks `!pb_decode_tag(&defstream, &wire_type, &tag, &eof)` (line 1019); if true it returns `false` straight away; then it repeats while `pb_field_iter_next(iter)` (line 1023); then it checks `!pb_field_set_to_default(iter)` (line 1025); if true it returns `false` straight away; then it checks `tag != 0 && iter->tag == tag` (line 1028); then it checks `!decode_field(&defstream, wire_type, iter)` (line 1031); if true it returns `false` straight away; then it checks `!pb_decode_tag(&defstream, &wire_type, &tag, &eof)` (line 1033); if true it returns `false` straight away; then it checks `iter->pSize` (line 1036); if true it sets `*(bool*)iter->pSize = false`; then it calls pb_field_iter_next() (line 1039); \u2026.",
+    "Related values are also set here: `stream->errmsg = substream.errmsg` in pb_encode_submessage() (pb_encode.c:745); `iter->message = message` in pb_field_iter_begin() (pb_common.c:161); `iter->submessage_index = 0` in advance_iterator() (pb_common.c:131); `iter->submessage_index = (pb_size_t)(iter->submessage_index + PB_LTYPE_IS_SUBMSG(prev_type))` in advance_iterator() (pb_common.c:152); `stream->errmsg = substream.errmsg` in pb_encode_submessage() (pb_encode.c:778); `stream->errmsg = NULL` in pb_decode_tag() (pb_decode.c:308).",
+    "The value is computed just before: `pb_type_t prev_type = (prev_descriptor >> 8) & 0xFF` (pb_common.c:143)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "np-invented",
+   "category": "honesty",
+   "q": "What does pb_decode_json do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 2
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 2,
+     "total": 2
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.15,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `pb_decode_json` in this code (none of its 869 indexed symbols has that name). The closest names are PB_DECODE_NOINIT (pb_decode.h:122), pb_decode_noinit (pb_decode.h:128), pb_decode_ex() (pb_decode.c:1219), described below.",
+    "PB_DECODE_NOINIT is a constant (macro), defined in pb_decode.h:122.",
+    "Nothing in this code assigns PB_DECODE_NOINIT after its declaration."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

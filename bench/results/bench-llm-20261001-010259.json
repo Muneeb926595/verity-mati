@@ -1,0 +1,299 @@
+{
+ "summary": {
+  "cases": 4,
+  "passed": 3,
+  "mean_score": 0.979,
+  "symbol_identification": {
+   "cases": 2,
+   "passed": 1,
+   "accuracy": 0.917
+  },
+  "call_paths_and_flows": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_outputs": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "execution_trace": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "branch_outcomes": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "intent_routing": {
+   "cases": 3,
+   "passed": 3,
+   "accuracy": 1.0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 50,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 50,
+   "claims": 50,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 8
+  },
+  "mean_seconds": 23.19
+ },
+ "results": [
+  {
+   "id": "c-flow-gps",
+   "category": "dataflow",
+   "q": "Explain how GPS data travels through this application.",
+   "intent": "flow",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "flow",
+     "got": "flow"
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "dataflow": {
+     "ok": true,
+     "score": 1.0,
+     "got": [
+      "USART2_IRQHandler() reads DR",
+      "rb_push()",
+      "rb_pop()",
+      "gps_receiver_poll()",
+      "gps_receiver_process_line()",
+      "nmea_split()",
+      "handle_rmc() (uses atof())",
+      "ProcessGpsData()",
+      "CalculateHeading() (uses wrap180(), wrap360())",
+      "back in ProcessGpsData()",
+      "NavigationTick()",
+      "VehicleController_SetDirection() (uses wrap180(), clamp())",
+      "motor_set_steering()"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 13
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 13,
+     "total": 13
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 42.72,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The GPS data first arrives in `USART2_IRQHandler()` where a byte is read from the `USART2->DR` register. That byte is stored in the ring buffer by `rb_push()` and later retrieved with `rb_pop()`. The retrieved byte is processed by `gps_receiver_poll()`, which eventually calls `gps_receiver_process_line()`. Inside that function, `nmea_split()` breaks the NMEA sentence into fields, and `handle_rmc()` converts the heading string to a number with `atof()`. The numeric heading is passed to `ProcessGpsData()`, which calls `CalculateHeading()` to compute the heading difference using `wrap180()` and `wrap360()`. Finally, `VehicleController_SetDirection()` uses `wrap180()` and `clamp()` to determine the steering error and sends the result to `motor_set_steering()` in the hardware layer. (The exact flow from the DR register to the motor output is likely, as it depends on runtime conditions.)"
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "c-influence",
+   "category": "dataflow",
+   "q": "Which variables affect the final heading?",
+   "intent": "influence",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "influence",
+     "got": "influence"
+    },
+    "symbols": {
+     "ok": false,
+     "score": 0.8333333333333334,
+     "missing": [
+      "HEADING_FILTER_ALPHA"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 7
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 7,
+     "total": 7
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 14.45,
+   "passed": false,
+   "score": 0.917,
+   "answer": [
+    "The final heading is influenced by the values `fix->heading_deg` and `fix->speed_knots` that are passed to `CalculateHeading()`. The calculation also uses the previous `currentHeading` value, and it checks several fields of `gps_fix_t` such as `valid`, `latitude`, `longitude`, `hdop`, and `satellites`. The heading is only updated when `status != GPS_OK` is false, which depends on `gps_validate_fix()` verifying that `fix` is not null, `valid` is true, latitude and longitude are within valid ranges, `hdop` is not greater than `GPS_MAX_HDOP` (2.5), and `satellites` is at least `GPS_MIN_SATELLITES` (4). Additionally, inside `CalculateHeading()` the update is skipped if `speed_knots < MIN_SPEED_FOR_HEADING` (2.0). The values that reach these checks originate from the DR register and flow through the USART2 interrupt handler and several processing functions before reaching `ProcessGpsData()`."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "c-scenario-270",
+   "category": "scenario",
+   "q": "GPS heading = 270, speed = 80, valid = true. Which branch executes?",
+   "intent": "scenario",
+   "checks": {
+    "intent": {
+     "ok": true,
+     "expected": "scenario",
+     "got": "scenario"
+    },
+    "scenario": {
+     "ok": true,
+     "score": 1.0,
+     "final": {
+      "g_nav.mode": "1 (NAV_MODE_TRACKING)",
+      "g_nav.has_fix": "1",
+      "currentHeading": "337.5000",
+      "g_nav.speed_knots": "80.0000"
+     }
+    },
+    "outputs": {
+     "ok": true,
+     "score": 1.0,
+     "got": [
+      "motor_set_steering(50)"
+     ]
+    },
+    "trace": {
+     "ok": true,
+     "score": 1.0,
+     "got": [
+      "ProcessGpsData",
+      "gps_validate_fix",
+      "CalculateHeading",
+      "wrap180",
+      "wrap360",
+      "wrap360",
+      "NavigationTick",
+      "bearing_deg",
+      "wrap360",
+      "VehicleController_SetDirection",
+      "wrap180",
+      "wrap360",
+      "clamp",
+      "clamp"
+     ]
+    },
+    "branches": {
+     "ok": true,
+     "score": 1.0,
+     "got": {
+      "nav/navigation.c:49": false,
+      "nav/navigation.c:37": false,
+      "nav/navigation.c:68": false
+     }
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 11
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 11,
+     "total": 11
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "OBSERVED",
+   "seconds": 14.51,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "I ran the real code in a sandbox with heading = 270, speed = 80, valid = 1.",
+    "Functions that ran, in order: ProcessGpsData() \u2192 gps_validate_fix() \u2192 CalculateHeading() \u2192 wrap180() \u2192 wrap360() \u2192 NavigationTick() \u2192 bearing_deg() \u2192 wrap360() \u2192 VehicleController_SetDirection() \u2192 wrap180() \u2192 wrap360() \u2192 clamp().",
+    "Decisions, in the order they ran: in ProcessGpsData(): `status != GPS_OK` was false (line 49); in gps_validate_fix(): `fix == 0 || !fix->valid` was false (line 7), `fix->latitude < -90.0 || fix->latitude > 90.0 || fix->longitude < -180.0 || fix->longitude > 180.0` was false (line 10), `fix->hdop > GPS_MAX_HDOP || fix->satellites < GPS_MIN_SATELLITES` was false (line 14); in CalculateHeading(): `speed_knots < MIN_SPEED_FOR_HEADING` was false (line 37); in NavigationTick(): `g_nav.has_fix && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` was false (line 68), `g_nav.mode != NAV_MODE_TRACKING && g_nav.mode != NAV_MODE_DEAD_RECKONING` was false (line 77).",
+    "Resulting values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 80.0000.",
+    "Outputs it produced: motor_set_steering(50)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cs-impact-update",
+   "category": "callpath",
+   "q": "What could be affected if I change NavigationController.ProcessGpsData?",
+   "intent": "impact",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 19
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 19,
+     "total": 19
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 21.09,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Changing `NavigationController.ProcessGpsData()` can affect the code that calls it, the data that depends on its result, and the outputs that data reaches. It is called directly by `Program.RunSelfTest()` and `GpsService.OnFix()`, and indirectly by `Program.Main()`, `SerialGpsSensor.OnFixReceived()`, `SerialGpsSensor.HandleLine()`, `SerialGpsSensor.Pump()`, and a lambda. The method stores its result in `RunSelfTest.accepted` and changes state such as `NavigationController._previousFixUtc`, `NavState.CurrentHeading`, `NavState.GroundSpeedMps`, `NavState.LastFixUtc`, `NavState.LatitudeDeg`, `NavState.LongitudeDeg`, `NavState.Mode`, and `NavState.RejectedFixes`, which are read by `NavLoop.Tick()` and `Program.Main()`. Functions that use values derived from it include `ComplementaryHeadingFilter.Update()`, `AutopilotLink.FormatFrame()`, `AutopilotLink.SendBankCommand()`, `NavLoop.Tick()`, `PidController.Update()`, `StreamAutopilotTransport.Send()`, `UdpAutopilotTransport.Send()`, `KalmanHeadingFilter.Update()`, `Program.Main()`, and `Program.RunSelfTest()`. The behavior also depends on `GpsTracking`, `NavigationController._headingFilter`, `NavigationController._options`, `NavigationController._previousFixUtc`, `NavigationController._state`, `NmeaParser.KnotsToMetersPerSecond`, and various fields of `GpsFix` and `NavOptions`."
+   ],
+   "prose_mode": "model"
+  }
+ ]
+}

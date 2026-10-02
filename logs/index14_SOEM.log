@@ -1,0 +1,15 @@
+  ✓ Looking at your project files: Found 41 C, 52 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + MSVC + GCC / Clang; 
+build settings reconstructed from the source (no build needed); platform SDK 
+headers not on this machine — Verity's API knowledge pack stands in for them; 
+26 missing header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 74 C file(s); also checked 2 configuration 
+switch(es): MSDOS, EC_MAX_MAPT
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 56% of function 
+definitions and 94% of direct calls
+  ✓ Connecting the pieces together: Traced 2 call(s) through function pointers 
+or tables; 2 matched by signature only; 2 indirect call(s) could not be 
+resolved; 5 entry point(s), 337 input/output site(s)
+  ✓ Preparing search: Indexed 2016 symbols for search (keyword + meaning search)
+Ready. Indexed in 156.4 s.

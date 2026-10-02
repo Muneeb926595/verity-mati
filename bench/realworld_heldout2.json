@@ -1,0 +1,30 @@
+{
+  "_doc": "SECOND HELD-OUT real project: littlefs (samples/realworld/littlefs, ~14K lines incl. runners/bd; analysed uncompiled). Questions written from facts verified in the source AFTER all lwIP and libmodbus fixes and BEFORE Verity was ever run on it. First run kept in bench/results/realworld_heldout2/first-run.* — never tune against this suite; add another project instead.",
+  "projects": {"lfs": "samples/realworld/littlefs"},
+  "cases": [
+    {"id": "lfs-verify-mismatch", "project": "lfs", "category": "scenario",
+     "q": "What happens when the data read back after programming does not match?", "must_mention": ["lfs_bd_flush", "LFS_ERR_CORRUPT"]},
+    {"id": "lfs-no-space", "project": "lfs", "category": "scenario",
+     "q": "What happens when the file system runs out of free blocks?", "must_mention": ["lfs_alloc", "LFS_ERR_NOSPC"]},
+    {"id": "lfs-name-too-long", "project": "lfs", "category": "scenario",
+     "q": "What does lfs_mkdir do when the name is too long?", "must_mention": ["LFS_ERR_NAMETOOLONG"]},
+    {"id": "lfs-bad-version", "project": "lfs", "category": "scenario",
+     "q": "What happens when mounting finds an unsupported on-disk version?", "must_mention": ["lfs_mount_", "LFS_ERR_INVAL"]},
+    {"id": "lfs-crc-fn", "project": "lfs", "category": "symbol",
+     "q": "Which function computes the CRC?", "must_mention": ["lfs_crc"]},
+    {"id": "lfs-erase-callers", "project": "lfs", "category": "callpath",
+     "q": "Who calls lfs_bd_erase?", "must_mention": ["lfs_dir_compact", "lfs_ctz_extend", "lfs_file_relocate"]},
+    {"id": "lfs-prog-target", "project": "lfs", "category": "callpath",
+     "q": "What can lfs->cfg->prog point to?", "must_mention": ["lfs_emubd_prog"]},
+    {"id": "lfs-block-count", "project": "lfs", "category": "symbol",
+     "q": "Where is the block count set?", "must_mention": ["lfs_init"], "must_cite": ["lfs.c:4208"]},
+    {"id": "lfs-flush-callers", "project": "lfs", "category": "callpath",
+     "q": "Who calls lfs_bd_flush?", "must_mention": ["lfs_bd_sync"]},
+    {"id": "lfs-sync", "project": "lfs", "category": "symbol",
+     "q": "What does lfs_bd_sync do?", "must_mention": ["lfs_bd_flush", "sync"]},
+    {"id": "lfs-cache-drop", "project": "lfs", "category": "symbol",
+     "q": "Where is the read cache invalidated?", "must_mention": ["lfs_cache_drop"]},
+    {"id": "lfs-invented", "project": "lfs", "category": "honesty",
+     "q": "What does lfs_defragment_blocks do?", "must_not_claim_defined": ["lfs_defragment_blocks"]}
+  ]
+}

@@ -1,0 +1,15 @@
+  ✓ Looking at your project files: Found 25 C, 11 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + MSVC + GCC / Clang; 
+build settings reconstructed from the source (no build needed); platform SDK 
+headers not on this machine — Verity's API knowledge pack stands in for them; 1
+missing header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 30 C file(s); also checked 4 configuration 
+switch(es): MQTT_SERVER, MQTT_CLIENT, AIX, MQTT_TASK
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 71% of function 
+definitions and 89% of direct calls
+  ✓ Connecting the pieces together: Traced 29 call(s) through function pointers 
+or tables; 4 matched by signature only; 1 indirect call(s) could not be 
+resolved; 5 entry point(s), 119 input/output site(s)
+  ✓ Preparing search: Indexed 364 symbols for search (keyword + meaning search)
+Ready. Indexed in 9.6 s.

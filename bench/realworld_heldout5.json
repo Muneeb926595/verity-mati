@@ -1,0 +1,148 @@
+{
+ "_doc": "FIFTH HELD-OUT real project (Phase 4): uC/OS-II (samples/realworld/uC-OS2, ~15K lines; RTOS kernel by Weston Embedded/Micrium, trimmed as a real project would be to the kernel, the os_cfg.h template and ONE port: Win32/Visual Studio, i.e. Windows/MSVC-style code). ucos_ii.c #includes every kernel .c file (single-translation-unit build). Questions written from facts verified in the source AFTER all Phase 4 re-ranking work and BEFORE Verity was ever run on it. First runs (keyword-only, +embeddings, +local-model re-ranking) kept in bench/results/realworld_heldout5/first-run-*.",
+ "projects": {
+  "ucos": "samples/realworld/uC-OS2"
+ },
+ "cases": [
+  {
+   "id": "ucos-q-full",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when a message is posted to a queue that is already full?",
+   "must_mention": [
+    "OSQPost",
+    "OS_ERR_Q_FULL"
+   ]
+  },
+  {
+   "id": "ucos-mem-empty",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when a task asks for a memory block and the partition has none left?",
+   "must_mention": [
+    "OSMemGet",
+    "OS_ERR_MEM_NO_FREE_BLKS"
+   ]
+  },
+  {
+   "id": "ucos-sem-timeout",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when a task waiting on a semaphore times out?",
+   "must_mention": [
+    "OSSemPend",
+    "OS_ERR_TIMEOUT"
+   ]
+  },
+  {
+   "id": "ucos-prio-exist",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when a task is created at a priority that is already taken?",
+   "must_mention": [
+    "OSTaskCreate",
+    "OS_ERR_PRIO_EXIST"
+   ]
+  },
+  {
+   "id": "ucos-no-tcb",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when there are no free task control blocks left?",
+   "must_mention": [
+    "OS_TCBInit",
+    "OS_ERR_TASK_NO_MORE_TCB"
+   ]
+  },
+  {
+   "id": "ucos-pend-isr",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when OSSemPend is called from an ISR?",
+   "must_mention": [
+    "OSIntNesting",
+    "OS_ERR_PEND_ISR"
+   ]
+  },
+  {
+   "id": "ucos-mutex-pcp",
+   "project": "ucos",
+   "category": "scenario",
+   "q": "What happens when a task waits for a mutex that a lower-priority task owns?",
+   "must_mention": [
+    "OSMutexPend",
+    "OSTCBPrio = pcp"
+   ]
+  },
+  {
+   "id": "ucos-ostime",
+   "project": "ucos",
+   "category": "symbol",
+   "q": "Where is the system time OSTime incremented?",
+   "must_mention": [
+    "OSTimeTick"
+   ],
+   "must_cite": [
+    "Source/os_core.c:954"
+   ]
+  },
+  {
+   "id": "ucos-cpu-usage",
+   "project": "ucos",
+   "category": "symbol",
+   "q": "How is the CPU usage percentage computed?",
+   "must_mention": [
+    "OS_TaskStat",
+    "OSIdleCtrMax"
+   ]
+  },
+  {
+   "id": "ucos-prio-high",
+   "project": "ucos",
+   "category": "dataflow",
+   "q": "Where does OSPrioHighRdy get its value?",
+   "must_mention": [
+    "OS_SchedNew",
+    "OSUnMapTbl"
+   ]
+  },
+  {
+   "id": "ucos-tick-callers",
+   "project": "ucos",
+   "category": "callpath",
+   "q": "Who calls OSTimeTick?",
+   "must_mention": [
+    "OSTickW32"
+   ]
+  },
+  {
+   "id": "ucos-sched-callers",
+   "project": "ucos",
+   "category": "callpath",
+   "q": "Who calls OS_Sched?",
+   "must_mention": [
+    "OSTimeDly",
+    "OSSemPost"
+   ]
+  },
+  {
+   "id": "ucos-threads",
+   "project": "ucos",
+   "category": "symbol",
+   "q": "What threads does the program start?",
+   "must_mention": [
+    "OSTickW32",
+    "OSTaskW32"
+   ]
+  },
+  {
+   "id": "ucos-invented",
+   "project": "ucos",
+   "category": "honesty",
+   "q": "What does OSTaskRestart do?",
+   "must_not_claim_defined": [
+    "OSTaskRestart"
+   ]
+  }
+ ]
+}

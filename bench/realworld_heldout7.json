@@ -1,0 +1,129 @@
+{
+ "_doc": "SEVENTH HELD-OUT real project (Phase 4), the first real C# one: nanoFramework M2Mqtt (samples/realworld/m2mqtt, ~13.7K lines of C#; MQTT 3.1.1/5 client for .NET nanoFramework microcontrollers, shipped tree incl. unit tests and test apps). Questions written from facts verified in the source BEFORE Verity was ever run on it. First runs kept in bench/results/realworld_heldout7/first-run-*.",
+ "projects": {
+  "m2mqtt": "samples/realworld/m2mqtt"
+ },
+ "cases": [
+  {
+   "id": "m2-ping-timeout",
+   "project": "m2mqtt",
+   "category": "scenario",
+   "q": "What happens when the broker does not answer a ping in time?",
+   "must_mention": [
+    "Ping",
+    "OnConnectionClosing"
+   ]
+  },
+  {
+   "id": "m2-send-fail",
+   "project": "m2mqtt",
+   "category": "scenario",
+   "q": "What happens when sending on the network channel fails?",
+   "must_mention": [
+    "Send",
+    "MqttCommunicationException"
+   ]
+  },
+  {
+   "id": "m2-connect-fail",
+   "project": "m2mqtt",
+   "category": "scenario",
+   "q": "What happens when the client cannot connect to the broker?",
+   "must_mention": [
+    "Connect",
+    "MqttConnectionException"
+   ]
+  },
+  {
+   "id": "m2-keepalive-zero",
+   "project": "m2mqtt",
+   "category": "scenario",
+   "q": "What happens when the keep alive period is zero?",
+   "must_mention": [
+    "KeepAliveThread",
+    "_keepAlivePeriod != 0"
+   ]
+  },
+  {
+   "id": "m2-msgid-wrap",
+   "project": "m2mqtt",
+   "category": "symbol",
+   "q": "How does the message id wrap around?",
+   "must_mention": [
+    "GetMessageId",
+    "MaxValue"
+   ]
+  },
+  {
+   "id": "m2-ping-callers",
+   "project": "m2mqtt",
+   "category": "callpath",
+   "q": "Who calls Ping?",
+   "must_mention": [
+    "KeepAliveThread"
+   ]
+  },
+  {
+   "id": "m2-inflight-callers",
+   "project": "m2mqtt",
+   "category": "callpath",
+   "q": "Who calls EnqueueInflight?",
+   "must_mention": [
+    "Subscribe",
+    "Publish",
+    "ReceiveThread"
+   ]
+  },
+  {
+   "id": "m2-threads",
+   "project": "m2mqtt",
+   "category": "symbol",
+   "q": "What threads does the client start?",
+   "must_mention": [
+    "ReceiveThread",
+    "KeepAliveThread",
+    "DispatchEventThread",
+    "ProcessInflightThread"
+   ]
+  },
+  {
+   "id": "m2-lastcomm",
+   "project": "m2mqtt",
+   "category": "symbol",
+   "q": "Where is _lastCommTime updated?",
+   "must_mention": [
+    "Send",
+    "SendReceive"
+   ]
+  },
+  {
+   "id": "m2-isconnected",
+   "project": "m2mqtt",
+   "category": "symbol",
+   "q": "Where is IsConnected set?",
+   "must_mention": [
+    "Connect",
+    "OnConnectionClosing"
+   ]
+  },
+  {
+   "id": "m2-varbyte",
+   "project": "m2mqtt",
+   "category": "symbol",
+   "q": "How is the remaining length encoded?",
+   "must_mention": [
+    "EncodeVariableByte",
+    "128"
+   ]
+  },
+  {
+   "id": "m2-invented",
+   "project": "m2mqtt",
+   "category": "honesty",
+   "q": "What does ReconnectAsync do?",
+   "must_not_claim_defined": [
+    "ReconnectAsync"
+   ]
+  }
+ ]
+}

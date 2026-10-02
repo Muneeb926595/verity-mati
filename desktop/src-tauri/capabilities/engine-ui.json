@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "engine-ui",
+  "description": "The Verity UI served by the local engine on 127.0.0.1 (any port): it may open the native folder picker.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:*"]
+  },
+  "permissions": ["core:default", "dialog:allow-open", "allow-pick-folder", "allow-engine-status", "allow-selftest-report"]
+}

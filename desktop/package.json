@@ -1,0 +1,12 @@
+{
+  "name": "verity-desktop",
+  "private": true,
+  "version": "0.5.0",
+  "description": "Verity desktop shell (Tauri 2). Starts the local engine and shows its UI.",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "~2.12.0"
+  }
+}

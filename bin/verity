@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Verity launcher: runs the CLI from this folder's own Python environment (no system install needed).
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$HERE/.venv/bin/python" -m verity "$@"

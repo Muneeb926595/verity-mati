@@ -1,0 +1,42 @@
+[bench] FAIL m2-ping-timeout            score=0.50 0.3s
+[bench] PASS m2-send-fail               score=1.00 0.1s
+[bench] PASS m2-connect-fail            score=1.00 0.2s
+[bench] PASS m2-keepalive-zero          score=1.00 0.1s
+[bench] PASS m2-msgid-wrap              score=1.00 0.0s
+[bench] PASS m2-ping-callers            score=1.00 0.0s
+[bench] PASS m2-inflight-callers        score=1.00 0.0s
+[bench] PASS m2-threads                 score=1.00 0.0s
+[bench] PASS m2-lastcomm                score=1.00 0.0s
+[bench] PASS m2-isconnected             score=1.00 0.0s
+[bench] PASS m2-varbyte                 score=1.00 0.0s
+[bench] PASS m2-invented                score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-191817)
+
+Cases: 12 · passed: 11 · mean score: 0.958 · mean time per question: 0.07 s
+
+| metric | result |
+|---|---|
+| symbol identification | 10/11 passed · accuracy 0.955 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 3 of 76 (3.95%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 73/76 (96.05%) |
+| answer paragraphs without any evidence | 0 of 35 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| m2-ping-timeout | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["OnConnectionClosing"]} |
+| m2-send-fail | scenario | failure_invalid | ✓ | 1.0 |  |
+| m2-connect-fail | scenario | failure_invalid | ✓ | 1.0 |  |
+| m2-keepalive-zero | scenario | failure_invalid | ✓ | 1.0 |  |
+| m2-msgid-wrap | symbol | explain | ✓ | 1.0 |  |
+| m2-ping-callers | callpath | callers | ✓ | 1.0 |  |
+| m2-inflight-callers | callpath | callers | ✓ | 1.0 |  |
+| m2-threads | symbol | entries | ✓ | 1.0 |  |
+| m2-lastcomm | symbol | where_computed | ✓ | 1.0 |  |
+| m2-isconnected | symbol | where_computed | ✓ | 1.0 |  |
+| m2-varbyte | symbol | which_fn | ✓ | 1.0 |  |
+| m2-invented | honesty | explain | ✓ | 1.0 |  |
+

@@ -1,0 +1,11 @@
+realworld_heldout8 direct exit=1 5/12
+realworld_heldout8 direct-embed exit=1 5/12
+realworld_heldout8 llm exit=1 5/12
+realworld_heldout8 llm-embed exit=1 5/12
+realworld_heldout9 direct exit=1 7/12
+realworld_heldout9 direct-embed exit=1 7/12
+realworld_heldout9 llm exit=1 9/12
+realworld_heldout9 llm-embed exit=1 9/12
+DONE
+realworld_heldout8 llm exit=1 9/12
+realworld_heldout8 llm-embed exit=1 9/12

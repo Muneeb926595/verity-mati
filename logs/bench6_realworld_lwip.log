@@ -1,0 +1,50 @@
+[bench] indexed lwip: done 361.32
+[bench] PASS lw-callers-tcp-process     score=1.00 2.1s
+[bench] PASS lw-callers-ip4-input       score=1.00 0.0s
+[bench] PASS lw-tcp-bad-checksum        score=1.00 0.9s
+[bench] PASS lw-ip-checksum             score=1.00 0.1s
+[bench] PASS lw-established             score=1.00 0.0s
+[bench] PASS lw-ttl-decrement           score=1.00 0.0s
+[bench] PASS lw-ttl-zero                score=1.00 0.9s
+[bench] PASS lw-callers-dhcp-fine       score=1.00 0.0s
+[bench] PASS lw-offered-ip              score=1.00 1.9s
+[bench] PASS lw-tcp-write-full          score=1.00 0.2s
+[bench] PASS lw-threads                 score=1.00 0.1s
+[bench] PASS lw-path-eth-tcp            score=1.00 0.0s
+[bench] PASS lw-retransmit              score=1.00 0.1s
+[bench] PASS lw-input-fn                score=1.00 0.0s
+[bench] PASS lw-invented                score=1.00 0.2s
+# Verity benchmark — direct mode (20261001-075552)
+
+Cases: 15 · passed: 15 · mean score: 1.0 · mean time per question: 0.43 s
+
+| metric | result |
+|---|---|
+| symbol identification | 14/14 passed · accuracy 1.000 |
+| file line references | 2/2 passed · accuracy 1.000 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 135 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 135/135 (100.00%) |
+| answer paragraphs without any evidence | 0 of 50 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| lw-callers-tcp-process | callpath | callers | ✓ | 1.0 |  |
+| lw-callers-ip4-input | callpath | callers | ✓ | 1.0 |  |
+| lw-tcp-bad-checksum | scenario | failure_invalid | ✓ | 1.0 |  |
+| lw-ip-checksum | symbol | which_fn | ✓ | 1.0 |  |
+| lw-established | symbol | where_computed | ✓ | 1.0 |  |
+| lw-ttl-decrement | symbol | where_computed | ✓ | 1.0 |  |
+| lw-ttl-zero | scenario | failure_invalid | ✓ | 1.0 |  |
+| lw-callers-dhcp-fine | callpath | callers | ✓ | 1.0 |  |
+| lw-offered-ip | dataflow | origin | ✓ | 1.0 |  |
+| lw-tcp-write-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| lw-threads | symbol | entries | ✓ | 1.0 |  |
+| lw-path-eth-tcp | callpath | flow | ✓ | 1.0 |  |
+| lw-retransmit | symbol | triggers | ✓ | 1.0 |  |
+| lw-input-fn | callpath | explain | ✓ | 1.0 |  |
+| lw-invented | honesty | explain | ✓ | 1.0 |  |
+

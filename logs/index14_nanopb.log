@@ -1,0 +1,15 @@
+  ✓ Looking at your project files: Found 7 C, 5 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + GCC / Clang + MSVC + 
+IAR; build settings reconstructed from the source (no build needed); 3 missing 
+header(s) replaced by stand-ins
+  ✓ Reading the C code: Read 7 C file(s); also checked 4 configuration 
+switch(es): PB_VALIDATE_UTF8, PB_ENABLE_MALLOC, PB_CONVERT_DOUBLE_FLOAT, 
+PB_WITHOUT_64BIT
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 89% of function 
+definitions and 90% of direct calls
+  ✓ Connecting the pieces together: Traced 6 call(s) through function pointers 
+or tables; 40 matched by signature only; 2 indirect call(s) could not be 
+resolved; 1 entry point(s), 35 input/output site(s)
+  ✓ Preparing search: Indexed 416 symbols for search (keyword + meaning search)
+Ready. Indexed in 7.5 s.

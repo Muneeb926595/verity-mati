@@ -1,0 +1,42 @@
+[bench] PASS nm-slave-busy              score=1.00 18.6s
+[bench] PASS nm-acknowledge             score=1.00 20.5s
+[bench] PASS nm-wrong-function          score=1.00 15.4s
+[bench] PASS nm-wrong-slave             score=1.00 14.6s
+[bench] PASS nm-timeout                 score=1.00 7.5s
+[bench] PASS nm-checksum                score=1.00 15.4s
+[bench] FAIL nm-wait-negative           score=0.50 0.1s
+[bench] FAIL nm-validate-callers        score=0.00 3.2s
+[bench] FAIL nm-exception-detect        score=0.50 6.4s
+[bench] PASS nm-retries-set             score=1.00 15.6s
+[bench] PASS nm-crc-calc                score=1.00 7.9s
+[bench] PASS nm-invented                score=1.00 0.1s
+# Verity benchmark — llm-embed mode (20261001-083119)
+
+Cases: 12 · passed: 9 · mean score: 0.833 · mean time per question: 10.45 s
+
+| metric | result |
+|---|---|
+| symbol identification | 8/11 passed · accuracy 0.818 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 15 of 103 (14.56%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 88/103 (85.44%) |
+| answer paragraphs without any evidence | 0 of 49 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| nm-slave-busy | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-acknowledge | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-function | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wrong-slave | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-timeout | scenario | failure_missing | ✓ | 1.0 |  |
+| nm-checksum | scenario | failure_invalid | ✓ | 1.0 |  |
+| nm-wait-negative | scenario | failure_invalid | ✗ | 0.5 | symbols: {"missing": ["ArgumentException"]} |
+| nm-validate-callers | callpath | callers | ✗ | 0.0 | symbols: {"missing": ["UnicastMessage"]} |
+| nm-exception-detect | symbol | explain | ✗ | 0.5 | symbols: {"missing": ["ExceptionOffset"]} |
+| nm-retries-set | symbol | where_computed | ✓ | 1.0 |  |
+| nm-crc-calc | symbol | where_computed | ✓ | 1.0 |  |
+| nm-invented | honesty | explain | ✓ | 1.0 |  |
+

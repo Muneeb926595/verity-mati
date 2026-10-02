@@ -1,0 +1,7 @@
+<Project>
+  <!-- Keep intermediate/build output out of bin/, which holds only the published worker. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory).build/obj/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory).build/bin/</BaseOutputPath>
+  </PropertyGroup>
+</Project>

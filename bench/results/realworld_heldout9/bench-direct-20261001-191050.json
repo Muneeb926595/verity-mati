@@ -1,0 +1,527 @@
+{
+ "summary": {
+  "cases": 12,
+  "passed": 9,
+  "mean_score": 0.833,
+  "symbol_identification": {
+   "cases": 11,
+   "passed": 8,
+   "accuracy": 0.818
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 17,
+   "claims": 119,
+   "rate": 0.1429
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 102,
+   "claims": 119,
+   "rate": 0.8571
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 38
+  },
+  "mean_seconds": 0.07
+ },
+ "results": [
+  {
+   "id": "nm-slave-busy",
+   "category": "scenario",
+   "q": "What happens when the slave answers that it is busy?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.27,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is decided in ModbusTransport.UnicastMessage<T>() (NModbus/IO/ModbusTransport.cs:181): it checks `se.SlaveExceptionCode != SlaveExceptionCodes.SlaveDeviceBusy`; when that is NOT true it checks `SlaveBusyUsesRetryCount && attempt++ > _retries` (line 186); if true it throws the exception again; then it calls LoggingExtensions.Warning() (line 191); then it calls ModbusTransport.Sleep(WaitToRetryMilliseconds) (line 193).",
+    "LoggingExtensions.Warning() calls IModbusLogger.Log(LoggingLevel.Warning, message) (line 28).",
+    "ModbusTransport.Sleep() calls Task.Wait (line 331)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-acknowledge",
+   "category": "scenario",
+   "q": "What happens when the slave responds with an ACKNOWLEDGE exception?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "Acknowledge"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.08,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "This is handled in ModbusTransport.UnicastMessage<T>() (NModbus/IO/ModbusTransport.cs:158): it checks `readAgain`, and when that is true it calls LoggingExtensions.Debug() and calls ModbusTransport.Sleep() and calls WaitToRetryMilliseconds.get().",
+    "When it does not return there, ModbusTransport.UnicastMessage<T>() goes on to call ModbusTransport.ValidateResponse() with (`message`, `response`) (line 176).",
+    "ModbusTransport.Sleep() calls Task.Wait (line 331)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-wrong-function",
+   "category": "scenario",
+   "q": "What happens when a response has an unexpected function code?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.1,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in ModbusTransport.ValidateResponse() (NModbus/IO/ModbusTransport.cs:250): it checks `request.FunctionCode != response.FunctionCode`, and when that is true it calls FunctionCode.get() and calls new IOException() and throws `new IOException(msg)`, so the rest of ModbusTransport.ValidateResponse() is skipped and the exception goes to its caller.",
+    "Because it returns early, these do not happen in this case: SlaveAddress.get() \u2014 the previous values stay in place.",
+    "ModbusTransport.ValidateResponse() is called by ModbusTransport.UnicastMessage<T>() inside a try block (NModbus/IO/ModbusTransport.cs:176); its `catch (Exception)` handler (NModbus/IO/ModbusTransport.cs:195) checks `(e is SocketException socketException && socketException.SocketErrorCode != SocketError.TimedOut) || (e.InnerException is SocketException innerSocketException && innerSocketException.SocketErrorCode != SocketError.TimedOut)` (line 197); if true it throws the exception again; then it checks `e is FormatException || e is NotImplementedException || e is TimeoutException || e is IOException || e is SocketException` (line 202); if true it calls LoggingExtensions.Error(), Exception.GetType, ModbusTransport.Sleep(), WaitToRetryMilliseconds.get(); otherwise it throws the exception again; then it checks `attempt++ > _retries` (line 210); if true it throws the exception again.",
+    "Bad input is also rejected in other places: ModbusTransport.ShouldRetryResponse() rejects it when `request.FunctionCode != response.FunctionCode` (NModbus/IO/ModbusTransport.cs:279)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-wrong-slave",
+   "category": "scenario",
+   "q": "What happens when the response comes from a different slave address?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.1,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "This is handled in ModbusTransport.ValidateResponse() (NModbus/IO/ModbusTransport.cs:256): it checks `request.SlaveAddress != response.SlaveAddress`, and when that is true it calls SlaveAddress.get() and calls new IOException() and throws `new IOException(msg)`, so the rest of ModbusTransport.ValidateResponse() is skipped and the exception goes to its caller.",
+    "Because it returns early, these do not happen in this case: IModbusRequest.ValidateResponse(), ReadHoldingInputRegistersRequest.ValidateResponse(), ReadWriteMultipleRegistersRequest.ValidateResponse(), WriteMultipleCoilsRequest.ValidateResponse() \u2014 the previous values stay in place.",
+    "ModbusTransport.ValidateResponse() is called by ModbusTransport.UnicastMessage<T>() inside a try block (NModbus/IO/ModbusTransport.cs:176); its `catch (Exception)` handler (NModbus/IO/ModbusTransport.cs:195) checks `(e is SocketException socketException && socketException.SocketErrorCode != SocketError.TimedOut) || (e.InnerException is SocketException innerSocketException && innerSocketException.SocketErrorCode != SocketError.TimedOut)` (line 197); if true it throws the exception again; then it checks `e is FormatException || e is NotImplementedException || e is TimeoutException || e is IOException || e is SocketException` (line 202); if true it calls LoggingExtensions.Error(), Exception.GetType, ModbusTransport.Sleep(), WaitToRetryMilliseconds.get(); otherwise it throws the exception again; then it checks `attempt++ > _retries` (line 210); if true it throws the exception again."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-timeout",
+   "category": "scenario",
+   "q": "What happens when a request times out?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Losing the data is detected in ModbusTransport.UnicastMessage<T>() (NModbus/IO/ModbusTransport.cs:202), which checks `e is FormatException || e is NotImplementedException || e is TimeoutException || e is IOException || e is SocketException`.",
+    "When that happens it calls LoggingExtensions.Error() (which calls IModbusLogger.Log(LoggingLevel.Error, message) (line 33)); calls Exception.GetType; calls ModbusTransport.Sleep() (which calls Task.Wait (line 331)); calls WaitToRetryMilliseconds.get().",
+    "ModbusTransport.UnicastMessage<T>() also stops early when `attempt++ > _retries` (line 210), which skips ModbusTransport.Sleep(), WaitToRetryMilliseconds.get() \u2014 so without fresh valid data it does not reach those calls either."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-checksum",
+   "category": "scenario",
+   "q": "What happens when a response has a bad checksum?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 3,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.1,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "Invalid data is caught in ModbusSerialTransport.CreateResponse<T>() (NModbus/IO/ModbusSerialTransport.cs:51): it checks `CheckFrame && !ChecksumsMatch(response, frame)`, and when that is true it calls String.Join``1 and calls MessageFrame.get() and calls LoggingExtensions.Warning() and calls new IOException() and throws `new IOException(msg)`, so the rest of ModbusSerialTransport.CreateResponse<T>() is skipped and the exception goes to its caller.",
+    "MessageFrame.get() calls FunctionCode.get() (line 55); then it calls MeiType.get() (line 56).",
+    "LoggingExtensions.Warning() calls IModbusLogger.Log(LoggingLevel.Warning, message) (line 28)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-wait-negative",
+   "category": "scenario",
+   "q": "What happens when WaitToRetryMilliseconds is set to a negative value?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "ArgumentException"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.04,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "These parts of the code look most relevant: IModbusTransport.WaitToRetryMilliseconds (property, NModbus/Interfaces/IModbusTransport.cs:14); ModbusTransport.WaitToRetryMilliseconds (property, NModbus/IO/ModbusTransport.cs:64); ModbusTransportFixture.WaitToRetryMilliseconds() (method, NModbus.UnitTests/IO/ModbusTransportFixture.cs:59); Modbus.DefaultWaitToRetryMilliseconds (field, NModbus/Modbus.cs:18); WaitToRetryMilliseconds.get() (method, NModbus/Interfaces/IModbusTransport.cs:14); ModbusTransport._waitToRetryMilliseconds (field, NModbus/IO/ModbusTransport.cs:20)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-validate-callers",
+   "category": "callpath",
+   "q": "Who calls ValidateResponse?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is called by ModbusTransport.UnicastMessage<T>() at NModbus/IO/ModbusTransport.cs:176 with (`message`, `response`) \u2014 `IModbusMessage response = null` (line 134), repeatedly inside `!success`; lambda() at NModbus.UnitTests/IO/ModbusTcpTransportFixture.cs:182 with (`request`, `response`); ModbusTcpTransportFixture.ValidateResponse() at NModbus.UnitTests/IO/ModbusTcpTransportFixture.cs:196 with (`request`, `response`) \u2014 `var request = new ReadCoilsInputsRequest(ModbusFunctionCodes.ReadCoils, 1, 1, 1)` (line 190); `var response = new ReadCoilsInputsResponse(ModbusFunctionCodes.ReadCoils, 1, 1, null)` (line 192). The full chain from the program's start is: lambda() \u2192 ModbusTransport.UnicastMessage<T>() \u2192 ModbusTransport.ValidateResponse()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-exception-detect",
+   "category": "symbol",
+   "q": "How does the transport decide that a response is a slave exception?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "CreateResponse",
+      "ExceptionOffset"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 11,
+     "claims": 41
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 30,
+     "total": 41
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.02,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "ModbusTransport.UnicastMessage<T>() (NModbus/IO/ModbusTransport.cs:131).",
+    "Step by step, it sets `IModbusMessage response = null` (line 134); then it repeats while `!success` (line 138); then it calls ModbusTransport.Write(message) (line 144); then it repeats while `readAgain` (line 147); then it calls ModbusTransport.ReadResponse<T>() (line 150); then it sets `var exceptionResponse = response as SlaveExceptionResponse` (line 151); then it checks `exceptionResponse != null` (line 153); if true it calls SlaveExceptionCode.get() and sets `readAgain = exceptionResponse.SlaveExceptionCode == SlaveExceptionCodes.Acknowledge`; then it checks `readAgain` (line 158); if true it calls LoggingExtensions.Debug(), ModbusTransport.Sleep(), WaitToRetryMilliseconds.get(); otherwise it calls SlaveException.SlaveException() and throws `new SlaveException(exceptionResponse)`; then it checks `ShouldRetryResponse(message, response)` (line 168); then it calls ModbusTransport.ShouldRetryResponse(message, response) (line 168); then it handles `catch (SlaveException)` (line 179); there it calls LoggingExtensions.Warning(), ModbusTransport.Sleep(), WaitToRetryMilliseconds.get(); \u2026.",
+    "It is called by ModbusMaster.WriteSingleCoil() at NModbus/Device/ModbusMaster.cs:190; ModbusMaster.WriteSingleRegister() at NModbus/Device/ModbusMaster.cs:219; ModbusMaster.WriteMultipleRegisters() at NModbus/Device/ModbusMaster.cs:277; ModbusMaster.WriteMultipleCoils() at NModbus/Device/ModbusMaster.cs:314. It is also called by ModbusMaster.WriteFileRecord() (NModbus/Device/ModbusMaster.cs:408), ModbusMaster.ExecuteCustomMessage<TResponse>() (NModbus/Device/ModbusMaster.cs:421), ModbusMaster.ReadDeviceIdentification() (NModbus/Device/ModbusMaster.cs:436), ModbusMaster.PerformReadDiscretes() (NModbus/Device/ModbusMaster.cs:513), ModbusMaster.PerformReadRegisters() (NModbus/Device/ModbusMaster.cs:525), ModbusMaster.PerformReadRegisters() (NModbus/Device/ModbusMaster.cs:538), lambda() (NModbus/Device/ModbusMaster.cs:551), ModbusSerialMaster.ReturnQueryData() (NModbus/Device/ModbusSerialMaster.cs:39). The full chain from the program's start is: lambda() \u2192 ModbusTransport.UnicastMessage<T>()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-retries-set",
+   "category": "symbol",
+   "q": "Where is the number of retries set?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 8
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 8
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.02,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is set in Retries.set():",
+    "Retries.set() (NModbus/IO/ModbusTransport.cs:45).",
+    "Step by step, it sets `set => _retries = value` (line 45).",
+    "The update itself: `set => _retries = value` (NModbus/IO/ModbusTransport.cs:45).",
+    "Related values are also set here: `private int _retries = Modbus.DefaultRetries` in ModbusTransport._retries (NModbus/IO/ModbusTransport.cs:19); `public const int DefaultRetries = 3` in Modbus.DefaultRetries (NModbus/Modbus.cs:15); `private const int NumberOfPoints = ushort.MaxValue + 1` in PointSource<T>.NumberOfPoints (NModbus/Data/PointSource.cs:26); `_numberOfPoints = numberOfPoints` in PointEventArgs.PointEventArgs() (NModbus/Device/PointEventArgs.cs:18)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-crc-calc",
+   "category": "symbol",
+   "q": "Which function calculates the CRC?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 1,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 8,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "It is calculated in ModbusUtility.CalculateCrc():",
+    "ModbusUtility.CalculateCrc() (NModbus/Utility/ModbusUtility.cs:198) \u2014 Calculate Cyclical Redundancy Check.",
+    "Step by step, it checks `data == null` (line 200); if true it calls new ArgumentNullException() and throws `new ArgumentNullException(nameof(data))`; then it sets `ushort crc = ushort.MaxValue` (line 205); then it sets `byte tableIndex = (byte)(crc ^ b)` (line 209); then it sets `crc ^= CrcTable[tableIndex]` (line 211); then it calls BitConverter.GetBytes (line 214).",
+    "Related values are also set here: `private static readonly ushort[] CrcTable =` in ModbusUtility.CrcTable (NModbus/Utility/ModbusUtility.cs:13)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "nm-invented",
+   "category": "honesty",
+   "q": "What does ModbusMaster.Reconnect do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no `Reconnect` in this code (none of its 4414 indexed symbols has that name).",
+    "ConcurrentModbusMaster._master is a field of type `NModbus.IModbusMaster`, defined in NModbus/Device/ConcurrentModbusMaster.cs:16.",
+    "It is set by ConcurrentModbusMaster.ConcurrentModbusMaster() (`_master = master ?? throw new ArgumentNullException(nameof(master))`, line 27).",
+    "It is read by lambda() (line 111), lambda() (line 151), lambda() (line 187), lambda() (line 197), lambda() (line 202), lambda() (line 208).",
+    "In short: ConcurrentModbusMaster._master carries a value produced by ConcurrentModbusMaster.ConcurrentModbusMaster() and consumed by ConcurrentModbusMaster.Dispose(), lambda()."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

@@ -1,0 +1,602 @@
+{
+ "summary": {
+  "cases": 14,
+  "passed": 7,
+  "mean_score": 0.607,
+  "symbol_identification": {
+   "cases": 13,
+   "passed": 6,
+   "accuracy": 0.577
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 1,
+   "passed": 1,
+   "accuracy": 1.0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 99,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 99,
+   "claims": 99,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 1,
+   "paragraphs": 25
+  },
+  "mean_seconds": 10.45
+ },
+ "results": [
+  {
+   "id": "ucos-q-full",
+   "category": "scenario",
+   "q": "What happens when a message is posted to a queue that is already full?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 3
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 3,
+     "total": 3
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 16.54,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "When a message is posted to a queue that is already full, the function `OSQPost()` immediately returns the error code `OS_ERR_Q_FULL` and skips the rest of its processing. This happens because `OSQPost()` checks the condition `pq->OSQEntries >= pq->OSQSize` at line 672 of `Source/os_q.c`; if the condition is true, it calls `CPU_CRITICAL_EXIT` at line 673 and then returns `OS_ERR_Q_FULL`, so any subsequent code in `OSQPost()` is not executed."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-mem-empty",
+   "category": "scenario",
+   "q": "What happens when a task asks for a memory block and the partition has none left?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "OSMemGet",
+      "OS_ERR_MEM_NO_FREE_BLKS"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 11.88,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When a task\u2019s stack pointer has a null thread handle, the initialization hook immediately cleans up by closing the handle, clears the signal pointers, and exits, skipping the rest of the routine.",
+    "This is handled in OSTCBInitHook() (Ports/Win32/Visual Studio/os_cpu_c.c:594): it checks `p_stk->ThreadHandle == NULL`, and when that is true it calls CloseHandle() and calls CloseHandle() and records it (`p_stk->SignalPtr = NULL`, `p_stk->InitSignalPtr = NULL`) and returns immediately, so the rest of OSTCBInitHook() is skipped."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-sem-timeout",
+   "category": "scenario",
+   "q": "What happens when a task waiting on a semaphore times out?",
+   "intent": "failure_missing",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "OSSemPend",
+      "OS_ERR_TIMEOUT"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 0
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 0,
+     "total": 0
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 1
+    }
+   },
+   "status": "UNKNOWN",
+   "seconds": 5.76,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When a task waits on a semaphore and the wait times out, the code does not perform any special handling; the task simply continues to wait and the last received values remain unchanged, and the semaphore deletion routine `OSSemDel()` is not called directly by this code, so it will not be invoked as part of a timeout scenario."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-prio-exist",
+   "category": "scenario",
+   "q": "What happens when a task is created at a priority that is already taken?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "OSTaskCreate",
+      "OS_ERR_PRIO_EXIST"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 8.37,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When a task is created at a priority that is already taken, the system immediately cleans up the task\u2019s resources and aborts its initialization, preventing the task from running.",
+    "This is handled in OSTCBInitHook() (Ports/Win32/Visual Studio/os_cpu_c.c:594): it checks `p_stk->ThreadHandle == NULL`, and when that is true it calls CloseHandle() and calls CloseHandle() and records it (`p_stk->SignalPtr = NULL`, `p_stk->InitSignalPtr = NULL`) and returns immediately, so the rest of OSTCBInitHook() is skipped."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-no-tcb",
+   "category": "scenario",
+   "q": "What happens when there are no free task control blocks left?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "OS_TCBInit",
+      "OS_ERR_TASK_NO_MORE_TCB"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 9.86,
+   "passed": false,
+   "score": 0.0,
+   "answer": [
+    "When there are no free task control blocks left, the function `OSTCBInitHook()` immediately exits after cleaning up the thread handle and resetting signal pointers, skipping the rest of its logic.",
+    "This is handled in OSTCBInitHook() (Ports/Win32/Visual Studio/os_cpu_c.c:594): it checks `p_stk->ThreadHandle == NULL`, and when that is true it calls CloseHandle() and calls CloseHandle() and records it (`p_stk->SignalPtr = NULL`, `p_stk->InitSignalPtr = NULL`) and returns immediately, so the rest of OSTCBInitHook() is skipped."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-pend-isr",
+   "category": "scenario",
+   "q": "What happens when OSSemPend is called from an ISR?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "OS_ERR_PEND_ISR"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 8.4,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "When `OSSemPend` is called from an ISR, it immediately returns without performing any of its usual semaphore\u2011waiting logic; the function checks `OSIntNesting > 0u` and, because this condition is true, it exits early, so the critical section entry and exit macros (`CPU_CRITICAL_ENTER`, `CPU_CRITICAL_EXIT`) are not executed and the previous critical\u2011section state remains unchanged."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-mutex-pcp",
+   "category": "scenario",
+   "q": "What happens when a task waits for a mutex that a lower-priority task owns?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "OSTCBPrio = pcp"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 31
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 31,
+     "total": 31
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 30.39,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "When a higher\u2011priority task waits for a mutex that a lower\u2011priority task owns, the kernel promotes the lower\u2011priority task\u2019s priority so that it can run and release the mutex, and the waiting task is put into a pending state until the mutex becomes available. It first checks that the mutex ceiling is not disabled (`pcp != OS_PRIO_MUTEX_CEIL_DIS`). If true, it extracts the current priority of the mutex owner (`mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8)`) and the owner\u2019s task control block (`ptcb = (OS_TCB *)(pevent->OSEventPtr)`). It then compares the owner\u2019s priority (`ptcb->OSTCBPrio`) with the ceiling priority (`pcp`). If the owner\u2019s priority is higher than the ceiling, the owner\u2019s ready table entries are cleared (`OSRdyTbl[y] &= (OS_PRIO)~ptcb->OSTCBBitX`, `OSRdyGrp &= (OS_PRIO)~ptcb->OSTCBBitY`) and the owner is marked as ready (`rdy = OS_TRUE`). A similar check is performed against the current task\u2019s priority (`mprio > OSTCBCur->OSTCBPrio`), and if true the owner\u2019s ready entries are cleared again. After these checks, if the owner is still ready (`(OSRdyTbl[y] & ptcb->OSTCBBitX) != 0u`), its ready entries are cleared once more and it is marked ready. If the owner\u2019s ready table becomes empty (`OSRdyTbl[y] == 0u`), its group bit is cleared from `OSRdyGrp`. Once the promotion logic is finished, `OSMutexPend()` calls `OS_EventTaskWait(pevent)` (line 586) to place the waiting task on the mutex\u2019s event list, exits the critical section, and removes the task from the event list with `OS_EventTaskRemove(OSTCBCur, pevent)` (line 601). The waiting task remains pending until the mutex is released. Thus, the kernel temporarily raises the priority of the lower\u2011priority owner so that it can run, while the higher\u2011priority task is suspended on the mutex\u2019s event list until the mutex becomes available.",
+    "This is handled in OSMutexPend() (Source/os_mutex.c:532): it checks `pcp != OS_PRIO_MUTEX_CEIL_DIS`, and when that is true it sets `mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8)` (line 533); then it sets `ptcb = (OS_TCB *)(pevent->OSEventPtr)` (line 534); then it checks `ptcb->OSTCBPrio > pcp` (line 535); if true it sets `y = ptcb->OSTCBY`, `OSRdyTbl[y] &= (OS_PRIO)~ptcb->OSTCBBitX`, `OSRdyGrp &= (OS_PRIO)~ptcb->OSTCBBitY`, `rdy = OS_TRUE`, `pevent2 = ptcb->OSTCBEventPtr`; then it checks `mprio > OSTCBCur->OSTCBPrio` (line 536); if true it sets `y = ptcb->OSTCBY`, `OSRdyTbl[y] &= (OS_PRIO)~ptcb->OSTCBBitX`, `OSRdyGrp &= (OS_PRIO)~ptcb->OSTCBBitY`, `rdy = OS_TRUE`, `pevent2 = ptcb->OSTCBEventPtr`; then it checks `(OSRdyTbl[y] & ptcb->OSTCBBitX) != 0u` (line 538); if true it sets `OSRdyTbl[y] &= (OS_PRIO)~ptcb->OSTCBBitX`, `OSRdyGrp &= (OS_PRIO)~ptcb->OSTCBBitY`, `rdy = OS_TRUE`; then it checks `OSRdyTbl[y] == 0u` (line 540); if true it sets `OSRdyGrp &= (OS_PRIO)~ptcb->OSTCBBitY`.",
+    "When it does not return there, OSMutexPend() goes on to call OS_EventTaskWait() with (`pevent`) (line 586); OS_EventTaskWait() with (`pevent`) (line 586); CPU_CRITICAL_EXIT (line 587); OS_EventTaskRemove() with (`OSTCBCur`, `pevent`) (line 601); OS_EventTaskRemove() with (`OSTCBCur`, `pevent`) (line 601).",
+    "Consequence: OSMboxDel() checks `pevent->OSEventGrp != 0u` (Source/os_mbox.c:252); `pevent->OSEventGrp != 0u` depends on runtime values, so it may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT) and may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT).",
+    "Consequence: OSMboxPendAbort() checks `pevent->OSEventGrp != 0u` (Source/os_mbox.c:469); `pevent->OSEventGrp != 0u` depends on runtime values, so it may return early, skipping CPU_CRITICAL_EXIT and may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT) and may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT) and may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT) and may call OS_EventTaskRdy(pevent, (void *)0, OS_STAT_MBOX, OS_STAT_PEND_ABORT) and may call CPU_CRITICAL_EXIT and may call CPU_CRITICAL_EXIT and may call OS_Sched() and may call OS_Sched()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-ostime",
+   "category": "symbol",
+   "q": "Where is the system time OSTime incremented?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "citations": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 6.72,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The system time `OSTime` is incremented by the function `OSTimeTick()`; it increases the value by one tick each time it is called. This function reads the current value of `OSTime` and then writes back the incremented value, effectively updating the global time counter. The other functions that modify `OSTime` are `OS_InitMisc()` which sets it to zero during initialization, and `OSTimeSet()` which assigns a specific tick value. The value is read by `OSTimeGet()` and also by `OSTimeTick()` itself. All of these operations are performed on the global variable `OSTime` defined as `volatile INT32U` in `Source/ucos_ii.h`."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-cpu-usage",
+   "category": "symbol",
+   "q": "How is the CPU usage percentage computed?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "OSIdleCtrMax"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 7.55,
+   "passed": false,
+   "score": 0.5,
+   "answer": [
+    "The CPU usage percentage is stored in the variable `OSCPUUsage` by the function `OS_TaskStat()` after it has been calculated earlier in the code."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-prio-high",
+   "category": "dataflow",
+   "q": "Where does OSPrioHighRdy get its value?",
+   "intent": "origin",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 6.4,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "OSPrioHighRdy gets its value from the calculation performed in OS_SchedNew() and is initially set to 0 by OS_InitRdyList(). In OS_InitRdyList() the global variable is assigned `OSPrioHighRdy = 0u`. Later, when a new scheduling decision is made, OS_SchedNew() assigns `OSPrioHighRdy = (INT8U)((y << 3u) + OSUnMapTbl[OSRdyTbl[y]])`. The value used in this calculation comes from the array `OSUnMapTbl`, which is never assigned from other data in this code (literal/initial value or external)."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-tick-callers",
+   "category": "callpath",
+   "q": "Who calls OSTimeTick?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 1
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 1,
+     "total": 1
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 5.5,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "OSTimeTick is called by the function `OSTickW32()` in the file `Ports/Win32/Visual Studio/os_cpu_c.c` at line 1152. This call occurs repeatedly inside a loop that runs while `!terminate` is true. It is executed only when the condition `WaitForMultipleObjects(2, wait_signal, FALSE, INFINITE) == WAIT_OBJECT_0 + 1u` is met and the variable `suspended` equals `DEF_TRUE`. The overall call chain from program start is `OSTickW32()` \u2192 `OSTimeTick()`."
+   ],
+   "prose_mode": "model"
+  },
+  {
+   "id": "ucos-sched-callers",
+   "category": "callpath",
+   "q": "Who calls OS_Sched?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 20
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 20,
+     "total": 20
+    },
+    "_missing_evidence": {
+     "paragraphs": 2,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 9.12,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "OS_Sched is called by many OS API functions such as `OSMboxDel`, `OSMboxPend`, `OSMboxPendAbort`, `OSMboxPost`, `OSMboxPostOpt`, `OSFlagDel`, `OSFlagPend`, `OSFlagPost`, `OSEventPendMulti`, `OSSchedUnlock`, `OSMutexDel`, `OSMutexPend`, `OSMutexPost`, `OSSemDel`, `OSSemPend`, `OSSemPendAbort`, `OSSemPost`, `OSQDel`, `OSQPend`, and 44 other call sites; the full chain from program start is `OSTaskW32()` \u2192 `OSTaskDel()` \u2192 `OS_Sched()`.",
+    "It is called by OSMboxDel() at Source/os_mbox.c:264, only when `OSIntNesting > 0u` is false, in the case `opt == OS_DEL_ALWAYS`, only when `tasks_waiting == OS_TRUE` is true (OS_TRUE = 1); OSMboxPend() at Source/os_mbox.c:372, only when `OSIntNesting > 0u` is false, only when `OSLockNesting > 0u` is false, only when `pmsg != (void *)0` is false; OSMboxPendAbort() at Source/os_mbox.c:486, only when `pevent == (OS_EVENT *)0` is false, only when `pevent->OSEventType != OS_EVENT_TYPE_MBOX` is false (OS_EVENT_TYPE_MBOX = 1), only when `pevent->OSEventGrp != 0u` is true; OSMboxPost() at Source/os_mbox.c:549, only when `pmsg == (void *)0` is false, only when `pevent->OSEventType != OS_EVENT_TYPE_MBOX` is false (OS_EVENT_TYPE_MBOX = 1), only when `pevent->OSEventGrp != 0u` is true. It is also called by OSMboxPostOpt() (Source/os_mbox.c:635), OSFlagDel() (Source/os_flag.c:405), OSFlagPend() (Source/os_flag.c:755), OSFlagPost() (Source/os_flag.c:985), OSEventPendMulti() (Source/os_core.c:490), OSSchedUnlock() (Source/os_core.c:834), OSMutexDel() (Source/os_mutex.c:407), OSMutexPend() (Source/os_mutex.c:588), OSMutexPost() (Source/os_mutex.c:690), OSMutexPost() (Source/os_mutex.c:695), OSSemDel() (Source/os_sem.c:269), OSSemPend() (Source/os_sem.c:375), OSSemPendAbort() (Source/os_sem.c:484), OSSemPost() (Source/os_sem.c:537), OSQDel() (Source/os_q.c:332), OSQPend() (Source/os_q.c:496) and 44 more call sites. The full chain from the program's start is: OSTaskW32() \u2192 OSTaskDel() \u2192 OS_Sched()."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-threads",
+   "category": "symbol",
+   "q": "What threads does the program start?",
+   "intent": "entries",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 4
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 4,
+     "total": 4
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 8.87,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "The program starts two threads: `OSTaskW32()` and `OSTickW32()`. `OSTaskW32()` is created by a call to `CreateThread()` at `Ports/Win32/Visual Studio/os_cpu_c.c:593` and is registered there; it receives a task control block pointer, sets up its stack, marks the task state as `STATE_SUSPENDED`, waits on a synchronization object with `WaitForSingleObject()`, and then names the thread with `OSSetThreadName()`. `OSTickW32()` is created by a call to `CreateThread()` at `Ports/Win32/Visual Studio/os_cpu_c.c:219` and is registered there; it allocates a CPU status register, initializes two wait signals (`OSTerminate_SignalPtr` and `OSTick_SignalPtr`), sets a `terminate` flag to `DEF_FALSE`, and then loops while `!terminate`.",
+    "The code has 2 threads: OSTaskW32() \u2014 thread: started as a thread by CreateThread() at Ports/Win32/Visual Studio/os_cpu_c.c:593, registered at Ports/Win32/Visual Studio/os_cpu_c.c:593; OSTickW32() \u2014 thread: started as a thread by CreateThread() at Ports/Win32/Visual Studio/os_cpu_c.c:219, registered at Ports/Win32/Visual Studio/os_cpu_c.c:219.",
+    "OSTaskW32() sets `p_tcb = (OS_TCB *)p_arg` (line 1201); then it sets `p_stk = (OS_TASK_STK *)p_tcb->OSTCBStkPtr` (line 1202); then it sets `p_stk->TaskState = STATE_SUSPENDED` (line 1204); then it calls WaitForSingleObject() (line 1205); then it calls OSSetThreadName() (line 1207).",
+    "OSTickW32() calls CPU_SR_ALLOC (line 1126); then it sets `wait_signal[0] = OSTerminate_SignalPtr` (line 1130); then it sets `wait_signal[1] = OSTick_SignalPtr` (line 1131); then it sets `terminate = DEF_FALSE` (line 1137); then it repeats while `!terminate` (line 1138)."
+   ],
+   "prose_mode": "model+facts"
+  },
+  {
+   "id": "ucos-invented",
+   "category": "honesty",
+   "q": "What does OSTaskRestart do?",
+   "intent": "explain",
+   "checks": {
+    "no_invention": {
+     "ok": true,
+     "score": 1.0,
+     "found": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 10.89,
+   "passed": true,
+   "score": 1.0,
+   "answer": [
+    "There is no function called `OSTaskRestart` in this code; the closest related symbols are `os_task_stk.ThreadID`, `OSSetThreadName()`, and `os_task_stk.ThreadHandle`. The field `os_task_stk.ThreadID` is a `DWORD` defined in `Ports/Win32/Visual Studio/os_cpu_c.c` at line 90. It is set to `0u` by `OSTaskStkInit()` at line 509 and by `OSTaskTerminate()` at line 1248. The value is read by several functions: `OSTaskDelHook()` at line 376, `OSTCBInitHook()` at line 607, `OSCtxSw()` at line 810, `OSIntCurTaskSuspend()` at line 954, `OSIntCurTaskResume()` at line 1065, and `OSTaskW32()` at line 1207. In short, `os_task_stk.ThreadID` holds a value produced by `OSTaskStkInit()` and `OSTaskTerminate()` and consumed by the listed functions. No `OSTaskRestart` function exists in the code."
+   ],
+   "prose_mode": "model"
+  }
+ ]
+}

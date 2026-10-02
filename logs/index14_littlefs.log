@@ -1,0 +1,15 @@
+  ✓ Looking at your project files: Found 7 C, 7 header and 0 C# files
+  ✓ Working out how the code is built: C: neutral C17 + GCC / Clang + MSVC + 
+Keil / Arm Compiler 5; build settings reconstructed from the source (no build 
+needed); platform SDK headers not on this machine — Verity's API knowledge pack
+stands in for them
+  ✓ Reading the C code: Read 7 C file(s); also checked 4 configuration 
+switch(es): LFS_READONLY, LFS_MIGRATE, LFS_NO_MALLOC, LFS_MULTIVERSION
+  – Reading the C# code: No C# code in this project
+  ✓ Double-checking with a second parser: cppcheck agrees on 93% of function 
+definitions and 88% of direct calls
+  ✓ Connecting the pieces together: Traced 73 call(s) through function pointers 
+or tables; 22 matched by signature only; 10 indirect call(s) could not be 
+resolved; 34 entry point(s), 196 input/output site(s)
+  ✓ Preparing search: Indexed 1001 symbols for search (keyword + meaning search)
+Ready. Indexed in 73.9 s.

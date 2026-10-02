@@ -1,0 +1,42 @@
+[bench] PASS np-stream-full             score=1.00 0.2s
+[bench] PASS np-end-of-stream           score=1.00 0.2s
+[bench] PASS np-missing-required        score=1.00 1.8s
+[bench] PASS np-varint-overflow         score=1.00 0.9s
+[bench] PASS np-wrong-wire-type         score=1.00 0.3s
+[bench] FAIL np-max-depth               score=0.00 0.1s
+[bench] FAIL np-array-max               score=0.00 1.1s
+[bench] PASS np-zero-tag                score=1.00 0.7s
+[bench] PASS np-read-callers            score=1.00 0.0s
+[bench] PASS np-bytes-written           score=1.00 0.0s
+[bench] FAIL np-errmsg                  score=0.00 0.0s
+[bench] PASS np-invented                score=1.00 0.0s
+# Verity benchmark — direct mode (20261001-183852)
+
+Cases: 12 · passed: 9 · mean score: 0.75 · mean time per question: 0.46 s
+
+| metric | result |
+|---|---|
+| symbol identification | 8/11 passed · accuracy 0.727 |
+| no invention traps | 1/1 passed · accuracy 1.000 |
+| unsupported claims (rejected by verifier) | 0 of 186 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 186/186 (100.00%) |
+| answer paragraphs without any evidence | 0 of 53 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| np-stream-full | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-end-of-stream | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-missing-required | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-varint-overflow | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-wrong-wire-type | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-max-depth | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["pb_make_string_substream", "PB_MESSAGE_NESTING_MAX"]} |
+| np-array-max | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["encode_array", "array max size exceeded"]} |
+| np-zero-tag | scenario | failure_invalid | ✓ | 1.0 |  |
+| np-read-callers | callpath | callers | ✓ | 1.0 |  |
+| np-bytes-written | symbol | where_computed | ✓ | 1.0 |  |
+| np-errmsg | symbol | where_computed | ✗ | 0.0 | symbols: {"missing": ["PB_SET_ERROR"]} |
+| np-invented | honesty | explain | ✓ | 1.0 |  |
+
