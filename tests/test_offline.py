@@ -40,7 +40,7 @@ def test_no_remote_endpoints_in_runtime_code():
     for f in (ROOT / "verity").rglob("*.py"):
         if "bench" in f.parts:
             continue
-        for m in re.finditer(r"https?://([A-Za-z0-9.-]+)", f.read_text()):
+        for m in re.finditer(r"https?://([A-Za-z0-9.-]+)", f.read_text(encoding="utf-8")):
             host = m.group(1)
             if host not in ("127.0.0.1", "localhost", "tauri.localhost"):
                 bad.append(f"{f.relative_to(ROOT)}: {m.group(0)}")
@@ -48,5 +48,5 @@ def test_no_remote_endpoints_in_runtime_code():
 
 
 def test_llm_servers_bind_localhost_only():
-    src = (ROOT / "verity" / "llm" / "runtime.py").read_text()
+    src = (ROOT / "verity" / "llm" / "runtime.py").read_text(encoding="utf-8")
     assert '"--host", "127.0.0.1"' in src and "--api-key" in src
