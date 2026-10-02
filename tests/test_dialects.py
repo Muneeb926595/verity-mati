@@ -1,13 +1,14 @@
 """Uncompiled MSVC/Win32 and TI C2000 code analysed WITHOUT their SDK/device headers (knowledge-pack shims and the
 usage-guided stub loop), including sandboxed runs of that code on a non-target machine."""
 import json
+import os
 import shutil
 
 import pytest
 
 from conftest import ROOT, ask, needs_sandbox
 from verity.bench.run import grade, vocabulary
-from verity.extract.recon import add_stub_declarations
+from verity.extract.recon import add_stub_declarations, windows_sdk_include_args
 
 SUITE = json.loads((ROOT / "bench" / "dialects.json").read_text())
 
@@ -28,7 +29,9 @@ def test_msvc_parses_cleanly_without_windows_sdk(core, dialect_repos):
     st = core.project(str(dialect_repos["msvc"])).store
     rows = st.q("SELECT path, fidelity, errors FROM file WHERE path LIKE '%.c'")
     assert rows and all(r["fidelity"] == "F2" and r["errors"] == 0 for r in rows), [dict(r) for r in rows]
-    assert st.meta_get("c_profile")["shim_dirs"]
+    # a Windows PC with the SDK parses against the real headers; elsewhere the knowledge-pack shims stand in
+    win32_shims = [d for d in st.meta_get("c_profile")["shim_dirs"] if os.path.basename(d) == "win32"]
+    assert bool(win32_shims) != bool(windows_sdk_include_args()), win32_shims
 
 
 def test_ti_register_blocks_are_synthesised(core, dialect_repos):
@@ -69,3 +72,27 @@ def test_stub_loop_classifies_by_usage(tmp_path):
     assert "struct { struct { volatile unsigned long long GPIO31; } bit; } GPASET;" in out
     assert "extern volatile struct __vr_regs_AdcResult AdcResult;" in out
     assert "#define _Out_writes_(...)" in out
+
+
+def test_posix_headers_missing_on_the_host_come_from_the_knowledge_pack(tmp_path):
+    """Windows has no <pthread.h> or <sys/time.h>: an empty stand-in left pthread_t and struct timespec undefined
+    (SOEM's port header, lwIP's unix port). Knowledge-pack headers stand in, also with only the bundled libc."""
+    from verity import config
+    from verity.extract.recon import find_shim
+    import clang.cindex as ci
+    posix, win32 = str(config.SHIMS / "posix"), str(config.SHIMS / "win32")
+    assert find_shim("sys/time.h") == find_shim("pthread.h") == posix
+    assert find_shim("Windows.h") == find_shim("win/windows.h") == win32
+    assert find_shim("sys/socket.h") is None and find_shim("time.h") is None
+    src = ("#include <sys/time.h>\n#include <pthread.h>\n"
+           "static void *run(void *a) { return a; }\n"
+           "int f(void) { struct timeval a = {1, 2}, b = {3, 4}, c; struct timespec t = {0, 5}; pthread_t th;\n"
+           "  timeradd(&a, &b, &c); gettimeofday(&a, 0);\n"
+           "  return pthread_create(&th, 0, run, 0) + (int)t.tv_nsec + (int)c.tv_usec; }\n")
+    base = ["-x", "c", "-std=gnu17", "-nostdinc", "-isystem", str(config.SHIMS / "libc"), "-isystem", posix]
+    winsock = tmp_path / "winsock_timeval.h"                 # what winsock2.h defines, without a guard
+    winsock.write_text("struct timeval { long tv_sec; long tv_usec; };\n")
+    for extra in ([], ["-D_WINSOCK2API_", "-include", str(winsock)]):        # ... and winsock came first
+        tu = ci.Index.create().parse("t.c", args=base + extra, unsaved_files=[("t.c", src)])
+        errors = [d.spelling for d in tu.diagnostics if d.severity >= ci.Diagnostic.Error]
+        assert not errors, (extra, errors)

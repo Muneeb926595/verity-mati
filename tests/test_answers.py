@@ -4,13 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ROOT, ask
+from conftest import ROOT, ask, needs_sandbox
 from verity.bench.run import grade, vocabulary
 
 SUITE = json.loads((ROOT / "bench" / "suite.json").read_text())
+RUNS = ("run_state", "run_state_any", "run_state_absent", "hw_calls")      # cases checked against a real run
 
 
-@pytest.mark.parametrize("case", SUITE["cases"], ids=[c["id"] for c in SUITE["cases"]])
+@pytest.mark.parametrize("case", [pytest.param(c, marks=needs_sandbox) if any(k in c for k in RUNS) else c
+                                  for c in SUITE["cases"]], ids=[c["id"] for c in SUITE["cases"]])
 def test_case(core, c_indexed, cs_indexed, case):
     repo = c_indexed if case["project"] == "c" else cs_indexed
     ans = ask(core, repo, case["q"])

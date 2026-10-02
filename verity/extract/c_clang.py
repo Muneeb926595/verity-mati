@@ -1179,7 +1179,8 @@ def _load_api_writes() -> dict[str, list[int]]:
     try:
         from .recon import load_api_pack
         w = load_api_pack().get("writes", {})
-        return {k: v for k, v in w.items() if not k.startswith("_")}
+        # skip only metadata such as "_doc": real names start with "_" too (_InterlockedExchange, __atomic_store_n)
+        return {k: v for k, v in w.items() if isinstance(v, list)}
     except Exception:
         return {}
 

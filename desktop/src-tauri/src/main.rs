@@ -1,11 +1,14 @@
-// Verity desktop shell (Tauri 2).
+// Verity desktop shell (Tauri 2), for macOS and Windows.
 //
 // On start it spawns the local engine
 //     <ROOT>/.venv/bin/python -m verity.engine.server --port 0 --print-ready     (env VERITY_EXIT_WITH_PARENT=1)
+//     (Windows: <ROOT>\.venv\Scripts\python.exe, no console window, env VERITY_STOP_ON_STDIN_EOF=1)
 // reads the one-line ready JSON from its stdout, and points the main window at the UI the engine serves
 // (http://127.0.0.1:<port>/?token=<token>). Same origin as the engine, so no CORS is involved; the engine's
 // Origin check allows 127.0.0.1. The native folder picker is reachable from that page through a remote-URL
-// capability (capabilities/engine-ui.json). The engine and everything it started are stopped when the app exits.
+// capability (capabilities/engine-ui.json). The engine and everything it started are stopped when the app exits:
+// on macOS through its process group (SIGTERM, then SIGKILL); on Windows by closing the engine's stdin, which also
+// happens when the app is killed, then by ending its whole process tree.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs::{self, File, OpenOptions};
@@ -23,7 +26,13 @@ use tauri::{AppHandle, Manager, RunEvent, State, Url};
 
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
 const STOP_GRACE: Duration = Duration::from_secs(8);
+#[cfg(not(windows))]
 const FALLBACK_ROOT: &str = "/Users/emumba/Desktop/mati";
+#[cfg(windows)]
+const FALLBACK_ROOT: &str = r"C:\verity";
+/// Windows: start console programs without a console window (the engine, and taskkill when stopping it).
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Process-group id of the running engine (0 = none). Read by the signal handler, so it must be an atomic.
 static ENGINE_PGID: AtomicI32 = AtomicI32::new(0);
@@ -57,6 +66,21 @@ fn is_root(p: &Path) -> bool {
     p.join("verity").is_dir() && p.join(".venv").is_dir()
 }
 
+/// Windows: canonicalize() returns verbatim paths (\\?\C:\...), which the engine would inherit as its folder and data
+/// folder; such paths do not compare equal to the C:\... form and some tools refuse them. Keep the plain form.
+fn plain_path(p: PathBuf) -> PathBuf {
+    if cfg!(windows) {
+        let s = p.to_string_lossy();
+        if let Some(rest) = s.strip_prefix(r"\\?\") {
+            let b = rest.as_bytes();
+            if b.len() >= 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && b[2] == b'\\' {
+                return PathBuf::from(rest.to_string()); // drive paths only; \\?\UNC\... stays as it is
+            }
+        }
+    }
+    p
+}
+
 /// VERITY_ROOT if set (and valid), else walk up from the executable, else the known install location.
 fn resolve_root() -> (PathBuf, &'static str) {
     if let Ok(v) = std::env::var("VERITY_ROOT") {
@@ -70,7 +94,7 @@ fn resolve_root() -> (PathBuf, &'static str) {
         }
     }
     if let Ok(exe) = std::env::current_exe() {
-        let exe = exe.canonicalize().unwrap_or(exe);
+        let exe = exe.canonicalize().map(plain_path).unwrap_or(exe);
         for dir in exe.ancestors().skip(1) {
             if is_root(dir) {
                 return (dir.to_path_buf(), "executable location");
@@ -96,6 +120,13 @@ fn log_line(log: &Arc<Mutex<Option<File>>>, line: &str) {
 }
 
 /// GUI apps start with a minimal PATH; add the usual tool locations so the engine finds compilers etc.
+/// (Windows gives GUI apps the full user PATH, which is kept as it is.)
+#[cfg(windows)]
+fn augmented_path() -> String {
+    std::env::var("PATH").unwrap_or_default()
+}
+
+#[cfg(not(windows))]
 fn augmented_path() -> String {
     let mut parts: Vec<String> = std::env::var("PATH")
         .unwrap_or_default()
@@ -121,6 +152,7 @@ fn parse_ready(line: &str) -> Option<(u16, String)> {
     None
 }
 
+#[cfg(unix)]
 fn signal_group(pgid: i32, sig: i32) {
     if pgid > 0 {
         // SAFETY: plain syscalls on a process group we created
@@ -130,7 +162,39 @@ fn signal_group(pgid: i32, sig: i32) {
     }
 }
 
+/// Windows: close the engine's stdin (it then shuts down cleanly and stops its model server), wait for it, then end
+/// whatever is left of its process tree (the venv launcher, the interpreter it started, a model server).
+#[cfg(windows)]
+fn terminate(child: &mut Child, log: &Arc<Mutex<Option<File>>>) {
+    use std::os::windows::process::CommandExt;
+    let pid = child.id();
+    log_line(log, &format!("stopping engine pid {pid}"));
+    drop(child.stdin.take());
+    let deadline = Instant::now() + STOP_GRACE;
+    loop {
+        match child.try_wait() {
+            Ok(Some(st)) => {
+                log_line(log, &format!("engine exited ({st})"));
+                return;
+            }
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(50)),
+            _ => break,
+        }
+    }
+    log_line(log, "engine did not stop in time; ending its process tree");
+    let _ = Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
 /// SIGTERM the engine's process group, wait for a clean exit, then SIGKILL whatever is left.
+#[cfg(unix)]
 fn terminate(child: &mut Child, log: &Arc<Mutex<Option<File>>>) {
     let pid = child.id() as i32;
     log_line(log, &format!("stopping engine pid {pid}"));
@@ -157,8 +221,16 @@ fn terminate(child: &mut Child, log: &Arc<Mutex<Option<File>>>) {
 }
 
 // ------------------------------------------------------------------------------------------ engine lifecycle
+fn venv_python(root: &Path) -> PathBuf {
+    if cfg!(windows) {
+        root.join(".venv").join("Scripts").join("python.exe")
+    } else {
+        root.join(".venv/bin/python")
+    }
+}
+
 fn spawn_engine(shell: &Shell) -> Result<(Child, u16, String), String> {
-    let python = shell.root.join(".venv/bin/python");
+    let python = venv_python(&shell.root);
     if !python.exists() {
         return Err(format!(
             "Verity's Python environment was not found:\n  {}\n\nVerity folder: {} (from {}).\nSet VERITY_ROOT to the folder that contains verity/ and .venv/.",
@@ -180,6 +252,16 @@ fn spawn_engine(shell: &Shell) -> Result<(Child, u16, String), String> {
     {
         use std::os::unix::process::CommandExt;
         cmd.process_group(0); // its own group, so quitting can stop it and anything it started
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // the engine stops when this pipe closes (quit, crash or kill of the app); UTF-8 as in bin\verity.cmd
+        cmd.stdin(Stdio::piped())
+            .env("VERITY_STOP_ON_STDIN_EOF", "1")
+            .env("PYTHONUTF8", "1")
+            .env("PYTHONIOENCODING", "utf-8")
+            .creation_flags(CREATE_NO_WINDOW);
     }
     let mut child = cmd
         .spawn()
@@ -350,7 +432,10 @@ fn watch_engine(app: AppHandle, shell: ShellState, generation: u64) {
             e.child = None;
             ENGINE_PGID.store(0, Ordering::SeqCst);
             e.status = Status::Failed {
-                message: format!("The engine stopped unexpectedly ({st}).\nDetails are in data/logs/desktop-engine.log."),
+                message: format!(
+                    "The engine stopped unexpectedly ({st}).\nDetails are in {}.",
+                    Path::new("data").join("logs").join("desktop-engine.log").display()
+                ),
             };
             drop(e);
             log_line(&shell.log, &format!("engine exited unexpectedly ({st})"));
@@ -530,6 +615,8 @@ const SELFTEST_JS: &str = r#"
 "#;
 
 // ------------------------------------------------------------------------------------------ signals
+// Windows needs no handler: however the app ends, the engine's stdin pipe closes and the engine stops.
+#[cfg(unix)]
 extern "C" fn on_signal(sig: libc::c_int) {
     let pgid = ENGINE_PGID.load(Ordering::SeqCst);
     if pgid > 0 {
@@ -543,6 +630,10 @@ extern "C" fn on_signal(sig: libc::c_int) {
     }
 }
 
+#[cfg(not(unix))]
+fn install_signal_handlers() {}
+
+#[cfg(unix)]
 fn install_signal_handlers() {
     // SAFETY: installing a handler that only calls async-signal-safe functions
     let handler = on_signal as extern "C" fn(libc::c_int) as libc::sighandler_t;

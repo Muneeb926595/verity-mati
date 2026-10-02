@@ -112,29 +112,51 @@ Reports go to `logs\system-analysis-<time>.md` and `.json`.
 ## After setup
 
 ```
+scripts\windows\run_desktop.cmd   the desktop app (builds it the first time, see below)
 bin\verity.cmd ask samples\navgps-c "Explain how GPS data travels through this application."
 bin\verity.cmd ask C:\code\your-project "What happens when the CRC check fails?"
-bin\verity.cmd ui       the app in your browser
+bin\verity.cmd ui       the same app in your browser
 bin\verity.cmd mcp      MCP server for AI assistants
 ```
+
+## The desktop app (build_desktop.cmd, run_desktop.cmd)
+
+The Verity window on Windows is the same Tauri 2 app as on the Mac: it starts this folder's engine, shows the UI in
+its own window with the native Windows folder picker (**Open Project**), and stops the engine when you close it.
+
+```
+scripts\windows\build_desktop.cmd             builds desktop\target\release\Verity.exe (logs\desktop-build-*.log)
+scripts\windows\build_desktop.cmd -Shortcut   ... and adds "Verity" to the Desktop and the Start menu
+scripts\windows\run_desktop.cmd               starts the app (builds it first when it is not built yet)
+```
+
+- **Needs, for building only:** Rust (rustup, MSVC toolchain), the Visual Studio C++ Build Tools ("Desktop
+  development with C++"; on a managed PC usually installed by IT), WebView2 (part of Windows 11) and Node.js
+  (setup's `tools\node`). The script checks each one and says what is missing. The first build downloads the Rust
+  crates and the Tauri CLI and takes a few minutes; later builds take under a minute. The finished app is offline.
+- **Keep `Verity.exe` inside the Verity folder** (where the build puts it): it finds the engine by walking up from its
+  own location. A shortcut can live anywhere. `VERITY_ROOT` overrides the folder.
+- **Stopping:** closing the window, or the app being killed (Task Manager, a crash), stops the engine and any model
+  server it started within a few seconds: the engine watches the pipe the app holds open
+  (`VERITY_STOP_ON_STDIN_EOF`). No console windows appear.
+- **If the engine stops unexpectedly**, the window shows the reason and **Try again**. App and engine messages go to
+  `data\logs\desktop-engine.log`.
+- **Self-test:** `set VERITY_DESKTOP_SELFTEST=quit` and `set VERITY_DESKTOP_SELFTEST_PROJECT=<folder>`, then start
+  `Verity.exe`; it opens the project, asks a question, prints `SELFTEST {...}` lines and quits. The full browser check
+  can also drive the app's own window: start it with
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, then run
+  `node ui\scripts\e2e-cdp.mjs` with `CDP_ATTACH=1` and `VERITY_URL` set to the `url` in `data\engine.json`.
 
 ## Not on Windows yet
 
 - **Running code for "what happens when" questions:** there is no Windows sandbox adapter, so those questions are
   answered by reading the code (marked as such). The tests that need a sandbox are skipped.
-- **The native desktop app:** not ported. `bin\verity.cmd ui` shows the same pages in the browser.
-- **First real run:** these scripts were checked on a Mac, not on a Windows PC:
-  - parsing, plus a Windows PowerShell 5.1 compatibility lint;
-  - 36 planning checks with simulated machines;
-  - the prerequisites check on seven simulated PCs (gaming, workstation, 8 GB laptop, old Windows, Windows on ARM 10
-    and 11, low disk) and on a simulated finished install;
-  - real downloads with checksum verification;
-  - every URL and size;
-  - Windows wheels for every Python package;
-  - the stress test run against a real model server.
+- **An installer for the desktop app:** `build_desktop.cmd` makes a plain `Verity.exe` inside this folder (plus
+  optional shortcuts), not an MSI/NSIS installer, and setup does not build the app on its own.
 
-  The first run on a Windows PC is still the real test. If something fails, the log shows where, and re-running
-  continues from there.
+**First real run (2026-10-02, Windows 11, RTX 5070, VS 2022 Build Tools):** setup, the system analysis, pytest
+(152 passed, 18 skipped: sandbox-only), every benchmark suite and the desktop app were run on a real PC; the
+findings and fixes are in `PROGRESS.md` (Windows section).
 
 ## Troubleshooting
 

@@ -296,8 +296,86 @@ Spec (one page, start here): `docs/development/VERITY_LEARNING_FROM_CORRECTIONS_
   - the stress-test code against a real llama-server;
   - the PowerShell-written selection read by the Python engine;
   - pytest 157 passed on macOS.
-- [ ] First real run on a Windows PC (with a GPU, and without one)
-- [ ] Windows sandbox adapter for scenarios; native desktop app on Windows (Tauri: process groups, bundle targets)
+- [x] First real run on a Windows PC with a GPU (2026-10-02; a PC without a GPU is still to do)
+- [x] Native desktop app on Windows (2026-10-02, below)
+- [ ] Windows sandbox adapter for scenarios
+
+### First real Windows run (2026-10-02)
+PC: Windows 11 Pro 10.0.26200, NVIDIA RTX 5070 12 GB (driver too old for the CUDA 12.4 builds → Vulkan), 20 logical
+CPUs, Visual Studio 2022 Build Tools with Windows SDK 10.0.26100, cmake 4.2.1 on PATH (from Miniconda), Rust 1.95.
+- `setup.cmd`: every step OK in 53.7 min; 2 warnings: the CUDA driver, and pytest 10 failed / 141 passed / 13 skipped.
+- **Engine bugs found and fixed** (all generic; none was visible on the Mac):
+  - The API pack's `writes` loader dropped every name starting with `_` (meant for `_doc`), losing
+    `_InterlockedExchange`, `_InterlockedIncrement`, `_snprintf` and `__atomic_store_n`. With the real Windows SDK,
+    `InterlockedExchange` is a macro for `_InterlockedExchange`, so writes to `g_alarmActive` / `g_linkState` vanished
+    (msvc-silent and msvc-alarm-flag failed). `c_clang._load_api_writes` now skips only non-list metadata.
+  - A "quoted" include missing from the project never fell back to the system headers: it got an empty stand-in that
+    hid the real header. libmodbus includes `"stdint.h"` under `_MSC_VER`, so `uint32_t` became an opaque stub type
+    (20-32 errors per file, and under heavy load file parses ran into the 180 s timeout, so indexes differed from run
+    to run). `plan_c_profile` now checks both include forms against the system headers.
+  - POSIX headers that Windows lacks were empty stand-ins: `pthread_t t;` misparsed and pthread thread wrappers were
+    missed (lwIP's unix port: 23 instead of 24 threads); SOEM's port header left `struct timespec` undefined. New
+    knowledge-pack headers `verity/extract/shims/posix/pthread.h` and `sys/time.h` (used only when the host lacks
+    them; `struct timeval` only when winsock has not defined it); `find_shim` now finds headers with a folder part.
+  - The libc shims hard-coded 64-bit-Unix sizes (`size_t` = unsigned long …); on a Windows PC without Visual Studio
+    every MSVC file failed to parse cleanly (typedef redefinition, F3). They now use the compiler's own
+    `__SIZE_TYPE__`, `__PTRDIFF_TYPE__`, `__WCHAR_TYPE__`, `__INTPTR_TYPE__`, `__UINTPTR_TYPE__` (identical on the
+    Mac/Linux); the libc `time.h` shim gained C11 `struct timespec`.
+  - **The CMake capture ran `cmake` configure inside the user's project**, and configure scripts may write there:
+    lwIP rewrote `doc/doxygen/lwip.Doxyfile` (CRLF on Windows). It now runs on a private copy in the work folder
+    (`work/cmake-src`, VCS folders skipped, trees over 1 GiB not copied), maps the compile database back to the
+    project, and keeps headers the configure generated reachable through the copy, after the project's own folders.
+    On Windows the default Visual Studio generator exports no compile database, so there the capture adds nothing yet.
+- **Tests made platform-aware:** `test_answers` (5 cases checked against a real run skip without a sandbox, as in
+  `test_dialects`), the MSVC shim check (the real SDK is used when present), the orphaned-model-server test (no
+  symlink to `/bin/sleep`), `test_offline` reads UTF-8. New tests: CMake capture never writes into the project, maps
+  the copy back; POSIX knowledge-pack headers parse cleanly; engine stdin handling (below).
+- **UI end-to-end script** (`ui/scripts/e2e-cdp.mjs`): asks the engine whether a sandbox exists and reports the run
+  checks as SKIP without one (it aborted at 21/23 before); opens and indexes the sample itself (a fresh data folder
+  has no recent projects); screenshots go to a temporary folder unless `--shots` names one (it overwrote
+  `docs/screenshots`); `CDP_ATTACH=1` drives an already open page such as the desktop app's window; an answer that is
+  back before the progress line could be seen is a SKIP, not a FAIL.
+- **Results on this PC** (final code):
+  - pytest: 152 passed, 18 skipped (sandbox-only), the same in a simulated PC without Visual Studio (a pytest plugin
+    hiding the SDK).
+  - Direct mode, all 14 suites (207 questions), two baselines of the old code (identical scores) against the new
+    code: no question went from pass to fail; msvc-silent and msvc-alarm-flag now pass, soem-error-list-full too
+    (SOEM 12/12, as on the Mac). Every differing answer was read: corrections that now match the Mac's recorded
+    answers (lw-ttl-zero, lw-threads, msvc-threads, msvc-crc), order or count wording, internal fields only, and one
+    equally valid alternative (mb-timeout names libmodbus's TCP select() timeout check, identical code to the RTU one
+    the Mac names). Remaining Windows misses: 11 need the sandbox, 9 are the Mac's own known misses.
+  - Local model + meaning search (gpt-oss-20b on Vulkan), six suites (99 questions), one baseline
+    of the old code against the new code: 81 → 83/99; msvc-silent and msvc-alarm-flag now pass, nothing went from
+    pass to fail; 0 invented names and 11 rejected claims in both runs (as on the Mac). Of the other 8 differing
+    answers, 2 follow the changed MSVC facts and 6 are on projects whose index is identical (the model's wording
+    varies between runs).
+  - UI end-to-end: 29/29 with 2 skipped (sandbox) in Chrome, and 29/29 with 2 skipped inside the desktop app.
+- Not fixed, noted: on Windows answers name `_InterlockedExchange()` (the SDK macro's target) where the Mac says
+  `InterlockedExchange()`; libmodbus still has stand-ins for POSIX-only headers (`termios.h`, `sys/socket.h`), F3, and
+  indexes in about 75 s against 6.5 s on the Mac (each file is parsed five times against the real SDK headers).
+
+### Desktop app on Windows (2026-10-02)
+- `desktop/src-tauri/src/main.rs`: `.venv\Scripts\python.exe`, started without a console window and in UTF-8 mode;
+  stopped by closing its stdin pipe, then `taskkill /T /F` on what is left after 8 s; the `\\?\` prefix that
+  `canonicalize()` adds is removed (the engine inherited `\\?\C:\...` as its folder and data folder); Unix signal and
+  process-group code gated to Unix; `libc` is a Unix-only dependency. The Mac code paths are unchanged.
+- Engine: `VERITY_STOP_ON_STDIN_EOF=1` stops it cleanly once its stdin pipe closes, which also happens when the app is
+  killed (Windows has no SIGTERM, and `os.getppid()` never changes there). First built as a thread blocked reading
+  stdin: on Windows that stalled the start of the parser worker processes, so the app never finished indexing. Found by
+  the end-to-end test; the pipe is now polled every 2 s with `PeekNamedPipe` (select on Unix), and a test indexes a
+  project through such an engine.
+- `scripts\windows\build_desktop.cmd|ps1` (checks Rust, the C++ Build Tools, WebView2 and Node.js and says what is
+  missing; `tauri build --no-bundle` → `desktop\target\release\Verity.exe`; `-Shortcut` adds Desktop and Start menu
+  shortcuts) and `run_desktop.cmd`. First build 1 min 56 s, later ones about 30-40 s, 0 compiler warnings.
+- Verified on this PC, on the final binary: the self-test (open, index, answer, quit) in 12 s; the full UI end-to-end
+  check inside the app's own window (WebView2 DevTools); the native folder picker driven through the real Windows
+  dialog (the chosen project opened, indexed and answered); closing the window, killing `Verity.exe` and an engine
+  crash with **Try again** each leave no process behind (engine, model server, workers and web view gone in under
+  2.5 s, engine shut down cleanly); the engine-cannot-start page; the Desktop shortcut and `run_desktop.cmd`; no
+  console window at any point; an answer worded by the local model inside the app
+  (msvc-telemetry, 66 s including the model start), after which both model servers stopped with the app.
+- Not verified: the macOS build (a Tauri dependency compiles Objective-C, so it cannot be type-checked from Windows):
+  run `bash scripts/build_desktop.sh` on the Mac once.
 
 ## Prerequisites check and setup from a bare copy (2026-10-02)
 - [x] `scripts/check_prereqs.sh` (macOS/Linux, bash 3.2, no Python needed) and `scripts/windows/check_prereqs.cmd|ps1`

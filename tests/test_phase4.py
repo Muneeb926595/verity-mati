@@ -442,13 +442,22 @@ def test_orphaned_model_server_is_reaped(tmp_path, monkeypatch):
     """A model server whose Verity owner died (crash, kill -9) is stopped at the next start."""
     import json as _json
     import os
+    import shutil
     import subprocess
+    import sys
     import time
     import verity.llm.runtime as rt
-    fake = tmp_path / "llama-server"                 # a stand-in process whose command line says llama-server
-    fake.symlink_to("/bin/sleep")
-    child = subprocess.Popen([str(fake), "60"])
-    dead = subprocess.Popen(["/usr/bin/true"])
+    # a stand-in process whose command line says llama-server (Windows: a copy, since symlinks need admin rights)
+    if os.name == "nt":
+        fake = tmp_path / "llama-server.exe"
+        shutil.copy(os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "PING.EXE"), fake)
+        wait_args = ["-n", "60", "127.0.0.1"]
+    else:
+        fake = tmp_path / "llama-server"
+        fake.symlink_to("/bin/sleep")
+        wait_args = ["60"]
+    child = subprocess.Popen([str(fake)] + wait_args, stdout=subprocess.DEVNULL)
+    dead = subprocess.Popen([sys.executable, "-c", "pass"])
     dead.wait()                                      # an owner pid that no longer exists
     run = tmp_path / "run"
     run.mkdir()
@@ -465,7 +474,7 @@ def test_orphaned_model_server_is_reaped(tmp_path, monkeypatch):
         if child.poll() is None:
             child.kill()
     # a server whose owner is alive (another running Verity) is left alone
-    other = subprocess.Popen([str(fake), "60"])
+    other = subprocess.Popen([str(fake)] + wait_args, stdout=subprocess.DEVNULL)
     try:
         (run / f"{other.pid}.json").write_text(_json.dumps({"pid": other.pid, "owner": os.getppid(), "model": "x"}))
         assert rt.reap_orphans() == [] and other.poll() is None

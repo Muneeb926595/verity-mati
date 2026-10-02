@@ -20,6 +20,7 @@ node_modules/
 
 # Logs written by setup and the system analysis (the historical benchmark logs in logs/ are kept)
 /logs/setup-*.log
+/logs/desktop-build-*.log
 /logs/system-analysis-*
 /logs/cppcheck-msi.log
 

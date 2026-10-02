@@ -9,9 +9,10 @@ is `PROGRESS.md`; how to use the product is in `README.md`.
 - **Verity** (v0.5.0) is an offline code-intelligence tool for C and C# codebases. It indexes a project and answers
   plain-language questions with checked facts, citing file:line.
 - It is pilot-ready on macOS (Apple silicon) and fully built and tested there.
-- **Windows:** the setup, analysis and prerequisites scripts are written and were checked on the Mac (lint,
-  simulations, real downloads). They have **never run on a real Windows PC**. That first run is the main next step.
-  **Linux:** the scripts support it, but it has never been run.
+- **Windows:** first real run done on 2026-10-02 (Windows 11, RTX 5070, VS 2022 Build Tools): setup, pytest, every
+  benchmark suite and the **desktop app, now ported to Windows**. The bugs it found are fixed (`PROGRESS.md`, "First
+  real Windows run" and "Desktop app on Windows"). Still to do on Windows: a PC without a GPU / without Visual Studio
+  for real (it was simulated), and the sandbox adapter. **Linux:** the scripts support it, but it has never been run.
 - **Name:** the product was renamed to Verity on 2026-10-02 because the user found the earlier working name
   unprofessional. Every identifier, file, doc, icon and screenshot was changed and regression-tested (section 6).
   Never reintroduce the earlier name anywhere.
@@ -34,7 +35,8 @@ is `PROGRESS.md`; how to use the product is in `README.md`.
 - **Ways in:**
   - CLI: `bin/verity` (`bin\verity.cmd` on Windows).
   - Browser UI: `bin/verity ui`.
-  - Desktop app (Tauri 2 + SolidJS, macOS only): `Verity.app`, id `dev.verity.desktop`.
+  - Desktop app (Tauri 2 + SolidJS): `Verity.app` on macOS, `desktop\target\release\Verity.exe` on Windows
+    (`scripts\windows\build_desktop.cmd [-Shortcut]`, `run_desktop.cmd`), id `dev.verity.desktop`.
   - MCP stdio server: `bin/verity mcp`, tools `verity_index`, `verity_status`, `verity_ask`, `verity_search`,
     `verity_symbol`, `verity_source`.
 - **Configuration:**
@@ -126,6 +128,8 @@ are CRLF). `bash scripts/make_windows_bundle.sh` still makes an equivalent zip i
    - Options: `-Model auto|direct|C1|C2|C3`, `-StressTest`, `-QualityCheck`, `-Yes`. Logs go to `logs\setup-*.log`.
 4. `scripts\windows\analyze.cmd [-StressTest -Apply]`: hardware, then the recommended model; it measures and
    writes `models\selection.json`.
+   - Desktop app: `scripts\windows\build_desktop.cmd -Shortcut` (needs Rust and the Visual Studio C++ Build Tools,
+     only for building), then the Desktop shortcut or `scripts\windows\run_desktop.cmd`.
 5. Try it:
    - `bin\verity.cmd probe`
    - `bin\verity.cmd ask samples\navgps-c "Explain how GPS data travels through this application."`
@@ -157,8 +161,11 @@ Pinned tool versions:
 ## 5. How to test (and what "unchanged" looks like)
 
 - **Unit tests:** `.venv/bin/python -m pytest tests -q` (Windows: `.venv\Scripts\python -m pytest tests -q`).
-  Always pass `tests`: a bare `pytest` collects cppcheck's own tests under `tools/`. Expect **164 passed** (163 plus 1 skipped where PowerShell is not installed, for example a
-  Mac without pwsh).
+  Always pass `tests`: a bare `pytest` collects cppcheck's own tests under `tools/`. Expect **170 tests** on the
+  Mac (1 skipped where PowerShell is not installed); on Windows **152 passed, 18 skipped** (the sandbox-only ones).
+  To simulate a Windows PC without Visual Studio, load a pytest plugin that sets
+  `verity.extract.recon.windows_sdk_include_args = lambda: []` in `pytest_configure` (after conftest has set a private
+  `VERITY_HOME`; importing `verity` earlier makes the tests write into the real `data/`).
 - **Full regression (macOS):** `bash scripts/verify.sh [--llm] [--lwip]` runs pytest, every suite in Direct mode, then
   the demos. Note that it rewrites `docs/demos` in Direct mode; to restore the model-worded transcripts afterwards,
   run `bash scripts/run_demos.sh`.
@@ -211,6 +218,12 @@ Pinned tool versions:
   - 16: the engine is stopped while the page is open ("Reconnecting...");
   - 17 and 18: a copy of navgps-c, with a line appended to `nav/navigation.c` after indexing ("1 file changed", and
     the source-viewer warning).
+- **Desktop app on Windows:** `VERITY_DESKTOP_SELFTEST=quit` plus `VERITY_DESKTOP_SELFTEST_PROJECT=<folder>` on
+  `Verity.exe` (it prints `SELFTEST {...}` lines when its stdout is redirected). The full UI check runs inside the app:
+  start it with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223`, then
+  `CDP=http://127.0.0.1:9223 CDP_ATTACH=1 VERITY_URL=<url in data\engine.json> node ui/scripts/e2e-cdp.mjs`. Check
+  that closing the window, killing `Verity.exe` and killing the engine leave no `verity.engine.server` or
+  `llama-server` process behind. Use a fresh `VERITY_HOME` with `{"llm_mode": "direct"}` while a model benchmark runs.
 - **Desktop self-test (macOS):**
   - Basic run: `VERITY_DESKTOP_SELFTEST=quit VERITY_DESKTOP_SNAPSHOT_DIR=<dir> desktop/target/release/bundle/macos/Verity.app/Contents/MacOS/Verity`.
   - Add `VERITY_DESKTOP_SELFTEST_PROJECT=<abs path to samples/navgps-c>` for the answer screenshot.
@@ -269,19 +282,26 @@ Pinned tool versions:
 
 ## 7. Open items, roughly in priority order
 
-1. **First real Windows run.** Run `check_prereqs.cmd`, `setup.cmd` and `analyze.cmd -StressTest`, then pytest and a
-   few suites. Fix what breaks, and record the results in `PROGRESS.md` (Windows section).
-   - Watch for: proxies and antivirus rewriting downloads (checksum failures), CUDA driver versions, long paths,
-     curl not using the system proxy.
+1. **On the Mac, rebuild and self-test the desktop app** (`bash scripts/build_desktop.sh`, then the self-test in
+   section 5): `main.rs` was changed on Windows, and the macOS target cannot be type-checked there. Also run pytest and
+   a Direct suite there (the include fallback, CMake copy and libc shim changes run on every platform).
+   Windows follow-ups: a PC without a GPU and one without Visual Studio for real (both were only simulated); a POSIX
+   header pack for `sys/socket.h`, `unistd.h`, `termios.h` (POSIX-only code such as libmodbus is F3 on Windows);
+   a CMake generator that exports compile commands on Windows (Ninja, inside a VS developer environment); a Windows
+   installer for the desktop app (today a plain `Verity.exe` inside the folder, plus shortcuts).
 2. **Phase 5, learning from corrections:** checklist P5-0..P5-6 at the end of `PROGRESS.md`, spec in the one-pager.
    Start with P5-0, measured on a NEW never-seen project (#10).
-3. Windows sandbox adapter for runtime scenarios (C), C# scenarios, and the desktop app on Windows (Tauri process
-   groups and bundle targets).
+3. Windows sandbox adapter for runtime scenarios (C), and C# scenarios.
 4. Linux: run `check_prereqs.sh` and `setup.sh` on a real Linux machine.
 5. Benchmark gpt-oss-120b (C3) with `-QualityCheck` on a machine that can hold it.
 6. Validation on a customer's industrial codebase. This has not been done yet.
 
 ## 8. Known issues (pre-existing, not caused by the rename)
+
+- **Windows wording:** answers name `_InterlockedExchange()` (what the SDK's `InterlockedExchange` macro expands to)
+  where the Mac says `InterlockedExchange()`. Left as it is: the name check only accepts indexed names.
+- **Windows speed on POSIX code:** libmodbus indexes in about 75 s on Windows (6.5 s on the Mac): every file is parsed
+  five times (default + 4 configuration switches) against the real Windows SDK headers.
 
 - **Traceback in an answer:** in `bench/realworld_heldout9.json` case `nm-wait-negative`, the verification notes
   contain a Python traceback from an exception in `verity/agent/recipes.py` `Ctx.D` (`self.g.display(key)`).
@@ -297,6 +317,11 @@ Pinned tool versions:
 - **Model servers:** never run two engines with the 20B model on a 24 GB machine at once. The second one falls back
   to Direct mode without saying so loudly.
 - **Long runs:** runs over 2 hours exceed the background-task cap; launch them with `nohup`.
+- **Benchmarks under load:** never run several captures, or a capture and pytest, at once: overloaded parser workers
+  hit the 180 s per-file timeout and the indexes (and answers) change. One at a time, and a baseline must be a full
+  copy of the install (a git worktree lacks the git-ignored C# worker in `workers/roslyn/bin`, so C# falls back).
+- **Windows processes:** `.venv\Scripts\python.exe` is a launcher that starts the real interpreter as a child; kill
+  the tree, not the launcher. A thread blocked reading a pipe stalls child-process start on Windows: poll instead.
 - **PowerShell 5.1:**
   - keep scripts ASCII-only;
   - an if-expression that yields `@()` stores `$null`;

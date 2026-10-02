@@ -5,10 +5,14 @@
 //   1. start the engine:   .venv/bin/python -m verity.engine.server --port 8765 --token testtoken
 //   2. start a Chrome:     "Google Chrome" --headless=new --remote-debugging-port=9222 --user-data-dir=/tmp/verity-chrome-profile
 //   3. run:                node ui/scripts/e2e-cdp.mjs [--shots docs/screenshots] [--only home,answer,...]
+//                          (without --shots the screenshots go to <temp>/verity-e2e-shots)
 //
 // Env: VERITY_URL (default http://127.0.0.1:8765/?token=testtoken), CDP (default http://127.0.0.1:9222),
-//      SAMPLE (default <root>/samples/navgps-c).
+//      SAMPLE (default <root>/samples/navgps-c),
+//      CDP_ATTACH=1 to drive the page already open there instead of a new tab: the desktop app's own window
+//      (Windows: start Verity.exe with WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222).
 import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,7 +25,8 @@ const argVal = (k, d) => {
   const i = args.indexOf(k);
   return i >= 0 ? args[i + 1] : d;
 };
-const SHOTS = resolve(argVal("--shots", join(ROOT, "docs/screenshots")));
+// screenshots go to a temporary folder unless --shots names one (the tracked docs/screenshots only on purpose)
+const SHOTS = resolve(argVal("--shots", join(tmpdir(), "verity-e2e-shots")));
 const ONLY = (argVal("--only", "") || "").split(",").filter(Boolean);
 mkdirSync(SHOTS, { recursive: true });
 
@@ -30,11 +35,31 @@ function check(name, ok, detail = "") {
   results.push({ name, ok: !!ok, detail });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? "  — " + detail : ""}`);
 }
+// a check this machine cannot make (e.g. no sandbox to run code): reported, never counted as passed
+function skip(name, why) {
+  results.push({ name, ok: true, skipped: true, detail: why });
+  console.log(`SKIP  ${name}  — ${why}`);
+}
+function summary(failed, suffix = "") {
+  const skipped = results.filter((r) => r.skipped);
+  const why = [...new Set(skipped.map((r) => r.detail))].join("; ");
+  return `${results.length - failed.length - skipped.length}/${results.length - skipped.length} checks passed${suffix}` +
+    (skipped.length ? ` (${skipped.length} skipped: ${why})` : "");
+}
 
 // ------------------------------------------------------------------------------------------ CDP plumbing
+const ATTACH = process.env.CDP_ATTACH === "1";
 async function openPage() {
-  const r = await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" });
-  const t = await r.json();
+  let t;
+  if (ATTACH) {
+    const pages = (await (await fetch(`${CDP}/json/list`)).json()).filter((x) => x.type === "page");
+    t = pages.find((x) => /^http:\/\/127\.0\.0\.1:/.test(x.url)) || pages[0];
+    if (!t) throw new Error("no page to attach to at " + CDP);
+    console.log("attached to:", t.url.replace(/token=[^&#]+/, "token=…"));
+  } else {
+    const r = await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" });
+    t = await r.json();
+  }
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   await new Promise((res, rej) => {
     ws.onopen = res;
@@ -169,19 +194,35 @@ async function main() {
   });
   await setViewport(1280, 860);
 
-  const settingsBefore = (await (async () => {
+  const info = (await (async () => {
     await goto(URL0);
     return rpc("engine.info");
-  })()).result?.settings || {};
-  console.log("engine settings before:", JSON.stringify(settingsBefore));
+  })()).result || {};
+  const settingsBefore = info.settings || {};
+  const sandboxOk = !!info.probe?.tools?.sandbox?.ok;          // scenario questions run the code only with a sandbox
+  console.log("engine settings before:", JSON.stringify(settingsBefore), "· sandbox:", sandboxOk);
+  // the home screen lists recent projects: the sample must be one of them and indexed (a fresh data folder has none)
+  if (!(await rpc("project.open", { path: SAMPLE })).result?.ready) {
+    await rpc("index.start", { path: SAMPLE });
+    for (let i = 0; i < 360 && !(await rpc("project.status", { path: SAMPLE })).result?.ready; i++) await sleep(500);
+  }
 
   // ---------------------------------------------------------------- home
   await goto(URL0.split("#")[0]);
   await waitFor(`document.querySelector(".hero-title")?.innerText === "Verity"`, 20000, "home screen");
   await waitFor(`document.querySelectorAll(".recent-item").length > 0 || document.querySelector(".empty")`, 10000, "recent list");
-  check("home shows title, subtitle, folder field, recent list",
+  // inside the desktop app, projects open with the native folder picker and the typed-path field is one click away
+  const inApp = await evaluate(`!!window.__TAURI_INTERNALS__?.invoke`);
+  const showField = async () => {
+    if (inApp && !(await evaluate(`!!document.querySelector("#folder-path")`)))
+      await click(byText(".link-btn", "or type a folder path"), "the 'or type a folder path' link");
+    await waitFor(`!!document.querySelector("#folder-path")`, 5000, "folder field");
+  };
+  check(inApp ? "home shows title, subtitle, Open Project (native folder picker), recent list"
+              : "home shows title, subtitle, folder field, recent list",
     (await evaluate(text(".hero-sub"))) === "Understand your C/C# codebase" &&
-    (await evaluate(`!!document.querySelector("#folder-path")`)) &&
+    (inApp ? await evaluate(`!![...document.querySelectorAll("button")].find((b) => b.innerText.trim() === "Open Project")`)
+           : await evaluate(`!!document.querySelector("#folder-path")`)) &&
     (await evaluate(`document.querySelectorAll(".recent-item").length`)) >= 1);
   const recentRow = await evaluate(`[...document.querySelectorAll(".recent-item")].map(e => e.innerText.replace(/\\s+/g, " ")).join(" | ")`);
   check("recent row shows name, status label and language", /navgps-c/.test(recentRow) && /Ready/.test(recentRow), recentRow.slice(0, 160));
@@ -191,6 +232,7 @@ async function main() {
   await setViewport(1280, 860);
 
   // error path: a folder that does not exist → friendly inline banner
+  await showField();
   await click(`document.querySelector("#folder-path")`);
   await typeText("/no/such/folder");
   await pressEnter();
@@ -200,6 +242,7 @@ async function main() {
   await shot("02-home-error");
 
   // ---------------------------------------------------------------- open the sample via the path field (Enter submits)
+  await showField();
   await evaluate(`(() => { const i = document.querySelector("#folder-path"); i.select(); })()`);
   await typeText(SAMPLE);
   await pressEnter();
@@ -318,18 +361,34 @@ async function main() {
   } catch {
     /* too quick to see */
   }
-  check("ask progress line shown while answering", sawProgress);
-  await waitFor(`/heading = 270/.test(${text(".answer .prose")})`, 180000, "scenario answer");
-  await click(byText(".coll-head", "Show execution path"));
-  await waitFor(`!!document.querySelector(".run-table")`, 5000, "run table");
-  const run = await evaluate(text(".run-table"));
-  check("sandboxed run shown: inputs, outputs (motor_set_steering(50)), final values (currentHeading 337.5)",
-    /heading/.test(run) && /motor_set_steering\(50\)/.test(run) && /337\.5/.test(run), run.replace(/\s+/g, " ").slice(0, 200));
-  check("OBSERVED steps are marked 'ran'", (await evaluate(`document.querySelectorAll(".badge.ran").length`)) > 0);
-  await evaluate(`document.querySelector(".runs").scrollIntoView({block: "center"})`);
-  await shot("10-scenario-run");
-  await evaluate(`window.scrollTo(0, 0)`);
-  await shot("10-scenario-answer-full", { full: true });
+  if (sawProgress) check("ask progress line shown while answering", true);
+  else if (await evaluate(`/heading 270/.test(${text(".question-text")}) && !document.querySelector(".ask-progress") && !!document.querySelector(".answer .prose")`))
+    skip("ask progress line shown while answering", "the answer was back before the progress line could be seen"); // no sandbox run to wait for
+  else check("ask progress line shown while answering", false);
+  const RUN_CHECKS = ["sandboxed run shown: inputs, outputs (motor_set_steering(50)), final values (currentHeading 337.5)",
+    "OBSERVED steps are marked 'ran'"];
+  if (sandboxOk) {
+    await waitFor(`/heading = 270/.test(${text(".answer .prose")})`, 180000, "scenario answer");
+    await click(byText(".coll-head", "Show execution path"));
+    await waitFor(`!!document.querySelector(".run-table")`, 5000, "run table");
+    const run = await evaluate(text(".run-table"));
+    check(RUN_CHECKS[0],
+      /heading/.test(run) && /motor_set_steering\(50\)/.test(run) && /337\.5/.test(run), run.replace(/\s+/g, " ").slice(0, 200));
+    check(RUN_CHECKS[1], (await evaluate(`document.querySelectorAll(".badge.ran").length`)) > 0);
+    await evaluate(`document.querySelector(".runs").scrollIntoView({block: "center"})`);
+    await shot("10-scenario-run");
+    await evaluate(`window.scrollTo(0, 0)`);
+    await shot("10-scenario-answer-full", { full: true });
+  } else {
+    // no sandbox (Windows for now): the engine answers by reading the code, and must not pretend it ran anything
+    await waitFor(`/heading 270/.test(${text(".question-text")}) && !document.querySelector(".ask-progress") && ` +
+      `/ProcessGpsData|CalculateHeading/.test(${text(".answer .prose")})`, 180000, "scenario answer (read from the code)");
+    const prose = await evaluate(text(".answer .prose"));
+    check("without a sandbox the scenario is answered from the code, with no run shown",
+      !(await evaluate(`!!document.querySelector(".run-table") || !!document.querySelector(".badge.ran")`)),
+      prose.replace(/\s+/g, " ").slice(0, 160));
+    for (const name of RUN_CHECKS) skip(name, "no sandbox to run code on this machine");
+  }
 
   // ---------------------------------------------------------------- history + settings
   await evaluate(`window.scrollTo(0, 0)`);
@@ -369,9 +428,9 @@ async function main() {
   check("no uncaught errors in the page console", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));
 
   const failed = results.filter((r) => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
+  console.log(`\n${summary(failed)}`);
   try {
-    await fetch(`${CDP}/json/close/${P.target.id}`);
+    if (!ATTACH) await fetch(`${CDP}/json/close/${P.target.id}`);   // never close the app's own window
   } catch {
     /* ignore */
   }
@@ -381,6 +440,6 @@ async function main() {
 main().catch((e) => {
   console.error("E2E aborted:", e.message);
   const failed = results.filter((r) => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} checks passed before the abort`);
+  console.log(`\n${summary(failed, " before the abort")}`);
   process.exit(2);
 });

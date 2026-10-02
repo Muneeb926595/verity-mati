@@ -83,6 +83,38 @@ def terminate(pid: int, force: bool = False) -> None:
     os.kill(pid, signal.SIGKILL if force else signal.SIGTERM)
 
 
+def stdin_closed() -> bool:
+    """True once the other end of our stdin pipe has been closed (the desktop app quit or was killed). Checked without
+    reading: on Windows a thread blocked reading a pipe stalls the start of child processes, such as the parser
+    workers. False when stdin is not a pipe or cannot be checked."""
+    try:
+        fd = sys.stdin.fileno()
+    except (AttributeError, OSError, ValueError):
+        return False
+    if IS_WINDOWS:
+        import msvcrt
+        from ctypes import wintypes
+        try:
+            handle = msvcrt.get_osfhandle(fd)
+        except OSError:
+            return False
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)          # type: ignore[attr-defined]
+        peek = k32.PeekNamedPipe
+        peek.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p,
+                         ctypes.POINTER(wintypes.DWORD), ctypes.c_void_p]
+        peek.restype = wintypes.BOOL
+        avail = wintypes.DWORD(0)
+        if peek(handle, None, 0, None, ctypes.byref(avail), None):
+            return False
+        return ctypes.get_last_error() == 109                         # ERROR_BROKEN_PIPE: the writer is gone
+    import select
+    try:
+        ready, _, _ = select.select([fd], [], [], 0)
+        return bool(ready) and os.read(fd, 65536) == b""              # readable with no data = end of file
+    except OSError:
+        return False
+
+
 def lock_exclusive(fh) -> None:
     """Non-blocking exclusive lock on an open file; raises OSError when another process holds it."""
     if IS_WINDOWS:
