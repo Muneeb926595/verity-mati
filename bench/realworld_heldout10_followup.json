@@ -1,0 +1,184 @@
+{
+ "_doc": "Phase 5 learning-from-corrections follow-up set for the TENTH held-out project (cJSON v1.7.19, samples/realworld/cJSON). Two kinds of case. PARAPHRASE (field 'paraphrase_of' = main id, ids end in -p): every behavioural question of bench/realworld_heldout10.json reworded, asking for exactly the same answer with the same must_mention; it measures whether a correction taught on the main question carries over to new wording. NEIGHBOUR (field 'neighbour_of' = main id, ids end in -n): a different question in the same area of the code whose correct answer is a DIFFERENT place (its own must_mention, grepped verbatim in the source and checked to be where the behaviour is decided); it measures that a learned correction does not over-generalise and pull nearby questions to the corrected answer. Written from the source alone, together with the main suite, BEFORE any Verity run.",
+ "projects": {
+  "cjson": "samples/realworld/cJSON"
+ },
+ "cases": [
+  {
+   "id": "cj-deep-nesting-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "If the JSON text is a thousand opening square brackets in a row, does the parser keep descending, or does it stop at some depth?",
+   "must_mention": [
+    "parse_array",
+    "CJSON_NESTING_LIMIT"
+   ],
+   "paraphrase_of": "cj-deep-nesting"
+  },
+  {
+   "id": "cj-deep-nesting-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when I make a deep copy of a tree that is nested extremely deeply, or that loops back on itself?",
+   "must_mention": [
+    "cJSON_Duplicate_rec",
+    "CJSON_CIRCULAR_LIMIT"
+   ],
+   "neighbour_of": "cj-deep-nesting"
+  },
+  {
+   "id": "cj-minus-no-digits-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "Where and why does parsing fail when a lone '-' appears where a number is expected?",
+   "must_mention": [
+    "parse_number",
+    "number_c_string == after_end"
+   ],
+   "paraphrase_of": "cj-minus-no-digits"
+  },
+  {
+   "id": "cj-minus-no-digits-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What gets written out when a number value that holds NaN or infinity is printed?",
+   "must_mention": [
+    "print_number",
+    "isnan(d) || isinf(d)"
+   ],
+   "neighbour_of": "cj-minus-no-digits"
+  },
+  {
+   "id": "cj-unterminated-string-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "How does the parser deal with input like {\"key\": \"abc where the string's closing double quote is missing?",
+   "must_mention": [
+    "parse_string",
+    "input_end - input_buffer->content"
+   ],
+   "paraphrase_of": "cj-unterminated-string"
+  },
+  {
+   "id": "cj-bad-surrogate-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "How is an invalid UTF-16 surrogate pair inside a string handled, for example \\uD83D followed by \\u0041?",
+   "must_mention": [
+    "utf16_literal_to_utf8",
+    "second_code < 0xDC00"
+   ],
+   "paraphrase_of": "cj-bad-surrogate"
+  },
+  {
+   "id": "cj-bad-surrogate-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What does the printer write when a string value contains a control byte such as 0x01?",
+   "must_mention": [
+    "print_string_ptr",
+    "u%04x"
+   ],
+   "neighbour_of": "cj-bad-surrogate"
+  },
+  {
+   "id": "cj-member-alloc-fail-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "If allocating a node fails partway through parsing the key/value pairs of an object, what happens to the members that were already parsed?",
+   "must_mention": [
+    "parse_object",
+    "new_item == NULL"
+   ],
+   "paraphrase_of": "cj-member-alloc-fail"
+  },
+  {
+   "id": "cj-prealloc-too-small-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "When printing into a fixed-size buffer supplied by the caller that is too short, does the library try to grow it, and what does the print call report?",
+   "must_mention": [
+    "ensure",
+    "p->noalloc"
+   ],
+   "paraphrase_of": "cj-prealloc-too-small"
+  },
+  {
+   "id": "cj-trailing-garbage-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "If I parse with the option that rejects anything after the JSON value, what happens to input like {\"a\":1} xyz?",
+   "must_mention": [
+    "cJSON_ParseWithLengthOpts",
+    "require_null_terminated"
+   ],
+   "paraphrase_of": "cj-trailing-garbage"
+  },
+  {
+   "id": "cj-trailing-garbage-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when the input text begins with a UTF-8 byte order mark?",
+   "must_mention": [
+    "skip_utf8_bom",
+    "\\xEF\\xBB\\xBF"
+   ],
+   "neighbour_of": "cj-trailing-garbage"
+  },
+  {
+   "id": "cj-key-case-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "Is the ordinary object member lookup case-sensitive? Would looking up \"ID\" match a member called \"id\"?",
+   "must_mention": [
+    "get_object_item",
+    "case_insensitive_strcmp"
+   ],
+   "paraphrase_of": "cj-key-case"
+  },
+  {
+   "id": "cj-key-case-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "With the normal JSON Pointer lookup, does a pointer such as /Name match an object member that is stored as \"name\"?",
+   "must_mention": [
+    "compare_pointers",
+    "tolower(*name) != tolower(*pointer)"
+   ],
+   "neighbour_of": "cj-key-case"
+  },
+  {
+   "id": "cj-pointer-leading-zero-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "Is a JSON Pointer such as /items/007 accepted when /items is an array?",
+   "must_mention": [
+    "decode_array_index_from_pointer",
+    "pointer[0] == '0'"
+   ],
+   "paraphrase_of": "cj-pointer-leading-zero"
+  },
+  {
+   "id": "cj-patch-unknown-op-p",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "When applying a list of JSON Patch operations, what happens if one of them has an op name that is not add, remove, replace, move, copy or test?",
+   "must_mention": [
+    "apply_patch",
+    "status = 3"
+   ],
+   "paraphrase_of": "cj-patch-unknown-op"
+  },
+  {
+   "id": "cj-patch-unknown-op-n",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a JSON Patch add operation targets an array index past the end of the array, for example index 10 in a 3-element array?",
+   "must_mention": [
+    "insert_item_in_array",
+    "which > 0"
+   ],
+   "neighbour_of": "cj-patch-unknown-op"
+  }
+ ]
+}

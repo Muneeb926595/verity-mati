@@ -1,0 +1,644 @@
+{
+ "summary": {
+  "cases": 14,
+  "passed": 4,
+  "within_top3": 4,
+  "mean_score": 0.429,
+  "symbol_identification": {
+   "cases": 14,
+   "passed": 4,
+   "accuracy": 0.429
+  },
+  "call_paths_and_flows": {
+   "cases": 0
+  },
+  "file_line_references": {
+   "cases": 0
+  },
+  "scenario_results": {
+   "cases": 0
+  },
+  "scenario_outputs": {
+   "cases": 0
+  },
+  "execution_trace": {
+   "cases": 0
+  },
+  "branch_outcomes": {
+   "cases": 0
+  },
+  "intent_routing": {
+   "cases": 0
+  },
+  "false_positives": {
+   "cases": 0
+  },
+  "no_invention_traps": {
+   "cases": 0
+  },
+  "unsupported_claims": {
+   "rejected_by_verifier": 0,
+   "claims": 330,
+   "rate": 0.0
+  },
+  "hallucinated_names_in_answers": {
+   "cases": 0,
+   "details": []
+  },
+  "citation_precision": {
+   "verified_claims": 330,
+   "claims": 330,
+   "rate": 1.0
+  },
+  "missing_evidence": {
+   "paragraphs_without_evidence": 0,
+   "paragraphs": 53
+  },
+  "mean_seconds": 1.14
+ },
+ "results": [
+  {
+   "id": "cj-deep-nesting",
+   "category": "scenario",
+   "q": "What happens when the input has thousands of arrays nested inside each other, like [[[[ ... ]]]]?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 9
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 9,
+     "total": 9
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 3.03,
+   "passed": true,
+   "score": 1.0,
+   "topk_rank": 1,
+   "answer": [
+    "This is handled in parse_array() (cJSON.c:1497): it checks `input_buffer->depth >= CJSON_NESTING_LIMIT`, and when that is true it returns `false`, so the rest of parse_array() is skipped.",
+    "Because it returns early, these do not happen in this case: buffer_skip_whitespace() \u2014 the previous values stay in place.",
+    "parse_value() decides what counts as invalid: `(input_buffer == NULL) || (input_buffer->content == NULL)` \u2192 false; /* no input */; `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"null\", 4) == 0)` \u2192 true; `can_read(input_buffer, 5) && (strncmp((const char*)buffer_at_offset(input_buffer), \"false\", 5) == 0)` \u2192 true; `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)` \u2192 true; `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\\\"')` \u2192 parse_string(item, input_buffer); `can_access_at_index(input_buffer, 0) && ((buffer_at_offset(input_buffer)[0] == '-') || ((buffer_at_offset(input_buffer)[0] >= '0') && (buffer_at_offset(input_buffer)[0] <= '9')))` \u2192 parse_number(item, input_buffer); `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '[')` \u2192 parse_array(item, input_buffer); `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '{')` \u2192 parse_object(item, input_buffer)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-minus-no-digits",
+   "category": "scenario",
+   "q": "What happens when a value in the input starts with a minus sign but no digits follow it, as in [-]?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "parse_number",
+      "number_c_string == after_end"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 2.67,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "This is handled in apply_patch() (cJSON_Utils.c:826): it checks `opcode == INVALID`, and when that is true it jumps to `cleanup` (line 1025), where it calls cJSON_Delete() and calls cJSON_free(), skipping the rest of apply_patch().",
+    "Because it returns early, these do not happen in this case: overwrite_item(), get_object_item(), cJSON_Duplicate() \u2014 the previous values stay in place.",
+    "apply_patch()'s caller cJSONUtils_ApplyPatches() checks `status != 0` (cJSON_Utils.c:1057) and then returns `status`.",
+    "apply_patch()'s caller cJSONUtils_ApplyPatchesCaseSensitive() checks `status != 0` (cJSON_Utils.c:1086) and then returns `status`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-unterminated-string",
+   "category": "scenario",
+   "q": "What happens when a string in the input has an opening quote but the closing quote never comes?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "parse_string",
+      "input_end - input_buffer->content"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 6
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 6,
+     "total": 6
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 2.81,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "This is handled in parse_number() (cJSON.c:379): it checks `number_c_string == after_end`, and when that is true it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and returns `false`, so the rest of parse_number() is skipped.",
+    "Because it returns early, these do not happen in this case: free(), internal_free(), internal_malloc(), failing_malloc() \u2014 the previous values stay in place.",
+    "internal_free() calls free(pointer) (line 171).",
+    "internal_malloc() calls malloc(size) (line 167); then it returns `malloc(size)` (line 167)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-bad-surrogate",
+   "category": "scenario",
+   "q": "What happens when a string contains a \\u escape for the first half of a UTF-16 surrogate pair, but the \\u escape after it is not a valid second half?",
+   "intent": "scenario",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 35
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 35,
+     "total": 35
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.07,
+   "passed": true,
+   "score": 1.0,
+   "topk_rank": 1,
+   "answer": [
+    "I could not find a function that takes these values as input, so I cannot simulate this scenario.",
+    "These parts of the code look most relevant: utf16_literal_to_utf8() (function, cJSON.c:698); sort_list() (function, cJSON_Utils.c:484); cJSON_ParseWithOpts() (function, cJSON.c:1126); skip_utf8_bom() (function, cJSON.c:1111); static_strlen (constant, cJSON.c:184); parse_buffer.offset (field, cJSON.c:293).",
+    "utf16_literal_to_utf8() (cJSON.c:698) \u2014 converts a UTF-16 literal to UTF-8 A literal can be one or two sequences of the form \\uXXXX.",
+    "Step by step, it sets `const unsigned char *first_sequence = input_pointer` (line 702); then it checks `(input_end - first_sequence) < 6` (line 708); if true it jumps to `fail`; then it calls parse_hex4(first_sequence + 2) and stores the result in `first_code` (line 715); then it checks `((first_code >= 0xDC00) && (first_code <= 0xDFFF))` (line 718); if true it jumps to `fail`; then it checks `(first_code >= 0xD800) && (first_code <= 0xDBFF)` (line 724); if true it calls parse_hex4() and sets `const unsigned char *second_sequence = first_sequence + 6`, `sequence_length = 12`, `second_code = parse_hex4(second_sequence + 2)`, `codepoint = 0x10000 + (((first_code & 0x3FF) << 10) | (second_code & 0x3FF))`; otherwise it sets `sequence_length = 6`, `codepoint = first_code`; then it checks `(input_end - second_sequence) < 6` (line 730); if true it jumps to `fail`; then it checks `(second_sequence[0] != '\\\\') || (second_sequence[1] != 'u')` (line 736); if true it jumps to `fail`; then it checks `(second_code < 0xDC00) || (second_code > 0xDFFF)` (line 745); if true it jumps to `fail`; then it checks `codepoint < 0x80` (line 764); then it checks `codepoint < 0x800` (line 769); if true it sets `first_byte_mark = 0xC0`; \u2026."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-member-alloc-fail",
+   "category": "scenario",
+   "q": "What happens if memory runs out while the parser is creating the item for the next member of an object?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "parse_object",
+      "new_item == NULL"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 63
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 63,
+     "total": 63
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.65,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "This is decided in cJSON_AddItemReferenceToObject() (cJSON.c:2127): it checks `(object == NULL) || (string == NULL)`; when that is NOT true it calls add_item_to_object() and calls create_reference() and returns `add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false)`, so the rest of cJSON_AddItemReferenceToObject() is skipped.",
+    "add_item_to_object() sets `int new_type = cJSON_Invalid` (line 2070); then it checks `(object == NULL) || (string == NULL) || (item == NULL) || (object == item)` (line 2072); if true it returns `false` straight away; then it checks `constant_key` (line 2077); if true it calls cast_away_const() and sets `new_key = (char*)cast_away_const(string)`, `new_type = item->type | cJSON_StringIsConst`; otherwise it calls cJSON_strdup() and sets `new_key = (char*)cJSON_strdup((const unsigned char*)string, hooks)`, `new_type = item->type & ~cJSON_StringIsConst`; then it checks `new_key == NULL` (line 2085); if true it returns `false` straight away; then it checks `!(item->type & cJSON_StringIsConst) && (item->string != NULL)` (line 2093); if true it calls free(), internal_free(), internal_malloc(), failing_malloc(), normal_free(); then it updates item (string, type; lines 2098\u20132099).",
+    "create_reference() checks `item == NULL` (line 1994); if true it returns `NULL` straight away; then it calls cJSON_New_Item(hooks) and stores the result in `reference` (line 1999); then it checks `reference == NULL` (line 2000); if true it returns `NULL` straight away; then it calls memcpy(reference, item, sizeof(cJSON)) (line 2005); then it sets `reference->string = NULL` (line 2006); then it sets `reference->type |= cJSON_IsReference` (line 2007).",
+    "Consequence: cJSONUtils_FindPointerFromObjectTo() checks `current_child != NULL` (cJSON_Utils.c:215); `current_child != NULL` depends on runtime values, so it may return early and may call cJSONUtils_FindPointerFromObjectTo() and may call cJSON_IsArray() and may call cJSON_malloc() and may call strlen() and may call cJSON_free() and may call cJSON_free() and may call cJSON_free() and may call cJSON_IsObject() and may call cJSON_malloc() and may call strlen() and may call pointer_encoded_length() and may call encode_string_as_pointer() and may call strcat() and may call cJSON_free() and may call cJSON_free()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-prealloc-too-small",
+   "category": "scenario",
+   "q": "What happens when I print JSON into a buffer I allocated myself and the output turns out to be bigger than that buffer?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "p->noalloc"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 43
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 43,
+     "total": 43
+    },
+    "_missing_evidence": {
+     "paragraphs": 7,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 3.06,
+   "passed": false,
+   "score": 0.5,
+   "topk_rank": null,
+   "answer": [
+    "This is decided in print() (cJSON.c:1260): it checks `hooks->reallocate != NULL`; when that is NOT true it calls one of malloc(), internal_free(), internal_malloc(), failing_malloc(), normal_free() through internal_hooks.allocate \u2014 which one depends on the data at run time (line 1270); then it checks `printed == NULL` (line 1271); if true it jumps to `fail`; then it calls memcpy(printed, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1)) (line 1275); then it sets `printed[buffer->offset] = '\\0'` (line 1276); then it calls one of free(), internal_free(), internal_malloc(), failing_malloc(), normal_free() through internal_hooks.deallocate \u2014 which one depends on the data at run time (line 1279); then it sets `buffer->buffer = NULL` (line 1280).",
+    "When it does not return there, print() goes on to call free() with (`buffer->buffer`) (line 1288); internal_free() with (`buffer->buffer`) (line 1288); internal_malloc() with (`buffer->buffer`) (line 1288); failing_malloc() with (`buffer->buffer`) (line 1288); free() with (`printed`) (line 1294).",
+    "Consequence: ensure() checks `(p == NULL) || (p->buffer == NULL)` (cJSON.c:490); `(p == NULL) || (p->buffer == NULL)` depends on runtime values, so it may return early, skipping realloc(), internal_realloc(), failing_realloc().",
+    "Consequence: update_offset() checks `(buffer == NULL) || (buffer->buffer == NULL)` (cJSON.c:574); with buffer.buffer = 0, buffer = 0, `(buffer == NULL) || (buffer->buffer == NULL)` is true, so it returns early, so strlen() are no longer called.",
+    "Consequence: cJSON_PrintBuffered() checks `!p.buffer` (cJSON.c:1322); with buffer = 0, `!p.buffer` is true, so it returns early, so print_value() are no longer called.",
+    "internal_free() calls free(pointer) (line 171).",
+    "internal_malloc() calls malloc(size) (line 167); then it returns `malloc(size)` (line 167)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-trailing-garbage",
+   "category": "scenario",
+   "q": "What happens when I tell the parser that nothing but whitespace may follow the JSON value, and there is extra text after it?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "require_null_terminated"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 31
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 31,
+     "total": 31
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.61,
+   "passed": false,
+   "score": 0.5,
+   "topk_rank": null,
+   "answer": [
+    "This is handled in cJSON_ParseWithLengthOpts() (cJSON.c:1167): it checks `!parse_value(item, buffer_skip_whitespace(skip_utf8_bom(&buffer)))`, and when that is true it jumps to `fail` (line 1189), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and records it (`local_error.json = (const unsigned char*)value`, `global_error = local_error`, `local_error.position = 0`, `local_error.position = buffer.offset`, \u2026), skipping the rest of cJSON_ParseWithLengthOpts().",
+    "Because it returns early, these do not happen in this case: buffer_skip_whitespace() \u2014 the previous values stay in place.",
+    "parse_value() decides what counts as invalid: `(input_buffer == NULL) || (input_buffer->content == NULL)` \u2192 false; /* no input */; `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"null\", 4) == 0)` \u2192 true; `can_read(input_buffer, 5) && (strncmp((const char*)buffer_at_offset(input_buffer), \"false\", 5) == 0)` \u2192 true; `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)` \u2192 true; `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\\\"')` \u2192 parse_string(item, input_buffer); `can_access_at_index(input_buffer, 0) && ((buffer_at_offset(input_buffer)[0] == '-') || ((buffer_at_offset(input_buffer)[0] >= '0') && (buffer_at_offset(input_buffer)[0] <= '9')))` \u2192 parse_number(item, input_buffer); `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '[')` \u2192 parse_array(item, input_buffer); `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '{')` \u2192 parse_object(item, input_buffer)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-key-case",
+   "category": "scenario",
+   "q": "With the normal object key lookup, will looking up \"Name\" find a member that is stored as \"name\"?",
+   "intent": "explain",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "get_object_item",
+      "case_insensitive_strcmp"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 29
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 29,
+     "total": 29
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "cJSONUtils_FindPointerFromObjectTo() (cJSON_Utils.c:198) \u2014 Given a root object and a target object, construct a pointer from one to the other.",
+    "Step by step, it checks `(object == NULL) || (target == NULL)` (line 203); if true it returns `NULL` straight away; then it checks `object == target` (line 208); if true it calls cJSONUtils_strdup() and returns `(char*)cJSONUtils_strdup((const unsigned char*)\"\")` straight away; then it repeats while `current_child != NULL` (line 215); then it calls cJSONUtils_FindPointerFromObjectTo(current_child, target) (line 217); then it checks `target_pointer != NULL` (line 219); if true it calls cJSON_free() and returns `NULL` straight away; then it checks `cJSON_IsArray(object)` (line 221); if true it calls cJSON_malloc(), strlen(), sprintf(), cJSON_free() and sets `unsigned char *full_pointer = (unsigned char*)cJSON_malloc(strlen((char*)target_pointer) + 20 + sizeof(\"/\"))` and returns `(char*)full_pointer` straight away; then it checks `child_index > ULONG_MAX` (line 228); if true it calls cJSON_free() and returns `NULL` straight away; then it checks `cJSON_IsObject(object)` (line 240); if true it calls cJSON_malloc(), strlen(), pointer_encoded_length(), encode_string_as_pointer(), strcat(), cJSON_free() and sets `unsigned char *full_pointer = (unsigned char*)cJSON_malloc(strlen((char*)target_pointer) + pointer_encoded_length((unsigned char*)current_child->string) + 2)` and returns `(char*)full_pointer` straight away.",
+    "It is called by cJSONUtils_FindPointerFromObjectTo() at cJSON_Utils.c:217, only when `(object == NULL) || (target == NULL)` is false, only when `object == target` is false, repeatedly inside `for (current_child = object->child; current_child != NULL; (void)(current_child = current_child->next), child_index++)`; cjson_utils_functions_shouldnt_crash_with_null_pointers() at tests/misc_utils_tests.c:65; cjson_utils_functions_shouldnt_crash_with_null_pointers() at tests/misc_utils_tests.c:66; misc_tests() at tests/old_utils_tests.c:107. The full chain from the program's start is: misc_tests() \u2192 cJSONUtils_FindPointerFromObjectTo()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-pointer-leading-zero",
+   "category": "scenario",
+   "q": "What happens when a JSON Pointer path uses an array index with a leading zero, like /list/01?",
+   "intent": "scenario",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 10
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 10,
+     "total": 10
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": true,
+   "score": 1.0,
+   "topk_rank": 1,
+   "answer": [
+    "decode_array_index_from_pointer() (cJSON_Utils.c:274).",
+    "Step by step, it checks `(pointer[0] == '0') && ((pointer[1] != '\\0') && (pointer[1] != '/'))` (line 279); if true it returns `0` straight away; then it repeats while `(pointer[position] >= '0') && (pointer[position] <= '9')` (line 285); then it sets `parsed_index = (10 * parsed_index) + (size_t)(pointer[position] - '0')` (line 287); then it checks `(pointer[position] != '\\0') && (pointer[position] != '/')` (line 291); if true it returns `0` straight away; then it sets `*index = parsed_index` (line 296); then it returns `1` (line 298).",
+    "It is called by get_item_from_pointer() at cJSON_Utils.c:317 with (`(const unsigned char*)pointer`, `&index`), only when `pointer == NULL` is false, repeatedly inside `while ((pointer[0] == '/') && (current_element != NULL))`, only when `cJSON_IsArray(current_element)` is true; detach_path() at cJSON_Utils.c:458 with (`child_pointer`, `&index`) \u2014 `unsigned char *child_pointer = NULL` (line 433), only when `parent_pointer == NULL` is false, only when `child_pointer == NULL` is false, only when `cJSON_IsArray(parent)` is true; apply_patch() at cJSON_Utils.c:991 with (`child_pointer`, `&index`) \u2014 `unsigned char *child_pointer = NULL` (line 814), only when `(parent == NULL) || (child_pointer == NULL)` is false, only when `cJSON_IsArray(parent)` is true, only when `strcmp((char*)child_pointer, \"-\") == 0` is false. The full chain from the program's start is: cjson_utils_functions_shouldnt_crash_with_null_pointers() \u2192 cJSONUtils_GetPointer() \u2192 get_item_from_pointer() \u2192 decode_array_index_from_pointer()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-patch-unknown-op",
+   "category": "scenario",
+   "q": "What happens when a JSON Patch entry has a valid path but its \"op\" is something the library does not support, like \"rename\"?",
+   "intent": "failure_invalid",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "status = 3"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 5
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 5,
+     "total": 5
+    },
+    "_missing_evidence": {
+     "paragraphs": 4,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 2.96,
+   "passed": false,
+   "score": 0.5,
+   "topk_rank": null,
+   "answer": [
+    "This is handled in apply_patch() (cJSON_Utils.c:826): it checks `opcode == INVALID`, and when that is true it jumps to `cleanup` (line 1025), where it calls cJSON_Delete() and calls cJSON_free(), skipping the rest of apply_patch().",
+    "Because it returns early, these do not happen in this case: overwrite_item(), get_object_item(), cJSON_Duplicate() \u2014 the previous values stay in place.",
+    "apply_patch()'s caller cJSONUtils_ApplyPatches() checks `status != 0` (cJSON_Utils.c:1057) and then returns `status`.",
+    "apply_patch()'s caller cJSONUtils_ApplyPatchesCaseSensitive() checks `status != 0` (cJSON_Utils.c:1086) and then returns `status`."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-string-parser-callers",
+   "category": "structural",
+   "q": "Who calls the function that turns a quoted string in the input text into a C string?",
+   "intent": "callers",
+   "checks": {
+    "symbols": {
+     "ok": true,
+     "score": 1.0,
+     "missing": []
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 20
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 20,
+     "total": 20
+    },
+    "_missing_evidence": {
+     "paragraphs": 1,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.03,
+   "passed": true,
+   "score": 1.0,
+   "topk_rank": 1,
+   "answer": [
+    "It is called by parse_value() at cJSON.c:1396, only when `can_read(input_buffer, 5) && (strncmp((const char*)buffer_at_offset(input_buffer), \"false\", 5) == 0)` is false, only when `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)` is false, only when `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\\\"')` is true; parse_object() at cJSON.c:1716, repeatedly inside `do-while`, only when `new_item == NULL` is false, only when `cannot_access_at_index(input_buffer, 1)` is false; parse_value() at cJSON.c:1396, only when `can_read(input_buffer, 5) && (strncmp((const char*)buffer_at_offset(input_buffer), \"false\", 5) == 0)` is false, only when `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)` is false, only when `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\\\"')` is true; parse_object() at cJSON.c:1716, repeatedly inside `do-while`, only when `new_item == NULL` is false, only when `cannot_access_at_index(input_buffer, 1)` is false. It is also called by parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716), parse_value() (cJSON.c:1396), parse_object() (cJSON.c:1716) and 24 more call sites. The full chain from the program's start is: parse_string_should_not_parse_non_strings() \u2192 assert_not_parse_string() \u2192 parse_string()."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-custom-allocator",
+   "category": "structural",
+   "q": "Where can a program plug in its own malloc and free for the library to use, and where are they stored?",
+   "intent": "where_computed",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "cJSON_InitHooks",
+      "global_hooks"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 18
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 18,
+     "total": 18
+    },
+    "_missing_evidence": {
+     "paragraphs": 3,
+     "without_evidence": 0
+    }
+   },
+   "status": "INFERENCE",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "These parts of the code look most relevant: cJSON_strdup() (function, cJSON.c:188); cJSON_malloc() (function, cJSON.c:3182); cJSON_free() (function, cJSON.c:3187); internal_malloc() (function, cJSON.c:165); print() (function, cJSON.c:1234); cJSON_Hooks.malloc_fn (field, cJSON.h:128).",
+    "cJSON_strdup() (cJSON.c:188).",
+    "Step by step, it checks `string == NULL` (line 193); if true it returns `NULL` straight away; then it calls strlen((const char*)string) and stores the result in `length` (line 198); then it calls one of malloc(), internal_free(), internal_malloc(), failing_malloc(), normal_free() through internal_hooks.allocate \u2014 which one depends on the data at run time (line 199); then it checks `copy == NULL` (line 200); if true it returns `NULL` straight away; then it calls memcpy(copy, string, length) (line 204); then it returns `copy` (line 206)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-object-indent",
+   "category": "structural",
+   "q": "Which function writes the tab characters that indent each member of an object when pretty-printing?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.5,
+     "missing": [
+      "output_buffer->depth"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 44
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 44,
+     "total": 44
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.04,
+   "passed": false,
+   "score": 0.5,
+   "topk_rank": null,
+   "answer": [
+    "The best match is print_string_ptr() (cJSON.c:949).",
+    "print_string_ptr() (cJSON.c:949) \u2014 Render the cstring provided to an escaped version that can be printed.",
+    "Step by step, it checks `output_buffer == NULL` (line 958); if true it returns `false` straight away; then it checks `input == NULL` (line 964); if true it calls ensure(), strcpy() and sets `output = ensure(output_buffer, sizeof(\"\\\"\\\"\"))` and returns `true` straight away; then it checks `output == NULL` (line 967); if true it returns `false` straight away; then it repeats while `*input_pointer` (line 977); then it chooses a case based on `*input_pointer` (line 979); then it checks `*input_pointer < 32` (line 992); then it sets `output_length = (size_t)(input_pointer - input) + escape_characters` (line 1000); then it calls ensure(output_buffer, output_length + sizeof(\"\\\"\\\"\")) and stores the result in `output` (line 1002); then it checks `output == NULL` (line 1003); if true it returns `false` straight away; then it checks `escape_characters == 0` (line 1009); if true it calls memcpy() and returns `true` straight away; \u2026.",
+    "It is called by print_string() at cJSON.c:1073; print_object() at cJSON.c:1815, only when `output_buffer == NULL` is false, only when `output_pointer == NULL` is false, repeatedly inside `while (current_item)`; print_string() at cJSON.c:1073; print_object() at cJSON.c:1815, only when `output_buffer == NULL` is false, only when `output_pointer == NULL` is false, repeatedly inside `while (current_item)`. It is also called by print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815), print_string() (cJSON.c:1073), print_object() (cJSON.c:1815) and 24 more call sites. The full chain from the program's start is: print_string_should_print_utf8() \u2192 assert_print_string() \u2192 print_string_ptr().",
+    "Other candidates: cJSON_Minify() (cJSON.c:2909), get_decimal_point() (cJSON.c:279), cJSONUtils_SortObject() (cJSON_Utils.c:1311)."
+   ],
+   "prose_mode": "direct"
+  },
+  {
+   "id": "cj-generate-patches",
+   "category": "structural",
+   "q": "Which function works out the list of operations that turns one JSON document into another, and which helper builds each operation entry?",
+   "intent": "which_fn",
+   "checks": {
+    "symbols": {
+     "ok": false,
+     "score": 0.0,
+     "missing": [
+      "create_patches",
+      "compose_patch"
+     ]
+    },
+    "_unsupported_claims": {
+     "rejected": 0,
+     "claims": 12
+    },
+    "_hallucinated_names": {
+     "names": []
+    },
+    "_citation_precision": {
+     "verified": 12,
+     "total": 12
+    },
+    "_missing_evidence": {
+     "paragraphs": 5,
+     "without_evidence": 0
+    }
+   },
+   "status": "CONFIRMED",
+   "seconds": 0.01,
+   "passed": false,
+   "score": 0.0,
+   "topk_rank": null,
+   "answer": [
+    "The best match is overwrite_item() (cJSON_Utils.c:784).",
+    "overwrite_item() (cJSON_Utils.c:784) \u2014 overwrite and existing item with another one and free resources on the way.",
+    "Step by step, it checks `root == NULL` (line 786); if true it stops there (returns); then it checks `root->string != NULL` (line 791); if true it calls cJSON_free(); then it checks `root->valuestring != NULL` (line 795); if true it calls cJSON_free(); then it checks `root->child != NULL` (line 799); if true it calls cJSON_Delete(); then it calls memcpy(root, &replacement, sizeof(cJSON)) (line 804).",
+    "It is called by apply_patch() at cJSON_Utils.c:845 with (`object`, `invalid`), only when `!cJSON_IsString(path)` is false, only when `path->valuestring[0] == '\\0'` is true, only when `opcode == REMOVE` is true (REMOVE = 2); apply_patch() at cJSON_Utils.c:869 with (`object`, `*value`), only when `(opcode == REPLACE) || (opcode == ADD)` is true (REPLACE = 3, ADD = 1), only when `value == NULL` is false, only when `value == NULL` is false. The full chain from the program's start is: cjson_utils_functions_shouldnt_crash_with_null_pointers() \u2192 cJSONUtils_ApplyPatches() \u2192 apply_patch() \u2192 overwrite_item().",
+    "Other candidates: decode_patch_operation() (cJSON_Utils.c:742), cJSON_SetNumberHelper() (cJSON.c:411), internal_malloc() (cJSON.c:165)."
+   ],
+   "prose_mode": "direct"
+  }
+ ]
+}

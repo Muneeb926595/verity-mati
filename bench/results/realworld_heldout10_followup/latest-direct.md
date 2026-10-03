@@ -1,0 +1,32 @@
+# Verity benchmark — direct mode (20261002-235802)
+
+Cases: 16 · passed: 4 · mean score: 0.375 · mean time per question: 0.96 s · right place within the top 3 candidates: 5
+
+| metric | result |
+|---|---|
+| symbol identification | 4/16 passed · accuracy 0.375 |
+| unsupported claims (rejected by verifier) | 0 of 332 (0.00%) — removed before display |
+| hallucinated code names in final answers | 0 case(s) |
+| citation precision (claims whose cited line re-verified) | 332/332 (100.00%) |
+| answer paragraphs without any evidence | 0 of 50 |
+
+## Cases
+
+| id | category | intent | passed | score | failing checks |
+|---|---|---|---|---|---|
+| cj-deep-nesting-p | scenario | explain | ✗ | 0.5 | symbols: {"missing": ["CJSON_NESTING_LIMIT"]} |
+| cj-deep-nesting-n | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["cJSON_Duplicate_rec", "CJSON_CIRCULAR_LIMIT"]} |
+| cj-minus-no-digits-p | scenario | failure_invalid | ✓ | 1.0 |  |
+| cj-minus-no-digits-n | scenario | explain | ✓ | 1.0 |  |
+| cj-unterminated-string-p | scenario | failure_missing | ✗ | 0.5 | symbols: {"missing": ["input_end - input_buffer->content"]} |
+| cj-bad-surrogate-p | scenario | scenario | ✗ | 0.5 | symbols: {"missing": ["second_code < 0xDC00"]} |
+| cj-bad-surrogate-n | scenario | explain | ✗ | 0.0 | symbols: {"missing": ["print_string_ptr", "u%04x"]} |
+| cj-member-alloc-fail-p | scenario | failure_invalid | ✗ | 0.0 | symbols: {"missing": ["parse_object", "new_item == NULL"]} |
+| cj-prealloc-too-small-p | scenario | downstream | ✗ | 0.5 | symbols: {"missing": ["p->noalloc"]} |
+| cj-trailing-garbage-p | scenario | scenario | ✗ | 0.0 | symbols: {"missing": ["cJSON_ParseWithLengthOpts", "require_null_terminated"]} |
+| cj-trailing-garbage-n | scenario | scenario | ✓ | 1.0 |  |
+| cj-key-case-p | scenario | explain | ✓ | 1.0 |  |
+| cj-key-case-n | scenario | explain | ✗ | 0.0 | symbols: {"missing": ["compare_pointers", "tolower(*name) != tolower(*pointer)"]} |
+| cj-pointer-leading-zero-p | scenario | scenario | ✗ | 0.0 | symbols: {"missing": ["decode_array_index_from_pointer", "pointer[0] == '0'"]} |
+| cj-patch-unknown-op-p | scenario | explain | ✗ | 0.0 | symbols: {"missing": ["apply_patch", "status = 3"]} |
+| cj-patch-unknown-op-n | scenario | scenario | ✗ | 0.0 | symbols: {"missing": ["insert_item_in_array", "which > 0"]} |

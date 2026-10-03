@@ -1,0 +1,148 @@
+{
+ "_doc": "TENTH HELD-OUT real project (Phase 5, learning-from-corrections measurement): cJSON v1.7.19 (samples/realworld/cJSON, upstream commit c859b25; ~5.3K lines of library C and headers (cJSON.c, cJSON.h, cJSON_Utils.c, cJSON_Utils.h, test.c) plus ~4.3K lines of the project's own unit tests; a JSON parser/printer library plus cJSON_Utils for JSON Pointer, JSON Patch and Merge Patch; the bundled Unity test framework, the fuzzing folder and the test data folders were removed). 10 behavioural (scenario) and 4 structural questions written from facts verified in the source BEFORE Verity was ever run on it. Every must_mention token was grepped verbatim (case-sensitive) in the tree, and the first token names the function where the behaviour is decided. Paraphrases and neighbours for the Phase 5 learning measurement are in bench/realworld_heldout10_followup.json.",
+ "projects": {
+  "cjson": "samples/realworld/cJSON"
+ },
+ "cases": [
+  {
+   "id": "cj-deep-nesting",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when the input has thousands of arrays nested inside each other, like [[[[ ... ]]]]?",
+   "must_mention": [
+    "parse_array",
+    "CJSON_NESTING_LIMIT"
+   ]
+  },
+  {
+   "id": "cj-minus-no-digits",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a value in the input starts with a minus sign but no digits follow it, as in [-]?",
+   "must_mention": [
+    "parse_number",
+    "number_c_string == after_end"
+   ]
+  },
+  {
+   "id": "cj-unterminated-string",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a string in the input has an opening quote but the closing quote never comes?",
+   "must_mention": [
+    "parse_string",
+    "input_end - input_buffer->content"
+   ]
+  },
+  {
+   "id": "cj-bad-surrogate",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a string contains a \\u escape for the first half of a UTF-16 surrogate pair, but the \\u escape after it is not a valid second half?",
+   "must_mention": [
+    "utf16_literal_to_utf8",
+    "second_code < 0xDC00"
+   ]
+  },
+  {
+   "id": "cj-member-alloc-fail",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens if memory runs out while the parser is creating the item for the next member of an object?",
+   "must_mention": [
+    "parse_object",
+    "new_item == NULL"
+   ]
+  },
+  {
+   "id": "cj-prealloc-too-small",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when I print JSON into a buffer I allocated myself and the output turns out to be bigger than that buffer?",
+   "must_mention": [
+    "ensure",
+    "p->noalloc"
+   ]
+  },
+  {
+   "id": "cj-trailing-garbage",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when I tell the parser that nothing but whitespace may follow the JSON value, and there is extra text after it?",
+   "must_mention": [
+    "cJSON_ParseWithLengthOpts",
+    "require_null_terminated"
+   ]
+  },
+  {
+   "id": "cj-key-case",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "With the normal object key lookup, will looking up \"Name\" find a member that is stored as \"name\"?",
+   "must_mention": [
+    "get_object_item",
+    "case_insensitive_strcmp"
+   ]
+  },
+  {
+   "id": "cj-pointer-leading-zero",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a JSON Pointer path uses an array index with a leading zero, like /list/01?",
+   "must_mention": [
+    "decode_array_index_from_pointer",
+    "pointer[0] == '0'"
+   ]
+  },
+  {
+   "id": "cj-patch-unknown-op",
+   "project": "cjson",
+   "category": "scenario",
+   "q": "What happens when a JSON Patch entry has a valid path but its \"op\" is something the library does not support, like \"rename\"?",
+   "must_mention": [
+    "apply_patch",
+    "status = 3"
+   ]
+  },
+  {
+   "id": "cj-string-parser-callers",
+   "project": "cjson",
+   "category": "structural",
+   "q": "Who calls the function that turns a quoted string in the input text into a C string?",
+   "must_mention": [
+    "parse_value",
+    "parse_object"
+   ]
+  },
+  {
+   "id": "cj-custom-allocator",
+   "project": "cjson",
+   "category": "structural",
+   "q": "Where can a program plug in its own malloc and free for the library to use, and where are they stored?",
+   "must_mention": [
+    "cJSON_InitHooks",
+    "global_hooks"
+   ]
+  },
+  {
+   "id": "cj-object-indent",
+   "project": "cjson",
+   "category": "structural",
+   "q": "Which function writes the tab characters that indent each member of an object when pretty-printing?",
+   "must_mention": [
+    "print_object",
+    "output_buffer->depth"
+   ]
+  },
+  {
+   "id": "cj-generate-patches",
+   "project": "cjson",
+   "category": "structural",
+   "q": "Which function works out the list of operations that turns one JSON document into another, and which helper builds each operation entry?",
+   "must_mention": [
+    "create_patches",
+    "compose_patch"
+   ]
+  }
+ ]
+}
