@@ -79,11 +79,15 @@ class LearnStore:
     # ------------------------------------------------------------------------------------------ connection
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path, check_same_thread=False, timeout=30, isolation_level=None)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        conn.executescript(SCHEMA)
-        conn.execute("SELECT count(*) FROM correction").fetchone()
+        try:
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            conn.executescript(SCHEMA)
+            conn.execute("SELECT count(*) FROM correction").fetchone()
+        except BaseException:
+            conn.close()                     # Windows cannot move a damaged file aside while it is still open
+            raise
         return conn
 
     def _open(self) -> sqlite3.Connection:
