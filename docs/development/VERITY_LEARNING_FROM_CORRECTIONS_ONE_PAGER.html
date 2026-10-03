@@ -627,7 +627,7 @@ flowchart TB
     <tr><td>The corrected question asked again: right every time, with the correction disclosed</td><td><b>Met</b> in facts-only mode. With the model, 8/9: the pin was applied and disclosed, but the summary left out the expected value ("status = 3").</td></tr>
     <tr><td>A paraphrase of a corrected question: right in at least 9 of 10</td><td><b>Not met.</b> 4 of 6 with meaning search, 2 of 6 with word overlap alone. One paraphrase got a hint that lost to a stronger candidate, which is by design. Another, at similarity 0.698, was routed to a different kind of question.</td></tr>
     <tr><td>A neighbouring question: reported honestly, with no target</td><td><b>Met:</b> 2–3 of 6 right, and no neighbour used a correction.</td></tr>
-    <tr><td>Every existing suite, facts-only and with the model: no score drops</td><td><b>Met:</b> 198/207 before and after, per question (two captures on each side, compared).</td></tr>
+    <tr><td>Every existing suite, facts-only and with the model: no score drops</td><td><b>Met.</b> Facts-only: 198/207 before and after, per question (two captures on each side, compared). With the model: 95/99 before, 96/99 after (the one change, read by hand, is now right).</td></tr>
     <tr><td>A target line edited, then re-indexed: never applied, listed as stale</td><td><b>Met</b> in every mode.</td></tr>
     <tr><td><code>learned.db</code> survives an <code>index.db</code> reset</td><td><b>Met</b> (<code>tests/test_learning.py</code>).</td></tr>
   </table></div>

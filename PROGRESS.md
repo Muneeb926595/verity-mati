@@ -342,7 +342,23 @@ after reviewing it (below). Nothing retrains the model: a correction only change
     right place helps most); a correction matched as this question but not used by the recipe is always disclosed
     ("…could not be used here, so this answer comes from the analysis alone"); vectors from another embedding model
     are recomputed.
-- Tests: `tests/test_learning.py` (30 tests); full suite 202 passed, 1 skipped (PowerShell not installed). They cover the store and its corruption recovery, pin and hint, an
+- Tests: `tests/test_learning.py` (30 tests); full suite 202 passed, 1 skipped (PowerShell not installed).
+- **Regression against `windows-first-run-desktop-app` (73972e7)** (`scripts/regress/capture.py`; each run indexes from
+  scratch in its own data folder; the base branch ran from a worktree):
+  - Direct, all 207 questions, two captures per side: 198/207 on both, **no pass/fail change**, and no index
+    difference (the indexing code is byte-identical). The answers that differ beyond run-to-run variation were read by
+    hand:
+    - the intended macro wording (`rw-rtos-isrs`, `lfs-sync`, `lw-ip-checksum`, `lw-threads`);
+    - `nm-wait-negative` (failing on both): before, a search fallback hiding the crash; now a wrong but visible place;
+    - noise: `c-origin-lat` (hash seed, reproduced on both branches with fixed `PYTHONHASHSEED`), `lw-input-fn` /
+      `lw-path-eth-tcp` (index write order), and `ucos-mutex-pcp` (evidence id).
+  - Local model + meaning search, the six suites of the model baseline: **95/99 → 96/99**. The one change is
+    `nm-wait-negative`, now right (read by hand: the setter's `value < 0` → `ArgumentException`, ModbusTransport.cs:70).
+    The other 12 differing answers differ only in the model's summary paragraph; the checked facts are identical.
+  - UI end-to-end 42/42 (screenshots regenerated; 19–21 new). Desktop self-test passes with no process left
+    behind. Both design docs render (2/2 and 23/23 Mermaid diagrams).
+- Note for long runs: background jobs started from a Claude Code session lose access to `~/Desktop` (macOS privacy)
+  when the session ends ("Operation not permitted" on `.venv/pyvenv.cfg`). Rerun anything that ran past that point. They cover the store and its corruption recovery, pin and hint, an
   unrelated question left unaffected, every correctable intent, undo/restore, replacing a correction, the refusals,
   stale and revive, a moved line, an index.db reset, conflicts, the glossary (including verity.toml), an exported
   suite that passes, export/import round trip, the CLI and MCP.

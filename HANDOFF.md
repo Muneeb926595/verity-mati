@@ -203,7 +203,8 @@ Pinned tool versions:
   | NModbus (C#) | 10/12 |
   | lwIP | 15/15 |
 
-- **Baseline: with gpt-oss-20b and meaning search, 95/99** on suite, heldout, dialects, M2Mqtt, nanopb and NModbus
+- **Baseline: with gpt-oss-20b and meaning search, 96/99** (95/99 before Phase 5; NModbus `nm-wait-negative` is now
+  right) on suite, heldout, dialects, M2Mqtt, nanopb and NModbus
   (31, 15, 17, 11, 11, 10). There were 0 invented names and 11 rejected claims in every run.
 - **Results vary between runs. Compare pass/fail per question, not raw text.**
   - Even unchanged code differs in about 35 of 207 Direct answers between runs. The causes are the order of tied

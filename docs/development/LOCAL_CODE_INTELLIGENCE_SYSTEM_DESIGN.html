@@ -3635,7 +3635,7 @@ flowchart TB
     <tr><td>Facts + meaning search</td><td>4/14</td><td>12/14</td><td>8/8, all disclosed</td><td>4/6</td><td>2/6 (0)</td></tr>
     <tr><td>Local model + meaning search</td><td>4/14</td><td>12/14</td><td>8/9, 9 disclosed</td><td>4/7</td><td>3/6 (0)</td></tr>
   </table></div>
-  <div class="cal mistake"><b>Below target on paraphrases.</b> The spec asked for 9 of 10 paraphrases of a corrected question to come out right. Measured: 4 of 6 with meaning search and 2 of 6 with word overlap alone. A stale correction was never applied, and no existing suite changed score (Direct 198/207 per question, before and after).</div>
+  <div class="cal mistake"><b>Below target on paraphrases.</b> The spec asked for 9 of 10 paraphrases of a corrected question to come out right. Measured: 4 of 6 with meaning search and 2 of 6 with word overlap alone. A stale correction was never applied, and no existing suite lost a point: Direct 198/207 per question before and after, and with the model 95/99 before, 96/99 after.</div>
 
   <h3 class="mid">Known limitations (not hidden)</h3>
   <div class="cal mistake"><b>Built and verified on macOS only.</b> The primary production target is <b>Windows 10/11 with the MSVC compiler</b>, then GCC and TI. The MSVC and TI dialect packs, vcxproj/CCS flag capture and the Windows paths exist but are <b>untested on Windows</b>. Runtime scenarios need a local C compiler and a sandbox: the Windows Sandbox/TTD adapter is not built, so on Windows today scenarios fall back to static reading (INFERENCE). The desktop bundle is macOS-only; Tauri builds for Windows are possible but not produced. C# questions are answered by reading the code (Roslyn facts); C# scenarios are not run.</div>
