@@ -35,9 +35,14 @@ CORRECTABLE = {"failure_invalid", "failure_missing", "explain", "purpose", "wher
 ALT_RATIO = 0.6               # an alternative is offered when it scores at least this share of the first candidate
 ALT_MAX = 2                   # at most this many alternatives are shown (candidates 2 and 3)
 CANDIDATES_KEPT = 3           # how many top candidates are recorded in the answer (for picking and for top-k grading)
-# Words that turn a question into its opposite ("…cannot be opened" / "…is opened"). The router's topic words leave
-# them out, and meaning vectors barely see them, so a question is matched as the same one only when both agree.
+# A question and its opposite ("…cannot be opened" / "…is opened") share their topic words (the router drops the
+# negation) and nearly their meaning vector. They are told apart when one is negated and the other names no trouble at
+# all; "no closing quote" and "the closing quote is missing" stay the same question.
 NEGATION_RE = re.compile(r"\b(?:not|no|never|cannot|without|unable|nothing|none|neither|nor)\b|n't\b", re.I)
+TROUBLE_RE = re.compile(r"\b(?:missing|absent|lack\w*|fail\w*|invalid|wrong|bad|errors?|broken|corrupt\w*|malformed|lost|"
+                        r"unknown|unsupported|illegal|incorrect|mismatch\w*|exceed\w*|overflow\w*|too|negative|empty|"
+                        r"unterminated|truncated|garbage|refus\w*|reject\w*|runs? out|out of|exhaust\w*|timeouts?|"
+                        r"times? out|stops?|dropped|invalidated|denied|abort\w*)\b", re.I)
 # How strongly a pin matches, strongest first: the same words, the same kind of question about the same things, the
 # same meaning. The strongest match wins; the newest correction wins among equals.
 TIER = {"same": 0, "words": 1, "meaning": 2}
@@ -54,6 +59,13 @@ class Loc:
 
 def negated(question: str) -> bool:
     return bool(NEGATION_RE.search(question or ""))
+
+
+def opposite(a: str, b: str) -> bool:
+    """One question is negated and the other names no trouble at all: they ask opposite things."""
+    def plain(q: str) -> bool:
+        return not negated(q) and not TROUBLE_RE.search(q or "")
+    return negated(a) and plain(b) or negated(b) and plain(a)
 
 
 class Learning:
@@ -79,7 +91,6 @@ class Learning:
         self.meaning: dict[str, float] = {}          # correction id -> meaning similarity, for meaning matches
         self.match: dict[str, str] = {}              # correction id -> same | words | meaning | similar
         self.rerouted: str | None = None             # the kind of question taken from a same-meaning correction
-        self.neg = negated(question)
         self._pending_hint: tuple[dict, bool, Any] | None = None    # (correction, changed, the item it put first)
 
     # ------------------------------------------------------------------------------------------ loading
@@ -126,7 +137,7 @@ class Learning:
         sim = cosine(qvec, c["qvec"]) if qvec and c.get("qvec") else 0.0
         if sim >= HINT_MEANING:
             self.meaning[c["id"]] = round(sim, 3)
-        same_sense = negated(c.get("question") or "") == self.neg
+        same_sense = not opposite(c.get("question") or "", self.question)
         if sim >= MEANING_SAME and same_sense:
             return "meaning"                         # the same question in other words (any kind of question)
         same_kind = bool(self.intent) and c.get("intent") == self.intent
@@ -304,20 +315,27 @@ class Learning:
     def meta(self, recipe_supports: bool) -> dict:
         self._settle_hint()
         used = list(self.used.values())
-        # failure questions can always be corrected by picking a line, even when the analysis found no candidate
-        out = {"correctable": bool(recipe_supports and (self.offered and self.candidates or
-                                                        self.intent in ("failure_invalid", "failure_missing"))),
+        # every question of a kind whose recipe uses corrections can be corrected by picking a line, also when the
+        # analysis found no candidate and fell back to search (that is when pointing at the right place helps most)
+        out = {"correctable": bool(recipe_supports),
                "candidates": self.candidates, "alternatives": self.alternatives if recipe_supports else [],
                "used": used}
         if self.glossary_used:
             out["glossary_used"] = sorted(set(self.glossary_used))
         if self.rerouted:
             out["rerouted"] = self.rerouted
-        if self.pin_missed is not None and not self.pin_applied:
-            c = self.pin_missed
+        c = self._missed_pin()
+        if c is not None:
             out["pin_not_applied"] = {"id": c["id"], "target": c.get("target_label"),
                                       "why": "the corrected place could not be used for this kind of question"}
         return out
+
+    def _missed_pin(self) -> dict | None:
+        """A correction recorded for this question that the answer did not use (the recipe never reached its hook, or
+        could not build the corrected place): never dropped silently."""
+        if self.pin_applied:
+            return None
+        return self.pin_missed if self.pin_missed is not None else (self.pins[0] if self.pins else None)
 
     def disclosure(self) -> list[str]:
         """One plain line per correction the answer used (for the CLI, MCP text and the answer's assumptions)."""
@@ -337,6 +355,10 @@ class Learning:
         if self.rerouted and self.pins:
             lines.append(f"Answered as the same kind of question as correction {self.pins[0]['id']}, because it means "
                          "the same.")
+        missed = self._missed_pin()
+        if missed is not None:
+            lines.append(f"Correction {missed['id']} was recorded for this question, but the place it points at could "
+                         "not be used here, so this answer comes from the analysis alone.")
         return lines
 
 

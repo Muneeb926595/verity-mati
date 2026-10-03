@@ -502,3 +502,50 @@ def test_one_macro_calling_twice_is_listed_once(core, dn_repo):
     text = " ".join(ans["answer"])
     assert ans["meta"]["intent"] == "downstream", ans["meta"]
     assert "store_it" in text and text.count("log_it() (line 7") == 1, text
+
+
+UT_FILES = {
+    "Bus/Port.cs": """
+namespace Bus
+{
+    public class Port
+    {
+        private int _delay;
+        public int RetryDelay
+        {
+            get { return _delay; }
+            set
+            {
+                if (value < 0)
+                    throw new System.ArgumentException("RetryDelay must not be negative");
+                _delay = value;
+            }
+        }
+    }
+}
+""",
+    "Bus.UnitTests/PortFixture.cs": """
+namespace Bus.UnitTests
+{
+    public class PortFixture
+    {
+        public void RetryDelay()
+        {
+            var p = new Bus.Port();
+            p.RetryDelay = 5;
+        }
+    }
+}
+""",
+}
+
+
+@pytest.fixture(scope="module")
+def ut_repo(core, tmp_path_factory):
+    return _make(core, tmp_path_factory, "auditut", UT_FILES)
+
+
+def test_named_unit_test_helper_does_not_answer_a_failure_question(core, ut_repo):
+    # the only *method* named RetryDelay is a unit test's: it must not become the function the question is about
+    text = _text(core, ut_repo, "What happens when RetryDelay is set to a negative value?")
+    assert "PortFixture" not in text.split(".")[0], text

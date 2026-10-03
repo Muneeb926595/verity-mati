@@ -518,11 +518,18 @@ def test_pins_rank_by_match_strength_and_negation_is_not_the_same_question():
     lr3 = Learning.load(_FakeStore([dict(neg, qvec=[1.0, 0.0])]), R, "What happens when the socket is opened?",
                         qvec=[1.0, 0.0])
     assert not lr3.pins                                          # not even by meaning
+    from verity.learn.apply import opposite
+    assert not opposite("What happens when the closing quote never comes?", "What if the closing quote is missing?")
+    assert not opposite("What if the buffer is too small?", "What if the buffer is not big enough?")
+    assert opposite("Why can the file not be read?", "How is the file read?")
     lr4 = Learning.load(_FakeStore([dict(neg, question="When is the socket opened, then?", qnorm="z")]), R,
                         "What happens when the socket is opened?")
     assert lr4.pins and lr4.match["c-0003"] == "words"
+    assert lr4.meta(True)["pin_not_applied"]["id"] == "c-0003"     # matched but not used yet: never silent
+    assert "could not be used here" in lr4.disclosure()[-1]
     lr4.use_pin()
     assert "a question about the same thing (“When is the socket opened, then?”)" in lr4.disclosure()[0]
+    assert "pin_not_applied" not in lr4.meta(True) and len(lr4.disclosure()) == 1
 
 
 def test_switch_cases_are_told_apart():

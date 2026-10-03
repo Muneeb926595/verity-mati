@@ -2460,8 +2460,9 @@ def r_failure_invalid(cx: Ctx) -> None:
     err_q = bool(re.search(rf"\b{FAIL_ADJ}\b|\bfails?\b|\bfailure\b|\berrors? (occurs?|happens?|is raised|is reported)\b|"
                            r"\bgoes (bus.?off|wrong|down)\b|\bbus.?off\b|\bcorrupt|\bdoes not match\b|\bmismatch",
                            cx.r.question, re.I))
-    explicit_fn = next((c for c in cx.mentioned(FN_KINDS) if c in g.defined), None) \
-        if any(m.get("explicit") for m in cx.r.mentions) else None
+    # the function the question names (a unit test's helper of the same name never answers for the program)
+    explicit_fn = next((c for c in cx.mentioned(FN_KINDS) if c in g.defined and (cx.about_tests or not g.is_test(c))),
+                       None) if any(m.get("explicit") for m in cx.r.mentions) else None
     users = {o["fn"] for t in tnodes for o in g.occ.get(t, []) if o.get("fn")}
     helpers: set[str] = set()
     if explicit_fn:
