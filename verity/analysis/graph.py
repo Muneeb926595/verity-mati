@@ -198,6 +198,8 @@ class CodeGraph:
 
     # ------------------------------------------------------------------------------------------ naming
     def name(self, key: str) -> str:
+        if not key:
+            return "(unknown)"                 # never crash an answer over a missing key
         if key in self.sym:
             s = self.sym[key]
             cs = key[:2] in ("M:", "F:", "P:", "E:", "T:")

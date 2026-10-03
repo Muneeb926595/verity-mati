@@ -124,3 +124,10 @@ export function valueText(v: unknown): string {
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
 }
+
+/** 2 Oct 2026 */
+export function dayText(ts: number | null | undefined): string {
+  if (!ts) return "";
+  // day month year everywhere (the engine writes "2 Oct 2026" too)
+  return new Date(ts * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}

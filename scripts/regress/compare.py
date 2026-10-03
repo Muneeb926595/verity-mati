@@ -7,7 +7,8 @@ Even unchanged code gives slightly different answers from run to run (the order 
 in scenario output, internal ids), so record TWO baselines. With two, an answer counts as unchanged when it equals
 either baseline, or when the two baselines already differ for that question. Timings, run folders and the answer-
 history table are ignored. --text-only compares only what the user reads (pass/fail and the answer paragraphs): use it
-for model-worded runs. --map rewrites a string in the baselines first (for example an old checkout path).
+for model-worded runs. --map rewrites a string in the baselines first (for example an old checkout path); --ignore
+leaves out a field the change adds (for example --ignore learning).
 Exit code 0: no pass/fail change and nothing unexplained."""
 import argparse
 import json
@@ -20,9 +21,13 @@ VOLATILE = re.compile(r"^(seconds|ms|elapsed.*|took.*|started|finished|created|o
 VOLATILE_TABLES = {"answer", "card_fts_data", "card_fts_idx", "card_fts_config"}     # history; FTS internals
 
 
+IGNORED: set[str] = set()
+
+
 def norm(o, maps, top=False):
     if isinstance(o, dict):
-        return {k: norm(v, maps) for k, v in o.items() if not VOLATILE.match(k) and not (top and k == "id")}
+        return {k: norm(v, maps) for k, v in o.items()
+                if not VOLATILE.match(k) and not (top and k == "id") and k not in IGNORED}
     if isinstance(o, list):
         return [norm(v, maps) for v in o]
     if isinstance(o, str):
@@ -62,7 +67,10 @@ def main() -> int:
     ap.add_argument("before", nargs="+")
     ap.add_argument("--text-only", action="store_true")
     ap.add_argument("--map", action="append", default=[], help="OLD=NEW string rewrite applied to the baselines")
+    ap.add_argument("--ignore", action="append", default=[],
+                    help="a field to leave out wherever it occurs (e.g. a field the change adds: learning)")
     a = ap.parse_args()
+    IGNORED.update(a.ignore)
     maps = [tuple(m.split("=", 1)) for m in a.map]
     after, befores = Path(a.after), [Path(b) for b in a.before[:2]]
 

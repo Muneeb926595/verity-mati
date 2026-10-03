@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..agent.evidence import PLAIN_STATUS, Pack
+from ..learn.apply import MATCH_WORDS
 
 
 def render(question: str, route: dict, pack: Pack, paragraphs: list[str], report: dict, meta: dict) -> dict[str, Any]:
@@ -101,6 +102,19 @@ def to_text(ans: dict[str, Any], details: bool = False, width: int = 100) -> str
             out.append(f"  [{e['id']}] {e['file']}:{e['line']}  {e['text'][:90]}")
         out.append("")
     out.append(f"Certainty: {ans['status_label']}  " + ", ".join(f"{k.lower()}: {v}" for k, v in ans["status_counts"].items()))
+    lm = (ans.get("meta") or {}).get("learning") or {}
+    for u in lm.get("used") or []:
+        match = u.get("match") or ("same" if u.get("how") == "pin" else "similar")
+        out.append(f"Learned: uses correction {u['id']} (recorded for {MATCH_WORDS.get(match, MATCH_WORDS['similar'])}" +
+                   (f": “{u.get('question')}”" if match != "same" and u.get("question") else "") + ")" +
+                   (f" — {u['note']}" if u.get("note") else "") +
+                   (f"; disagrees with {', '.join(u['conflicts'])}, the newest is used" if u.get("conflicts") else ""))
+    alts = lm.get("alternatives") or []
+    if alts:
+        out += ["", "Other places that could be the answer"]
+        for c in alts:
+            out += [f"  [{c['rank']}] " + ln if i == 0 else "      " + ln
+                    for i, ln in enumerate(textwrap.wrap(c["label"].replace("`", ""), width - 8))]
     if details:
         s = ans["sections"]
         if s.get("details"):

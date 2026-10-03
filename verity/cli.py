@@ -11,6 +11,12 @@
   verity ui                            run the engine and open the browser UI
   verity mcp                           MCP server on stdio (for AI assistants)
   verity bench  [--out DIR]            run the known-answer benchmark
+
+Teaching Verity (per project, stored next to the index, always disclosed and undoable):
+  verity correct     PATH ANSWER_ID --pick N | --line FILE:LINE [--note TEXT]
+  verity confirm     PATH ANSWER_ID                  the answer was right (kept as a test case)
+  verity corrections PATH [list|undo ID|restore ID|note ID TEXT|export|import FILE]
+  verity glossary    PATH [list|accept TERM|reject TERM|add TERM IDENT…|remove TERM]
 """
 from __future__ import annotations
 
@@ -21,6 +27,7 @@ import threading
 import time
 
 from rich.console import Console
+from rich.markup import escape
 
 from . import __version__
 
@@ -123,6 +130,178 @@ def cmd_ask(a) -> int:
             if ans["meta"].get("model_choices") else ""
         con.print(f"[dim]{ans['meta']['seconds']:.1f} s · {how}" + (f" · {pm['fallback']}" if pm.get("fallback") else "") + (f" · {pm['skipped']}" if pm.get("skipped") else "")
                   + picked + "[/]")
+        _print_correct_hint(a.path, ans)
+        return 0
+    finally:
+        core.shutdown()
+
+
+def _q(p: str) -> str:
+    return f'"{p}"' if any(c in p for c in " '\t") else p
+
+
+def _print_correct_hint(path: str, ans: dict) -> None:
+    """Under an answer: its id, and how to correct or confirm it."""
+    aid = ans.get("id")
+    if not aid:
+        return
+    lm = (ans.get("meta") or {}).get("learning") or {}
+    parts = [f"Answer {aid}"]
+    if lm.get("alternatives"):
+        parts.append(f"correct it: verity correct {_q(path)} {aid} --pick {lm['alternatives'][0]['rank']}")
+    elif lm.get("correctable"):
+        parts.append(f"correct it: verity correct {_q(path)} {aid} --line FILE:LINE")
+    parts.append(f"right? verity confirm {_q(path)} {aid}")
+    con.print("[dim]" + " · ".join(parts) + "[/]", markup=True, highlight=False)
+
+
+def _learner_core(a):
+    from .engine.core import EngineCore
+    return EngineCore(llm_mode="direct", embeddings=False)
+
+
+def cmd_correct(a) -> int:
+    core = _learner_core(a)
+    try:
+        target = None
+        if a.line:
+            f, _, ln = a.line.rpartition(":")
+            if not f or not ln.isdigit():
+                err.print("[red]--line must be FILE:LINE, for example src/ec_main.c:93[/]")
+                return 2
+            target = {"file": f, "line": int(ln)}
+        r = core.answer_correct(a.path, a.answer_id, pick=a.pick, target=target, note=a.note or "")
+        if a.json:
+            print(json.dumps(r, indent=1, default=str))
+            return 0
+        c = r["correction"]
+        con.print(f"[bold green]{r['message']}[/]")
+        con.print(f"  Right place: {c['target_label']}", markup=False)
+        for old in r.get("replaced") or []:
+            con.print(f"  [dim]It replaces {old}.[/]")
+        for t in r.get("glossary_suggestions") or []:
+            con.print(f"  Glossary suggestion: “{escape(t['term'])}” → {escape(', '.join(t['identifiers']))}  "
+                      f"[dim](accept: verity glossary {escape(_q(a.path))} accept \"{escape(t['term'])}\")[/]")
+        con.print(f"  [dim]Undo: verity corrections {escape(_q(a.path))} undo {c['id']}[/]")
+        return 0
+    finally:
+        core.shutdown()
+
+
+def cmd_confirm(a) -> int:
+    core = _learner_core(a)
+    try:
+        r = core.answer_confirm(a.path, a.answer_id, note=a.note or "")
+        if a.json:
+            print(json.dumps(r, indent=1, default=str))
+            return 0
+        con.print(f"[bold green]{r['message']}[/]")
+        return 0
+    finally:
+        core.shutdown()
+
+
+def cmd_corrections(a) -> int:
+    core = _learner_core(a)
+    try:
+        lr = core.project(a.path).learner()
+        act = a.action or "list"
+        if act == "list":
+            lst = lr.listing()
+            if a.json:
+                print(json.dumps(lst, indent=1, default=str))
+                return 0
+            from .learn.service import summarize
+            con.print(f"[bold]{escape(core.project(a.path).root.name)}[/] — {summarize(lst)}")
+            if lst.get("recovered_from"):
+                con.print(f"  [yellow]The learning file was damaged and started again; the old copy is at "
+                          f"{escape(lst['recovered_from'])}[/]")
+            show = [c for c in lst["corrections"] if a.all or c["status"] != "removed"]
+            for c in show:
+                colour = {"active": "green", "stale": "yellow", "removed": "dim"}.get(c["status"], "")
+                con.print(f"  [{colour}]{c['id']}  {c['status']:<7}[/] {c['created_label']:<12} {escape(c['question'])}",
+                          highlight=False)
+                con.print(f"      → {c['target_file']}:{c['target_line']}  {c['target_label']}", markup=False)
+                if c.get("note"):
+                    con.print(f"      “{c['note']}”", markup=False)
+                if c["status"] != "active" and c.get("status_reason"):
+                    con.print(f"      [dim]{escape(c['status_reason'])}[/]")
+                if c.get("conflict") and c["status"] == "active":
+                    con.print(f"      [yellow]disagrees with {', '.join(c['conflict'])}[/]")
+            hidden = len(lst["corrections"]) - len(show)
+            if hidden:
+                con.print(f"  [dim]{hidden} undone (show them with --all)[/]")
+            for k in lst["confirmations"]:
+                con.print(f"  [dim]✓ confirmed[/] {escape(k['question'] or '')}  "
+                          f"[dim](must mention {escape(', '.join(k['must_mention']))})[/]")
+            for t in lst["glossary"]:
+                if t["status"] in ("suggested", "accepted"):
+                    con.print(f"  glossary {t['status']:<9} “{t['term']}” → {', '.join(t['identifiers'])}", highlight=False,
+                              markup=False)
+            return 0
+        if act in ("undo", "restore", "note"):
+            if not a.ref:
+                err.print(f"[red]Say which correction: verity corrections PATH {act} c-0001[/]")
+                return 2
+            r = lr.remove(a.ref) if act == "undo" else lr.restore(a.ref) if act == "restore" else \
+                lr.set_note(a.ref, " ".join(a.rest or []))
+            con.print(r.get("message") or f"Saved the note for {a.ref}.", markup=False)
+            return 0
+        if act == "export":
+            r = lr.export(a.format)
+            text = r["data"] if isinstance(r["data"], str) else json.dumps(r["data"], indent=1, default=str)
+            if a.output:
+                from pathlib import Path
+                Path(a.output).write_text(text, encoding="utf-8")
+                con.print(f"Wrote {a.output}")
+            else:
+                print(text)
+            return 0
+        if act == "import":
+            if not a.ref:
+                err.print("[red]Say which file: verity corrections PATH import FILE[/]")
+                return 2
+            from pathlib import Path
+            r = lr.import_(Path(a.ref).read_text(encoding="utf-8"))
+            con.print(r["message"], markup=False)
+            return 0
+        err.print(f"[red]Unknown action {act} (list, undo, restore, note, export, import)[/]")
+        return 2
+    finally:
+        core.shutdown()
+
+
+def cmd_glossary(a) -> int:
+    core = _learner_core(a)
+    try:
+        lr = core.project(a.path).learner()
+        act = a.action or "list"
+        if act == "list":
+            terms = lr.glossary_list()
+            if a.json:
+                print(json.dumps(terms, indent=1, default=str))
+                return 0
+            if not terms:
+                con.print("No glossary terms yet. Corrections suggest them; add one with: verity glossary PATH add TERM IDENT")
+            for t in terms:
+                src = "verity.toml" if t.get("read_only") else t.get("source") or ""
+                con.print(f"  {t['status']:<9} “{t['term']}” → {', '.join(t['identifiers'])}  [dim]{src}[/]", highlight=False)
+            return 0
+        if not a.term:
+            err.print(f"[red]Say which term: verity glossary PATH {act} TERM[/]")
+            return 2
+        if act == "accept":
+            r = lr.glossary_accept(a.term, a.identifiers or None)
+        elif act == "reject":
+            r = lr.glossary_reject(a.term)
+        elif act == "add":
+            r = lr.glossary_add(a.term, a.identifiers or [])
+        elif act == "remove":
+            r = lr.glossary_remove(a.term)
+        else:
+            err.print(f"[red]Unknown action {act} (list, accept, reject, add, remove)[/]")
+            return 2
+        con.print(r.get("message") or "Done.", markup=False)
         return 0
     finally:
         core.shutdown()
@@ -281,6 +460,38 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(fn=cmd_ui)
     p = sub.add_parser("mcp", help="MCP server (stdio)")
     p.set_defaults(fn=cmd_mcp)
+    p = sub.add_parser("correct", help="record the right place for an answer")
+    p.add_argument("path")
+    p.add_argument("answer_id")
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument("--pick", type=int, help="the number of one of the answer's alternatives (2, 3)")
+    g.add_argument("--line", help="FILE:LINE of the line that answers the question")
+    p.add_argument("--note", help="why (shown with later answers)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_correct)
+    p = sub.add_parser("confirm", help="the answer was right (kept as a test case)")
+    p.add_argument("path")
+    p.add_argument("answer_id")
+    p.add_argument("--note")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_confirm)
+    p = sub.add_parser("corrections", help="list, undo, restore, export or import corrections")
+    p.add_argument("path")
+    p.add_argument("action", nargs="?", choices=["list", "undo", "restore", "note", "export", "import"])
+    p.add_argument("ref", nargs="?", help="correction id (undo / restore / note) or file (import)")
+    p.add_argument("rest", nargs="*", help="the note text (note)")
+    p.add_argument("--all", action="store_true", help="also list undone corrections")
+    p.add_argument("--format", default="json", choices=["json", "bench", "toml"], help="export format")
+    p.add_argument("-o", "--output", help="export to this file")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_corrections)
+    p = sub.add_parser("glossary", help="this project's glossary words")
+    p.add_argument("path")
+    p.add_argument("action", nargs="?", choices=["list", "accept", "reject", "add", "remove"])
+    p.add_argument("term", nargs="?")
+    p.add_argument("identifiers", nargs="*")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_glossary)
     p = sub.add_parser("bench", help="known-answer benchmark")
     p.add_argument("--out", default=str(__import__("verity.config", fromlist=["ROOT"]).ROOT / "bench" / "results"))
     p.add_argument("--llm", action="store_true", help="also measure answers phrased by the AI model")
@@ -292,7 +503,8 @@ def main(argv: list[str] | None = None) -> int:
         return 130
     except Exception as e:  # noqa: BLE001
         from .engine.core import EngineError
-        if isinstance(e, (EngineError, FileNotFoundError, ValueError)):
+        from .learn.store import LearnError
+        if isinstance(e, (EngineError, LearnError, FileNotFoundError, ValueError)):
             err.print(f"[red]{e}[/]")
             return 2
         raise

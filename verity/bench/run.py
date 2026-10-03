@@ -185,7 +185,25 @@ def grade(case: dict, ans: dict, vocab: set[str]) -> dict:
     scored = [v for k, v in c.items() if not k.startswith("_")]
     g["passed"] = all(v["ok"] for v in scored) and not halluc
     g["score"] = round(sum(v.get("score", 1.0 if v["ok"] else 0.0) for v in scored) / max(1, len(scored)), 3)
+    g["topk_rank"] = topk_rank(case, ans, g["passed"])
     return g
+
+
+def topk_rank(case: dict, ans: dict, passed: bool, k: int = 3) -> int | None:
+    """Where the right place was among the top candidates the analysis ranked (Phase 5, P5-0): 1 when the answer
+    passes; 2 or 3 when that runner-up's code (function, check and its side) contains every must-mention name; None
+    otherwise. Measures how often 'show the alternatives' could help, not what the answer said."""
+    if passed:
+        return 1
+    must = case.get("must_mention") or []
+    cands = ((ans.get("meta") or {}).get("learning") or {}).get("candidates") or []
+    if not must:
+        return None
+    for c in cands[1:k]:
+        text = f"{c.get('label') or ''}\n{c.get('text') or ''}".lower()
+        if all(m.lower() in text for m in must):
+            return c.get("rank")
+    return None
 
 
 def summarize(results: list[dict]) -> dict:
@@ -204,6 +222,7 @@ def summarize(results: list[dict]) -> dict:
     paras = sum(r["checks"]["_missing_evidence"]["paragraphs"] for r in results)
     return {
         "cases": len(results), "passed": sum(1 for r in results if r["passed"]),
+        "within_top3": sum(1 for r in results if r.get("topk_rank")),     # the right place among the top 3 candidates
         "mean_score": round(sum(r["score"] for r in results) / max(1, len(results)), 3),
         "symbol_identification": agg("symbols"), "call_paths_and_flows": agg("dataflow"), "file_line_references": agg("citations"),
         "scenario_results": agg("scenario"), "scenario_outputs": agg("outputs"), "execution_trace": agg("trace"),
@@ -220,7 +239,9 @@ def summarize(results: list[dict]) -> dict:
 
 def to_markdown(summary: dict, results: list[dict], label: str) -> str:
     L = [f"# Verity benchmark — {label}", "", f"Cases: {summary['cases']} · passed: {summary['passed']} · mean score: "
-         f"{summary['mean_score']} · mean time per question: {summary['mean_seconds']} s", "", "| metric | result |", "|---|---|"]
+         f"{summary['mean_score']} · mean time per question: {summary['mean_seconds']} s" +
+         (f" · right place within the top 3 candidates: {summary['within_top3']}" if summary.get("within_top3") else ""),
+         "", "| metric | result |", "|---|---|"]
     for k in ("symbol_identification", "call_paths_and_flows", "file_line_references", "scenario_results", "scenario_outputs",
               "execution_trace", "branch_outcomes", "intent_routing", "false_positives", "no_invention_traps"):
         v = summary[k]

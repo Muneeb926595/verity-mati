@@ -7,6 +7,7 @@ import heapq
 import json
 import re
 from collections import defaultdict
+from types import SimpleNamespace
 from typing import Any
 
 from ..analysis.graph import CallSite, CodeGraph, Edge
@@ -14,6 +15,8 @@ from ..retrieval.cards import STOP, split_ident
 from ..retrieval.search import TEST_WORDS_RE, expand_words
 from .evidence import CONFIRMED, INFERENCE, OBSERVED, RUNTIME, UNKNOWN, Pack, weaker
 from .router import Route
+
+from ..learn.apply import Learning, Loc
 
 FN_KINDS = ("function", "method", "constructor")
 VAR_KINDS = ("global", "field", "property", "local", "param")
@@ -88,6 +91,7 @@ class Ctx:
         self.about_tests = bool(TEST_WORDS_RE.search(route.question or ""))
         self.llm = None                  # the local model, when the answer may use it (grounded re-ranking only)
         self.acronyms = _question_acronyms(g, route)
+        self.learn = Learning()          # this project's corrections for the question (inert unless the Answerer sets it)
 
     # --------------------------------------------------------------------------------------------- evidence
     def ev(self, kind: str, file: str | None, line: int | None, sym: str | None = None, note: str = "",
@@ -270,6 +274,56 @@ def _rerank(cx: Ctx, items: list, render, what: str = "check") -> list:
     return [chosen] + [x for x in items if x is not chosen]
 
 
+def _side_of(br: dict) -> str:
+    return "case" if br.get("_case") else "else" if br.get("_else") else "then"
+
+
+def _branch_loc(fn: str, br: dict) -> Loc:
+    span = (br["then_s"], br.get("then_e") or br["then_s"]) if br.get("_case") and br.get("then_s") else None
+    return Loc(fn, br.get("file"), br.get("line"), _side_of(br), span)
+
+
+def _branch_label(cx: Ctx, fn: str, br: dict) -> str:
+    """How a candidate check is named to people: `f() checks `cond` (file:line)`, `… when `cond` is not true`."""
+    cond = " ".join((br.get("_pos_cond") or br.get("cond") or "").split())
+    if br.get("_case"):
+        return f"{cx.D(fn)} in the case {' / '.join(f'`{x}`' for x in br['_case'])} ({cx.loc(br['file'], br['line'])})"
+    if br.get("_else"):
+        return f"{cx.D(fn)} when `{cond[:160]}` is not true ({cx.loc(br['file'], br['line'])})"
+    if br.get("kind") == "catch":
+        return f"{cx.D(fn)} catches `{cond[:160]}` ({cx.loc(br['file'], br['line'])})"
+    return f"{cx.D(fn)} checks `{cond[:160]}` ({cx.loc(br['file'], br['line'])})"
+
+
+def _learned_branch(cx: Ctx, c: dict) -> tuple | None:
+    """A correction's target as a (fn, branch, actions) candidate, built from the real code at the corrected line."""
+    g = cx.g
+    fn, bl = c.get("target_fn"), c.get("branch_line")
+    if fn not in g.defined or not bl:
+        return None
+    br = next((b for b in g.branches.get(fn, []) if b["line"] == bl and b["file"] == c.get("target_file")), None) or \
+        next((b for b in g.branches.get(fn, []) if b["line"] == bl), None)
+    if br is None or not br.get("cond") and br["kind"] != "catch":
+        return None
+    side = c.get("side") or "then"
+    if br["kind"] == "switch":
+        for cs in _case_sides(cx, fn, br):
+            if cs["then_s"] <= (c.get("target_line") or 0) <= (cs["then_e"] or cs["then_s"]):
+                return fn, cs, _branch_actions(cx, fn, cs)
+        return None
+    if side == "else":
+        if not br.get("else_s"):
+            return None
+        b2 = dict(br, cond=f"!({br['cond']})", then_s=br["else_s"], then_e=br["else_e"], _else=True, _pos_cond=br["cond"])
+        return fn, b2, _branch_actions(cx, fn, br, then=False)
+    return fn, br, _branch_actions(cx, fn, br)
+
+
+def _fn_label(cx: Ctx, key: str) -> str:
+    s = cx.g.sym.get(key) or {}
+    return f"{cx.D(key)} ({cx.loc(s.get('file'), s.get('line'))})" if s.get("file") else cx.D(key)
+
+
 def _render_function(cx: Ctx, fn: str, max_lines: int = 10) -> str:
     g = cx.g
     s = g.sym.get(fn) or {}
@@ -386,6 +440,17 @@ def fn_steps(cx: Ctx, fn: str, max_steps: int = 14) -> list[dict[str, Any]]:
         out.append(it)
     # merge: a write whose line also has a call -> "stores the result of"
     return out[:max_steps * 2]
+
+
+def _expanding_macro(g: CodeGraph, line_text: str, callee_name: str) -> str | None:
+    """The function-like macro whose expansion makes a call that the source line does not spell out
+    (`FD_ZERO(&fdset);` calls memset): its name, or None when the line names the callee itself."""
+    if not callee_name or re.search(rf"\b{re.escape(callee_name)}\b", line_text):
+        return None
+    for m in re.finditer(r"\b([A-Za-z_]\w*)\s*\(", STRING_RE.sub('""', line_text)):
+        if f"c:macro@{m.group(1)}" in g.sym:
+            return m.group(1)
+    return None
 
 
 def describe_steps(cx: Ctx, fn: str, steps: list[dict[str, Any]]) -> list[str]:
@@ -528,6 +593,11 @@ def describe_steps(cx: Ctx, fn: str, steps: list[dict[str, Any]]) -> list[str]:
             # short arguments carry the meaning (`vTaskPlaceOnEventList(&( pxQueue->xTasksWaitingToSend ), xTicksToWait)`)
             a_txt = ", ".join(a.strip() for a in c.args if a.strip())
             shown = f"{cx.D(c.callee)[:-2]}({a_txt})" if a_txt and len(a_txt) <= 70 and cx.D(c.callee).endswith("()") else cx.D(c.callee)
+            macro = _expanding_macro(g, txt, g.name(c.callee).split(".")[-1])
+            if macro:
+                # the call comes from a macro's expansion (`FD_ZERO(&fdset)` is memset(…)): its "arguments" are only the
+                # macro's own text, so name the macro instead
+                shown = f"{cx.D(c.callee)} (inside the macro {macro})"
             if m and cx.D(c.callee).rstrip("()") in txt:
                 lines.append(f"calls {shown}{via} and stores the result in `{m.group(1)}` (line {ln})")
             else:
@@ -1036,6 +1106,17 @@ def r_explain(cx: Ctx) -> None:
         tg = [t for _, t in sorted(enumerate(cx.targets_ranked(k=20) or tg), key=lambda it: (
             -_coverage(concepts, _name_words(g0.name(it[1]), allc)) - wraps(it[1]),
             -(1 if how and g0.sym.get(it[1], {}).get("kind") in FN_KINDS else 0), it[0]))]
+        cov = {t: _coverage(concepts, _name_words(g0.name(t), allc)) + wraps(t) +
+               (0.5 if how and g0.sym.get(t, {}).get("kind") in FN_KINDS else 0) - 0.001 * i for i, t in enumerate(tg)}
+        loc_e = lambda k: Loc(k, (g0.sym.get(k) or {}).get("file"), None, None)      # noqa: E731
+        tg = cx.learn.rank(tg, loc_e, lambda k: cov.get(k, 0.0))
+        pf = cx.learn.pin_function()
+        if pf and pf in g0.sym:
+            cx.learn.use_pin(changed=not tg or tg[0] != pf)
+            tg = [pf] + [t for t in tg if t != pf]
+        cx.learn.offer([t for t in tg if cx.about_tests or not g0.is_test(t)] or tg, loc_e,
+                       lambda k: (_fn_label(cx, k), _render_function(cx, k) if k in g0.defined else cx.D(k)),
+                       lambda k: cov.get(k, 0.0), what="symbol")
     if tg and not cx.about_tests:
         tg = [t for t in tg if not cx.g.is_test(t)] or tg     # the program's code, not a unit test named like it
     if not tg:
@@ -1665,10 +1746,12 @@ def r_where_computed(cx: Ctx) -> None:
                 if g.sym.get(c, {}).get("kind") in VAR_KINDS]
     if explicit:
         return explain_variable(cx, explicit[0])
-    if re.search(r"\bset (to|as)\b|\bassigned\b|\bchanged? to\b|\bbecomes?\b", cx.r.question, re.I) and _where_set_to_const(cx):
+    pinned = cx.learn.pin_function() if cx.learn.pin_function() in g.defined else None
+    if not pinned and re.search(r"\bset (to|as)\b|\bassigned\b|\bchanged? to\b|\bbecomes?\b", cx.r.question, re.I) and \
+            _where_set_to_const(cx):
         return
     tw = set(cx.r.topic)
-    qverb = next((v for w in split_ident(cx.r.question) for v in VERB_OPS if w.startswith(v)), None)
+    qverb = next((v for w in split_ident(cx.r.question) for v in VERB_OPS if w.startswith(v)), None) if not pinned else None
     named = [f for f in g.defined if qverb and any(w.startswith(qverb[:6]) for w in split_ident(g.sym[f]["name"]))
              and set(split_ident(g.sym[f]["name"])) & tw and (cx.about_tests or not g.is_test(f))]
     if qverb and not named:
@@ -1694,6 +1777,9 @@ def r_where_computed(cx: Ctx) -> None:
                     seen.add((c_[1], c_[2]))
                     picked.append(c_)
             picked = [c_ for c_ in picked if c_[0] == picked[0][0]][:4]
+            cx.learn.offer(picked, lambda c_: Loc(c_[4]["fn"], c_[1], c_[2], None),
+                           lambda c_: (f"`{c_[5][:120]}` in {cx.D(c_[4]['fn'])} ({cx.loc(c_[1], c_[2])})", c_[5]),
+                           lambda c_: float(-c_[0]), what="assignment")
             cl = [cx.claim(f"{cx.D(o['fn'])} writes {cx.D(k)} at {cx.loc(o['file'], o['line'])}.", "writes",
                            [o["fn"], k, o["file"], o["line"]], [cx.ev("write", o["file"], o["line"], k)])
                   for _, _, _, k, o, _ in picked]
@@ -1727,11 +1813,16 @@ def r_where_computed(cx: Ctx) -> None:
             fns.append((score, f))
     # equal scores: the function the code calls most is the canonical one (crc16_ccitt over crc16_ccitt_single)
     fns.sort(key=lambda x: (-x[0], -len({c.caller for c in g.callers(x[1])}), len(g.name(x[1]))))
+    loc_w = lambda x: Loc(x[1], (g.sym.get(x[1]) or {}).get("file"), None, None)      # noqa: E731
+    fns = cx.learn.rank(fns, loc_w, lambda x: float(x[0]))
     if cx.llm is not None and len([f for f in fns if f[0] >= 2]) > 1:
         cand = [f for f in fns if f[0] >= 2][:6]
         picked = _rerank(cx, cand, lambda f: _render_function(cx, f[1]), what="function")
         if picked[0] is not cand[0]:
             fns = [(max(4, picked[0][0]), picked[0][1])] + [f for f in fns if f[1] != picked[0][1]]
+    if pinned:
+        cx.learn.use_pin(changed=not fns or fns[0][1] != pinned)
+        fns = [(max(4, fns[0][0] if fns else 4), pinned)] + [f_ for f_ in fns if f_[1] != pinned]
     n_nouns = len(tw - verbish)
     if fns and fns[0][0] < 4 and n_nouns and fns[0][0] >= 2 * n_nouns and (
             len(fns) == 1 or fns[1][0] < fns[0][0] or
@@ -1779,6 +1870,8 @@ def r_where_computed(cx: Ctx) -> None:
         fns = [(min(3, sc), f_) for sc, f_ in fns]
         vars_ = exact_vars
     if fns and fns[0][0] >= 4:
+        cx.learn.offer(fns, loc_w, lambda x: (_fn_label(cx, x[1]), _render_function(cx, x[1])), lambda x: float(x[0]),
+                       what="function")
         f = fns[0][1]
         s = g.sym[f]
         cl = [cx.claim(f"{cx.D(f)} is defined in {cx.loc(s['file'], s['line'])}.", "defined", [f, s["file"], s["line"]],
@@ -1846,6 +1939,10 @@ def r_where_computed(cx: Ctx) -> None:
     others.sort(key=lambda it: -keep_score(it))
     others = _rerank(cx, others, lambda it: f"{g.name(it[0]['fn'])}() at {it[0]['file']}:{it[0]['line']}: `{it[2][:160]}`",
                      what="assignment")
+    if others and not (fns and fns[0][0] >= 4):
+        cx.learn.offer(others, lambda it: Loc(it[0]["fn"], it[0]["file"], it[0]["line"], None),
+                       lambda it: (f"`{it[2][:120]}` in {cx.D(it[0]['fn'])} ({cx.loc(it[0]['file'], it[0]['line'])})", it[2]),
+                       lambda it: float(keep_score(it)), what="assignment")
     if others:
         cls = [cx.claim(f"{cx.D(o['fn'])} writes {cx.D(v)} at {cx.loc(o['file'], o['line'])}.", "writes",
                         [o["fn"], v, o["file"], o["line"]], [cx.ev("write", o["file"], o["line"], v)]) for o, v, _ in others[:6]]
@@ -2355,7 +2452,7 @@ def _failure_subject(q: str) -> set[str]:
 def r_failure_invalid(cx: Ctx) -> None:
     g = cx.g
     if re.search(r"\b(not enough|insufficient|out of (memory|space|room)|no (free |more )?(memory|space|room)|"
-                 r"runs? out|exhausted)\b", cx.r.question, re.I) and r_insufficient(cx):
+                 r"runs? out|exhausted)\b", cx.r.question, re.I) and not cx.learn.pin_target() and r_insufficient(cx):
         return
     tnodes = topic_nodes(cx)
     ring_q = bool(re.search(r"\b(full|overflows?|overrun|empty)\b", cx.r.question, re.I))
@@ -2461,6 +2558,12 @@ def r_failure_invalid(cx: Ctx) -> None:
                         b2 = dict(br, cond=f"!({br['cond']})", then_s=br["else_s"], then_e=br["else_e"], _else=True,
                                   _pos_cond=br["cond"])
                         found.append((fn, b2, act2))
+    if not found and cx.learn.pin_target():
+        # nothing found by the analysis, but a person said where the answer is: build that candidate from the code
+        found = cx.learn.pin(found, lambda x: _branch_loc(x[0], x[1]), lambda c: _learned_branch(cx, c))
+        if not found and cx.learn.pin_function() in g.defined:
+            cx.learn.use_pin()
+            return _failure_modes_of(cx, cx.learn.pin_function())
     if not found:
         if explicit_fn:
             return _failure_modes_of(cx, explicit_fn)
@@ -2661,6 +2764,9 @@ def r_failure_invalid(cx: Ctx) -> None:
             (1 if act["returns"] else 0) - min(6.0, 0.05 * max(0, size - 15))
         return rel, failure
     found.sort(key=score)
+    loc_f = lambda x: _branch_loc(x[0], x[1])          # noqa: E731
+    # similar questions: corrected places get a bonus (and join the candidates, with their own score, if missing)
+    found = cx.learn.rank(found, loc_f, lambda x: -score(x), lambda c: _learned_branch(cx, c))
     if cx.llm is not None and len(found) > 1:
         # the model can only choose well from a pool that holds the answer: the best by overall score, plus the best
         # whose own outcome (error code / log message) matches the question, plus meaning-search functions
@@ -2673,6 +2779,13 @@ def r_failure_invalid(cx: Ctx) -> None:
         chosen = _rerank(cx, pool, lambda x: _render_branch(cx, x))
         if chosen[0] is not found[0]:
             found = [chosen[0]] + [x for x in found if x is not chosen[0]]
+    # the same question corrected by a person: that place goes first (after the model, so the correction holds)
+    found = cx.learn.pin(found, loc_f, lambda c: _learned_branch(cx, c))
+    if cx.learn.pin_target() and not cx.learn.pin_applied and cx.learn.pin_function() in g.defined and \
+            not cx.learn.pin_target().get("branch_line"):
+        cx.learn.use_pin()
+        return _failure_modes_of(cx, cx.learn.pin_function())
+    cx.learn.offer(found, loc_f, lambda x: (_branch_label(cx, x[0], x[1]), _render_branch(cx, x)), lambda x: -score(x))
     cx.rank_debug = [(g.name(f), b["line"], b["cond"][:60], round(score((f, b, a)), 2)) for f, b, a in found[:8]]
     cx.rank_all = found
     cx.rank_parts = parts
@@ -3399,7 +3512,11 @@ def _failure_modes_of(cx: Ctx, fn: str) -> None:
             items.append(f"`{br['cond']}` (line {br['line']})" + (f" → returns {rv}" if rv else ""))
     for c in g.out_calls.get(fn, []):
         if c.callee.startswith("?"):
-            items.append(f"the call through {cx.D(c.via)} (line {c.line}) goes to a target that cannot be known statically")
+            # (an unresolved delegate or function pointer may have no recorded holder: name what the call goes through)
+            via = cx.D(c.via) if c.via else (cx.g.name(c.callee[1:]) if len(c.callee) > 1 else "")
+            items.append(f"the call through {via} (line {c.line}) goes to a target that cannot be known statically"
+                         if via and via not in ("unknown", "(unknown)") else
+                         f"an indirect call (line {c.line}) goes to a target that cannot be known statically")
     if items:
         cx.say(f"{cx.D(fn)} can stop early or fail in these cases: " + "; ".join(items) + ".", cls)
     else:
@@ -3731,6 +3848,10 @@ def r_failure_missing(cx: Ctx) -> None:
             if TIMEOUT_OUT_RE.search(STRING_RE.sub(" ", head)):
                 act = _branch_actions(cx, fn, br)
                 found.append((4 + _missing_topic(cx, fn, words) + min(3, len(act["calls"]) + len(act["writes"])), fn, br, act))
+    if not found and cx.learn.pin_target():
+        # nothing found, but a person said where the answer is: build it from the code (a miss is disclosed)
+        found = cx.learn.pin([], lambda x: _branch_loc(x[1], x[2]),
+                             lambda c: (lambda b: (9, *b) if b else None)(_learned_branch(cx, c)))
     if not found:
         cx.pack.unknowns.append("No timeout or 'data stopped arriving' check was found in this code.")
         cx.say("I could not find any code that detects the data stopping (no timeout or last-update check). If the data "
@@ -3741,7 +3862,14 @@ def r_failure_missing(cx: Ctx) -> None:
             cx.say(f"{cx.D(tg[0])} would simply stop being called. " + txt, cl)
         return
     found.sort(key=lambda x: -x[0])
+    loc_m = lambda x: _branch_loc(x[1], x[2])          # noqa: E731
+    found = cx.learn.rank(found, loc_m, lambda x: x[0], lambda c: (lambda b: (min((x[0] for x in found), default=1) * 0.5,
+                                                                              *b) if b else None)(_learned_branch(cx, c)))
     found = _rerank(cx, found, lambda x: _render_branch(cx, (x[1], x[2], x[3])))
+    found = cx.learn.pin(found, loc_m, lambda c: (lambda b: (found[0][0] if found else 9, *b) if b else None)(
+        _learned_branch(cx, c)))
+    cx.learn.offer(found, loc_m, lambda x: (_branch_label(cx, x[1], x[2]), _render_branch(cx, (x[1], x[2], x[3]))),
+                   lambda x: x[0])
     _, fn, br, act = found[0]
     if br["kind"] in ("while", "do", "for"):
         return _narrate_retry_loop(cx, fn, br, act)
@@ -3858,12 +3986,16 @@ def r_downstream(cx: Ctx) -> None:
     calls = g.callees(fn)
     cls = []
     items = []
+    seen_calls: set[tuple] = set()
     for c in calls:
         st, why = cx.call_status(c)
         cond = ""
         if c.guards:
             gd = c.guards[-1]
             cond = f", only if `{gd['cond']}` is {'true' if gd['polarity'] else 'false'}"
+        if (c.callee, c.line, cond) in seen_calls:
+            continue                  # one macro expanding to the same call several times is one call in the code
+        seen_calls.add((c.callee, c.line, cond))
         cls.append(cx.claim(f"{cx.D(fn)} calls {cx.D(c.callee)} at {cx.loc(c.file, c.line)}{cond}.", "calls",
                             [fn, c.callee, c.file, c.line], [cx.ev("call", c.file, c.line, c.callee)], st, why))
         items.append(f"{cx.D(c.callee)} (line {c.line}{cond})")
@@ -4594,10 +4726,15 @@ def _find_check(cx: Ctx) -> bool:
         b[1] += int(computes) + int(rejects)
     best.sort(key=lambda x: (-x[0], -x[1], -x[2], -x[3], g.sym[x[4]]["file"], x[5]["line"]))
     best = [(b[0], b[3], b[4], b[5]) for b in best]
+    loc_c = lambda b: _branch_loc(b[2], b[3])          # noqa: E731
+    best = cx.learn.rank(best, loc_c, lambda b: float(b[0]))
     best = _rerank(cx, best, lambda b: _render_branch(cx, (b[2], b[3], _branch_actions(cx, b[2], b[3]))))
     cov, _, fn, br = best[0]
     if cov < 0.6:
         return False
+    cx.learn.offer(best, loc_c, lambda b: (_branch_label(cx, b[2], b[3]),
+                                           _render_branch(cx, (b[2], b[3], _branch_actions(cx, b[2], b[3])))),
+                   lambda b: float(b[0]))
     act = _branch_actions(cx, fn, br)
     cls = [cx.claim(f"{cx.D(fn)} checks `{br['cond']}` at {cx.loc(br['file'], br['line'])}.", "branch",
                     [fn, br["file"], br["line"]], [cx.ev("branch", br["file"], br["line"], fn)])]
@@ -4660,6 +4797,10 @@ def _find_io_fn(cx: Ctx) -> bool:
     if not best:
         return False
     best.sort(key=lambda x: (-x[0], -x[1], -x[2]))
+    loc_i = lambda b: Loc(b[3], (cx.g.sym.get(b[3]) or {}).get("file"), None, None)      # noqa: E731
+    best = cx.learn.rank(best, loc_i, lambda b: float(b[0]))
+    cx.learn.offer(best, loc_i, lambda b: (_fn_label(cx, b[3]), _render_function(cx, b[3])), lambda b: float(b[0]),
+                   what="function")
     cov, vhit, _, fn, ios = best[0]
     if cov < 0.3 or not vhit and cov < 0.6:
         return False                               # the medium named in the question must show up in the I/O it does
@@ -4681,10 +4822,12 @@ def _find_io_fn(cx: Ctx) -> bool:
 
 def r_which_fn(cx: Ctx) -> None:
     """'Which function parses/computes/sends X?': search restricted to functions, then explain the best one."""
-    if CHECK_VERB_RE.search(cx.r.question) and not any(m.get("explicit") for m in cx.r.mentions) and _find_check(cx):
+    pinned = cx.learn.pin_function() if cx.learn.pin_function() in cx.g.defined else None
+    if not pinned and CHECK_VERB_RE.search(cx.r.question) and not any(m.get("explicit") for m in cx.r.mentions) and \
+            _find_check(cx):
         return
-    if not any(m.get("explicit") for m in cx.r.mentions) and re.search(r"\b(over|via|through|to|from|on)\s+(the\s+)?\w+",
-                                                                      cx.r.question) and _find_io_fn(cx):
+    if not pinned and not any(m.get("explicit") for m in cx.r.mentions) and \
+            re.search(r"\b(over|via|through|to|from|on)\s+(the\s+)?\w+", cx.r.question) and _find_io_fn(cx):
         return
     hits = cx.s.search(cx.r.question, k=12, kinds=FN_KINDS)
     hits = [h for h in hits if h.key in cx.g.defined] or hits
@@ -4698,8 +4841,20 @@ def r_which_fn(cx: Ctx) -> None:
             if set(split_ident(cx.g.name(h.key))) & qv:
                 h.score *= 2.0
         hits.sort(key=lambda h: -h.score)
+    loc_h = lambda h: Loc(h.key, getattr(h, "file", None), None, None)      # noqa: E731
+    hits = cx.learn.rank(hits, loc_h, lambda h: float(h.score))
+    if pinned:
+        h0 = next((h for h in hits if h.key == pinned), None)
+        if h0 is None:
+            ps = cx.g.sym[pinned]
+            h0 = SimpleNamespace(key=pinned, name=ps["name"], kind=ps["kind"], file=ps["file"], line=ps["line"],
+                                 score=hits[0].score if hits else 1.0, why=["correction"])
+        cx.learn.use_pin(changed=not hits or hits[0] is not h0)
+        hits = [h0] + [h for h in hits if h is not h0]
     if not hits:
         return r_search(cx)
+    cx.learn.offer(hits, loc_h, lambda h: (_fn_label(cx, h.key), _render_function(cx, h.key)), lambda h: float(h.score),
+                   what="function")
     top = hits[0]
     s = cx.g.sym[top.key]
     c0 = cx.claim(f"{cx.D(top.key)} is defined in {cx.loc(s['file'], s['line'])}.", "defined", [top.key, s["file"], s["line"]],

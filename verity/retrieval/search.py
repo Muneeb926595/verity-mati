@@ -3,6 +3,7 @@ fused with reciprocal-rank fusion. Also resolves the code entities a question me
 from __future__ import annotations
 
 import re
+from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -54,8 +55,33 @@ SYNONYMS = {
 }
 
 
+# This project's accepted glossary words while one question is answered (word -> the words of its identifiers). Set by
+# the Answerer, per thread and per question, so one project's glossary never leaks into another's answers.
+_PROJECT_WORDS: ContextVar[dict[str, frozenset[str]] | None] = ContextVar("verity_project_words", default=None)
+
+
+def set_project_words(words: dict[str, frozenset[str]] | None) -> Token:
+    return _PROJECT_WORDS.set(words or None)
+
+
+def reset_project_words(token: Token) -> None:
+    _PROJECT_WORDS.reset(token)
+
+
 def expand_words(words) -> set[str]:
-    """Question words plus the abbreviations code uses for them (checksum -> chksum, timer -> tmr, …)."""
+    """Question words plus the abbreviations code uses for them (checksum -> chksum, timer -> tmr, …), plus the
+    words of this project's accepted glossary terms."""
+    out = _expand_words(words)
+    pw = _PROJECT_WORDS.get()
+    if pw:
+        for w in list(out):
+            extra = pw.get(w)
+            if extra:
+                out.update(extra)
+    return out
+
+
+def _expand_words(words) -> set[str]:
     out = set(words)
     for w in list(out):
         out.update(SYNONYMS.get(w, ()))

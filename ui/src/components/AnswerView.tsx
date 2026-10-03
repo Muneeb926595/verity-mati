@@ -1,7 +1,22 @@
 import { createMemo, For, Show } from "solid-js";
-import type { Answer, Evidence, Run } from "../types";
-import { certainty, CERTAINTY_ORDER, loc, plural, seconds, valueText } from "../util";
-import { CertaintyBadge, Collapsible, Inline, Limited, LocLink, useSource } from "./common";
+import type { Answer, Evidence, LearningUse, Run } from "../types";
+import { certainty, CERTAINTY_ORDER, dayText, loc, plural, seconds, valueText } from "../util";
+import { CertaintyBadge, Collapsible, Inline, Limited, LocLink, Spinner, useSource } from "./common";
+
+/** What the person can do with an answer to teach Verity (handled by the project view). */
+export interface LearnHandlers {
+  /** "This one": alternative `rank` is the right place */
+  pick: (rank: number) => void;
+  /** "The answer was right" (kept as a test case) */
+  confirm: () => void;
+  /** "None of these": open the source viewer to pick the line */
+  pickLine: () => void;
+  /** undo a correction this answer used */
+  undo: (id: string) => void;
+  /** what is being saved right now ("" = nothing), and the last result for this answer */
+  busy: () => string;
+  done: () => { kind: "corrected" | "confirmed"; text: string } | null;
+}
 
 function sameText(a: string, b: string): boolean {
   const norm = (s: string) => s.replace(/[`;\s]/g, "");
@@ -10,7 +25,7 @@ function sameText(a: string, b: string): boolean {
   return !!x && (x === y || y.includes(x));
 }
 
-export default function AnswerView(props: { answer: Answer }) {
+export default function AnswerView(props: { answer: Answer; learn?: LearnHandlers }) {
   const src = useSource();
   const a = props.answer;
   const flow = a.flow || [];
@@ -40,6 +55,9 @@ export default function AnswerView(props: { answer: Answer }) {
   };
 
   const openEv = (e: Evidence) => e.file && src.open({ file: e.file, line: e.line, end: e.end_line });
+  const learning = a.meta?.learning || {};
+  const used = learning.used || [];
+  const alternatives = learning.alternatives || [];
 
   return (
     <article class="answer" aria-label="Answer">
@@ -47,6 +65,20 @@ export default function AnswerView(props: { answer: Answer }) {
         <h2 class="eyebrow">Your question</h2>
         <p class="question-text">{a.question}</p>
       </section>
+
+      <Show when={used.length || learning.pin_not_applied}>
+        <div class="learned-notes" role="note" aria-label="What this answer learned from corrections">
+          <For each={used}>{(u) => <LearnedNote use={u} onUndo={props.learn?.undo} busy={props.learn?.busy?.() || ""} />}</For>
+          <Show when={learning.pin_not_applied}>
+            {(m) => (
+              <p class="learned-note muted">
+                <span class="learned-tag">learned</span> Correction {m().id} points at <Inline text={m().target || "another place"} links={false} />,
+                which this kind of question could not use, so this answer comes from the analysis alone.
+              </p>
+            )}
+          </Show>
+        </div>
+      </Show>
 
       <section class="a-sec">
         <h2 class="eyebrow">Answer</h2>
@@ -129,6 +161,10 @@ export default function AnswerView(props: { answer: Answer }) {
           <span class="muted"> · {summary().join(" · ")}</span>
         </Show>
       </p>
+
+      <Show when={props.learn && a.id}>
+        <LearnCard />
+      </Show>
 
       <div class="details">
         <Collapsible title="Show reasoning / evidence" count={reasoning.length || null}>
@@ -262,6 +298,64 @@ export default function AnswerView(props: { answer: Answer }) {
     </article>
   );
 
+  function LearnCard() {
+    const L = props.learn!;
+    const busy = () => L.busy();
+    return (
+      <section class="a-sec learn-card" aria-label="Was this the right place?">
+        <Show when={L.done()} fallback={
+          <>
+            <h2 class="eyebrow">Is this the right place?</h2>
+            <Show when={alternatives.length}>
+              <p class="learn-sub">Other places that could be the answer</p>
+              <ol class="alts">
+                <For each={alternatives}>
+                  {(c) => (
+                    <li class="alt">
+                      <span class="alt-rank" aria-hidden="true">{c.rank}</span>
+                      <span class="alt-label">
+                        <Inline text={c.label} links={false} />
+                      </span>
+                      <LocLink file={c.file} line={c.line} />
+                      <button class="btn sm" disabled={!!busy()} onClick={() => L.pick(c.rank)}
+                        title="Record that this is the right place for this question">
+                        This one
+                      </button>
+                    </li>
+                  )}
+                </For>
+              </ol>
+            </Show>
+            <div class="learn-actions">
+              <button class="btn sm ok-btn" disabled={!!busy()} onClick={() => L.confirm()}
+                title="Keep this answer as a test case for this project">
+                ✓ The answer was right
+              </button>
+              <Show when={learning.correctable}>
+                <button class="btn sm subtle" disabled={!!busy()} onClick={() => L.pickLine()}
+                  title="Open the code and pick the line that answers the question">
+                  {alternatives.length ? "None of these: pick a line…" : "Not the right place: pick a line…"}
+                </button>
+              </Show>
+              <Show when={busy()}>
+                <span class="muted small" role="status"><Spinner /> {busy()}</span>
+              </Show>
+            </div>
+            <p class="muted small learn-help">
+              Your choice is saved for this project only. Later answers say when they use it, and you can undo it.
+            </p>
+          </>
+        }>
+          {(d) => (
+            <p class="learn-done" role="status">
+              <span class="ok">✓</span> {d().text}
+            </p>
+          )}
+        </Show>
+      </section>
+    );
+  }
+
   function Verification(p: { answer: Answer }) {
     const v = verification;
     const r = v.report || {};
@@ -336,6 +430,48 @@ export default function AnswerView(props: { answer: Answer }) {
       </div>
     );
   }
+}
+
+const MATCH_WORDS: Record<string, string> = {
+  same: "this question",
+  words: "a question about the same thing",
+  meaning: "a question with the same meaning",
+  similar: "a similar question",
+};
+
+/** How the question matched (answers stored before "match" existed: from how and meaning). */
+function matchOf(u: LearningUse): string {
+  if (u.match) return u.match;
+  if (u.how !== "pin") return "similar";
+  return u.meaning ? "meaning" : "same";
+}
+
+function LearnedNote(props: { use: LearningUse; onUndo?: (id: string) => void; busy: string }) {
+  const u = props.use;
+  const when = u.created ? dayText(u.created) : "";
+  return (
+    <p class="learned-note">
+      <span class="learned-tag">learned</span>
+      <span>
+        {u.how === "pin" ? "Uses" : "Ranked with the help of"} correction <strong>{u.id}</strong>
+        {when ? ` (${when})` : ""}, recorded for {MATCH_WORDS[matchOf(u)] || MATCH_WORDS.similar}
+        <Show when={matchOf(u) !== "same" && u.question}>: “{u.question}”</Show>
+        <Show when={u.note}>
+          {" "}— <span class="learned-q">“{u.note}”</span>
+        </Show>
+        .
+        <Show when={(u.conflicts || []).length}>
+          <span class="warn-text"> It disagrees with {(u.conflicts || []).join(", ")}; the newest is used.</span>
+        </Show>
+      </span>
+      <Show when={props.onUndo}>
+        <button class="link-btn" disabled={!!props.busy} onClick={() => props.onUndo!(u.id)}
+          title="Stop using this correction (you can restore it in Learned)">
+          Undo
+        </button>
+      </Show>
+    </p>
+  );
 }
 
 function RunTable(props: { runs: Run[]; ok?: boolean; error?: string }) {

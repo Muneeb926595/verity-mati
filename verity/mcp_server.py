@@ -42,6 +42,20 @@ TOOLS = [
      "description": "Definition, signature, doc comment, callers, callees, writers and readers of one symbol.",
      "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}, "name": {"type": "string"}},
                      "required": ["path", "name"], "additionalProperties": False}},
+    {"name": "verity_correct", "title": "Correct or confirm an answer",
+     "description": "When the user says an answer from verity_ask described the wrong code, record the right place: "
+                    "pick one of the answer's alternatives (pick: 2 or 3) or give a file and line of the project. "
+                    "Verity then uses it for that question and similar ones on this project (always disclosed in the "
+                    "answer, undoable). confirm=true keeps a right answer as a test case; undo=<correction id> stops "
+                    "using a correction. Only record what the user said; never guess a correction.",
+     "inputSchema": {"type": "object", "properties": {
+         "path": {"type": "string"}, "answer_id": {"type": "string", "description": "the id verity_ask returned"},
+         "pick": {"type": "integer", "description": "an alternative's number (2, 3)"},
+         "file": {"type": "string"}, "line": {"type": "integer"},
+         "note": {"type": "string", "description": "why this place is right, in the user's words"},
+         "confirm": {"type": "boolean", "description": "the answer was right"},
+         "undo": {"type": "string", "description": "a correction id, e.g. c-0007"}},
+         "required": ["path"], "additionalProperties": False}},
     {"name": "verity_source", "title": "Read source",
      "description": "Source lines of a project file around a line (read-only, only files inside the project).",
      "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}, "file": {"type": "string"},
@@ -99,8 +113,32 @@ class MCPServer:
             r = core.ask(args["path"], args["question"])
             ans = r["result"]
             from .render.render import to_text
-            return _text(to_text(ans, details=bool(args.get("details"))), structured={
-                k: ans[k] for k in ("question", "answer", "flow", "evidence", "status", "status_counts")})
+            txt = to_text(ans, details=bool(args.get("details")))
+            lm = (ans.get("meta") or {}).get("learning") or {}
+            if ans.get("id"):
+                txt += f"\n\nAnswer id {ans['id']}" + (" (if the user says another place is right, record it with "
+                                                       "verity_correct)" if lm.get("correctable") else "")
+            st = {k: ans[k] for k in ("question", "answer", "flow", "evidence", "status", "status_counts")}
+            st.update(id=ans.get("id"), alternatives=lm.get("alternatives") or [], corrections_used=lm.get("used") or [])
+            return _text(txt, structured=st)
+        if name == "verity_correct":
+            path = args["path"]
+            if args.get("undo"):
+                r = core.project(path).learner().remove(args["undo"])
+                return _text(r["message"], structured=r)
+            if not args.get("answer_id"):
+                return _text("answer_id is required (the id verity_ask returned).", True)
+            if args.get("confirm"):
+                r = core.answer_confirm(path, args["answer_id"], note=args.get("note") or "")
+                return _text(r["message"], structured=r)
+            target = {"file": args["file"], "line": args.get("line")} if args.get("file") else None
+            r = core.answer_correct(path, args["answer_id"], pick=args.get("pick"), target=target,
+                                    note=args.get("note") or "", author="mcp")
+            c = r["correction"]
+            txt = f"{r['message']}\nRight place: {c['target_label']}\nUndo: verity_correct undo={c['id']}"
+            for t in r.get("glossary_suggestions") or []:
+                txt += f"\nGlossary suggestion (the user can accept it in Verity): {t['term']} -> {', '.join(t['identifiers'])}"
+            return _text(txt, structured=r)
         if name == "verity_search":
             hits = core.search(args["path"], args["query"], int(args.get("k", 15)))
             txt = "\n".join(f"{h['name']} ({h['kind']}) {h['file']}:{h['line']}" for h in hits) or "No matches."

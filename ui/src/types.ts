@@ -169,7 +169,115 @@ export interface Answer {
     verification?: Verification;
   };
   run?: { ok?: boolean; runs?: Run[]; explain?: string; error?: string } | null;
-  meta?: { seconds?: number; prose?: { mode?: string; model?: string; fallback?: string | boolean; skipped?: string }; intent?: string; model?: string | null; model_choices?: number };
+  meta?: {
+    seconds?: number;
+    prose?: { mode?: string; model?: string; fallback?: string | boolean; skipped?: string };
+    intent?: string;
+    model?: string | null;
+    model_choices?: number;
+    learning?: AnswerLearning;
+  };
+}
+
+// ------------------------------------------------------------------------------------------ learning from corrections
+/** One of the top places the analysis found for a question (1 = the one the answer describes). */
+export interface Candidate {
+  rank: number;
+  fn: string;
+  file?: string | null;
+  line?: number | null;
+  side?: string | null;
+  /** a switch case: its first and last line (all cases share the switch's line) */
+  span?: [number, number] | null;
+  label: string;
+}
+
+/** A correction an answer used: "pin" (recorded for this question) or "hint" (for a similar one). */
+export interface LearningUse {
+  id: string;
+  how: "pin" | "hint" | (string & {});
+  changed?: boolean;
+  created?: number | null;
+  note?: string;
+  target?: string | null;
+  question?: string | null;
+  conflicts?: string[];
+  /** meaning similarity, when the correction was recorded for a question worded differently */
+  meaning?: number;
+  /** how the question matched the correction's: the same question, the same thing in other words, the same meaning,
+   *  or only a similar question (a ranking hint) */
+  match?: "same" | "words" | "meaning" | "similar" | (string & {});
+}
+
+export interface AnswerLearning {
+  correctable?: boolean;
+  candidates?: Candidate[];
+  alternatives?: Candidate[];
+  used?: LearningUse[];
+  glossary_used?: string[];
+  pin_not_applied?: { id: string; target?: string | null; why?: string };
+  rerouted?: string;
+}
+
+export type CorrectionStatus = "active" | "stale" | "removed" | (string & {});
+
+export interface Correction {
+  id: string;
+  created?: number;
+  created_label?: string;
+  updated?: number;
+  note?: string;
+  question: string;
+  intent?: string;
+  kind?: "pick" | "line" | (string & {});
+  target_fn: string;
+  target_name: string;
+  target_file: string;
+  target_line: number;
+  branch_line?: number | null;
+  side?: string | null;
+  target_label: string;
+  wrong?: { label?: string; file?: string; line?: number } | null;
+  status: CorrectionStatus;
+  status_reason?: string;
+  conflict?: string[];
+  replaces?: string | null;
+  uses?: number;
+  last_used?: number | null;
+  source?: string;
+}
+
+export interface GlossaryTerm {
+  term: string;
+  identifiers: string[];
+  source?: string;
+  status: "suggested" | "accepted" | "rejected" | (string & {});
+  read_only?: boolean;
+}
+
+export interface Confirmation {
+  id: string;
+  question: string;
+  created?: number;
+  target_name?: string | null;
+  target_file?: string | null;
+  target_line?: number | null;
+  must_mention?: string[];
+}
+
+export interface LearningListing {
+  corrections: Correction[];
+  confirmations: Confirmation[];
+  glossary: GlossaryTerm[];
+  counts: { active: number; stale: number; removed: number; suggested: number; accepted: number; confirmations: number };
+  recovered_from?: string | null;
+}
+
+export interface CorrectResult {
+  correction: Correction;
+  glossary_suggestions?: GlossaryTerm[];
+  replaced?: string[];
+  message: string;
 }
 
 export interface SourceSlice {
@@ -206,4 +314,6 @@ export interface SourceTarget {
   file: string;
   line?: number | null;
   end?: number | null;
+  /** set when the viewer is opened to pick the line that answers a question */
+  pick?: { answerId: string; question: string; files?: string[] };
 }

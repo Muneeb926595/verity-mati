@@ -11,7 +11,7 @@
 //      SAMPLE (default <root>/samples/navgps-c),
 //      CDP_ATTACH=1 to drive the page already open there instead of a new tab: the desktop app's own window
 //      (Windows: start Verity.exe with WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222).
-import { mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -312,7 +312,7 @@ async function main() {
   await pressEnter();
   await waitFor(`!!document.querySelector(".answer .flow")`, 120000, "flow answer");
   const sections = await evaluate(`[...document.querySelectorAll(".answer .eyebrow")].map(e => e.childNodes[0].textContent.trim())`);
-  check("answer sections in order", JSON.stringify(sections) === JSON.stringify(["Your question", "Answer", "How the data flows", "Evidence"]), JSON.stringify(sections));
+  check("answer sections in order", JSON.stringify(sections) === JSON.stringify(["Your question", "Answer", "How the data flows", "Evidence", "Is this the right place?"]), JSON.stringify(sections));
   const flowSteps = await evaluate(`document.querySelectorAll(".flow-step").length`);
   check("flow chain rendered with steps + file:line", flowSteps >= 5 && (await evaluate(`document.querySelectorAll(".flow-step .loc").length`)) >= 5, `${flowSteps} steps`);
   check("inline code rendered from backticks", (await evaluate(`document.querySelectorAll(".prose code.ic").length`)) > 0);
@@ -423,6 +423,84 @@ async function main() {
   await evaluate(`window.scrollTo(0, 0)`);
   await shot("15-answer-dark");
   await setViewport(1280, 860);
+
+  // ---------------------------------------------------------------- learning from corrections (on a throwaway copy)
+  const LEARN = join(mkdtempSync(join(tmpdir(), "verity-e2e-learn-")), "navgps-c");
+  cpSync(SAMPLE, LEARN, { recursive: true });
+  try {
+    await rpc("project.open", { path: LEARN });
+    await rpc("index.start", { path: LEARN, full: true });
+    for (let i = 0; i < 360 && !(await rpc("project.status", { path: LEARN })).result?.ready; i++) await sleep(500);
+    await goto(URL0.split("#")[0] + "#/project/" + encodeURIComponent(LEARN));
+    await waitFor(`${text(".proj-actions .pill")}.trim() === "Ready"`, 60000, "learning copy ready");
+    const LQ = "What happens when the checksum of an NMEA sentence is wrong?";
+    const askQ = async (q) => {
+      await click(`document.querySelector(".ask-input")`);
+      await evaluate(`document.querySelector(".ask-input").select()`);
+      await typeText(q);
+      await pressEnter();
+    };
+    await askQ(LQ);
+    await waitFor(`/gps_receiver_process_line/.test(${text(".answer .prose")}) && !document.querySelector(".ask-progress")`, 60000, "failure answer");
+    check("an answer offers 'Is this the right place?' with the right was right / pick a line actions",
+      await evaluate(`!!document.querySelector(".learn-card") && /The answer was right/.test(${text(".learn-card")}) && /pick a line/.test(${text(".learn-card")})`));
+    await click(byText(".learn-card button", "pick a line"));
+    await waitFor(`!!document.querySelector(".source-panel.picking .row")`, 10000, "pick mode");
+    check("pick mode opens the source viewer asking which line answers the question",
+      /Which line answers your question/.test(await evaluate(text(".src-pickhead"))));
+    // the right line is in another file: go to it by function name
+    await click(`document.querySelector(".pick-find input")`);
+    await typeText("nmea_checksum_ok");
+    await waitFor(`[...document.querySelectorAll(".pick-results button")].some(b => /nmea_checksum_ok/.test(b.innerText))`, 10000, "function search results");
+    await click(byText(".pick-results button", "nmea_checksum_ok"));
+    await waitFor(`/nmea_parser\.c/.test(${text(".src-file")}) && !!document.querySelector(".source-panel.picking .row")`, 10000, "other file");
+    check("pick mode can go to another file by function name", true);
+    await click(`[...document.querySelectorAll(".source-panel.picking .row")].find(r => r.querySelector(".ln")?.innerText.trim() === "26")`, "line 26");
+    await click(`document.querySelector(".pick-note")`);
+    await typeText("the *hh field itself is checked here");
+    await shot("19-pick-a-line");
+    await click(byText(".src-pickbar button", "Use this line"));
+    await waitFor(`!!document.querySelector(".learned-note") && !document.querySelector(".ask-progress")`, 60000, "corrected answer");
+    const note = await evaluate(text(".learned-note"));
+    check("the answer asked again uses the correction and says so (id, note, Undo)",
+      /c-0001/.test(note) && /hh field/.test(note) && /Undo/.test(note) && /nmea_checksum_ok/.test(await evaluate(text(".answer .prose"))), note.slice(0, 160));
+    check("a banner confirms the saved correction with an Undo button", /Saved correction c-0001/.test(await evaluate(`document.body.innerText`)));
+    await shot("20-corrected-answer");
+    check("alternatives are offered, each with a 'This one' button",
+      await evaluate(`document.querySelectorAll(".alts .alt").length > 0 && [...document.querySelectorAll(".alts .alt")].every(li => [...li.querySelectorAll("button")].some(b => /This one/.test(b.innerText)))`),
+      (await evaluate(text(".learn-card"))).replace(/\s+/g, " ").slice(0, 200));
+    await click(`document.querySelector(".learn-btn")`);
+    await waitFor(`!!document.querySelector(".learn-panel .corr")`, 10000, "learned panel");
+    const panel = await evaluate(text(".learn-panel"));
+    check("the Learned panel lists the correction (status, question, right place)",
+      /c-0001/.test(panel) && /in use/.test(panel) && /nmea_parser\.c:26/.test(panel), panel.replace(/\s+/g, " ").slice(0, 160));
+    await shot("21-learned-panel");
+    await click(byText(".learn-panel .tab", "Glossary"));
+    await waitFor(`/Add a term/.test(${text(".learn-panel")})`, 5000, "glossary tab");
+    await click(byText(".learn-panel .tab", "Share"));
+    await waitFor(`/Export test suite/.test(${text(".learn-panel")})`, 5000, "share tab");
+    check("the panel's Glossary and Share tabs open", true);
+    await pressEscape();
+    await waitFor(`!document.querySelector(".learn-panel")`, 3000, "panel closes");
+    await click(byText(".learned-note button", "Undo"));
+    await waitFor(`!document.querySelector(".learned-note") && /gps_receiver_process_line/.test(${text(".answer .prose")}) && !document.querySelector(".ask-progress")`, 60000, "answer after undo");
+    check("Undo stops using the correction and the answer is the analysis' own again", true);
+    await click(byText(".learn-card button", "The answer was right"));
+    await waitFor(`/test case/.test(${text(".learn-card")})`, 10000, "confirmation saved");
+    check("'The answer was right' keeps the answer as a test case", true);
+    const lst = (await rpc("corrections.list", { path: LEARN })).result;
+    check("engine state matches: 1 undone correction, 1 confirmation", lst.counts.removed === 1 && lst.counts.confirmations === 1, JSON.stringify(lst.counts));
+    await setViewport(390, 844);
+    check("the learning card fits a phone screen", await evaluate(`document.documentElement.scrollWidth <= window.innerWidth + 1`));
+    await setViewport(1280, 860);
+  } finally {
+    await rpc("project.forget", { path: LEARN });
+    try {
+      rmSync(dirname(LEARN), { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
+  }
 
   // ---------------------------------------------------------------- console hygiene
   check("no uncaught errors in the page console", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));

@@ -18,6 +18,8 @@ from typing import Any, Callable
 from .. import __version__, config
 from ..agent.answer import Answerer
 from ..index import Cancelled, IndexBusy, Indexer
+from ..learn.service import Learner
+from ..learn.store import LearnError
 from ..store.db import FactStore
 
 
@@ -60,14 +62,26 @@ class Project:
         self.dir.mkdir(parents=True, exist_ok=True)
         self.store = FactStore(self.dir / "index.db")
         self._answerer: Answerer | None = None
+        self._learner: Learner | None = None
         self.lock = threading.RLock()
+
+    def learner(self) -> Learner:
+        """This project's corrections and glossary (learned.db next to the index, never inside it)."""
+        with self.lock:
+            if self._learner is None:
+                self._learner = Learner(self.store, self.root, self.dir)
+            return self._learner
 
     def answerer(self, runtime, embedder) -> Answerer:
         with self.lock:
             if self._answerer is None:
                 from ..runtime_exec.harness import Runner
+                try:
+                    learner = self.learner()
+                except Exception:  # noqa: BLE001 — corrections that cannot be opened must never stop an answer
+                    learner = None
                 self._answerer = Answerer(self.store, self.root, runtime=runtime, runner=Runner(self.store, self.root),
-                                          embedder=embedder)
+                                          embedder=embedder, learner=learner)
             return self._answerer
 
 
@@ -266,6 +280,12 @@ class EngineCore:
                 store.close()
             with pr.lock:
                 pr._answerer = None
+            try:
+                moved = pr.learner().refresh()          # corrections follow their code, or turn stale
+                if any(moved.values()):
+                    summary = dict(summary, learning=moved)
+            except Exception:  # noqa: BLE001 — learning must never fail an index
+                pass
             self._finish(j, "done", summary)
         except Cancelled:
             self._finish(j, "cancelled")
@@ -454,6 +474,61 @@ class EngineCore:
         self._save_settings()
         return {k: v for k, v in self.settings.items() if k != "recent"}
 
+    # ----------------------------------------------------------------------------------------- learning
+    def _embed_fn(self):
+        """The question-meaning function for new corrections: only when the embedding model is already running."""
+        rt = self._runtime
+        if rt is None or not self.opt("embeddings", True):
+            return None
+        try:
+            if not (rt.status().get("embed") or {}).get("running"):
+                return None
+            emb = self.embedder()
+        except Exception:  # noqa: BLE001
+            return None
+        if emb is None:
+            return None
+        return lambda q: [float(x) for x in emb.embed([q], query=True)[0]]
+
+    def answer_correct(self, path: str, answer_id: str, pick: int | None = None, target: dict | None = None,
+                       note: str = "", author: str | None = None) -> dict:
+        lr = self.project(path).learner()
+        r = lr.correct(answer_id, pick=pick, target=target, note=note,
+                       author=author or os.environ.get("USER") or os.environ.get("USERNAME") or "", embed=self._embed_fn())
+        self.emit({"type": "learning.changed", "project": str(self.project(path).root)})
+        return r
+
+    def answer_confirm(self, path: str, answer_id: str, note: str = "") -> dict:
+        r = self.project(path).learner().confirm(answer_id, note=note)
+        self.emit({"type": "learning.changed", "project": str(self.project(path).root)})
+        return r
+
+    def corrections_summary(self, path: str) -> dict:
+        lst = self.project(path).learner().listing()
+        return {"counts": lst["counts"], "recovered_from": lst["recovered_from"]}
+
+    def corrections_export(self, path: str, format: str = "json", save: bool = False) -> dict:
+        r = self.project(path).learner().export(format)
+        if save:
+            # the desktop app's web view cannot download files: write the export into the Downloads folder
+            folder = Path.home() / "Downloads"
+            if not folder.is_dir():
+                folder = config.HOME / "exports"
+            folder.mkdir(parents=True, exist_ok=True)
+            dest = folder / r["filename"]
+            n = 1
+            while dest.exists():
+                n += 1
+                dest = folder / f"{Path(r['filename']).stem}-{n}{Path(r['filename']).suffix}"
+            text = r["data"] if isinstance(r["data"], str) else json.dumps(r["data"], indent=1, default=str)
+            dest.write_text(text, encoding="utf-8")
+            r = {"format": r["format"], "filename": dest.name, "saved": str(dest)}
+        return r
+
+    def _learn_changed(self, path: str, result: Any) -> Any:
+        self.emit({"type": "learning.changed", "project": str(self.project(path).root)})
+        return result
+
     def shutdown(self) -> None:
         for j in list(self.jobs.values()):
             j.cancel.set()
@@ -462,6 +537,8 @@ class EngineCore:
         if self._runtime is not None:
             self._runtime.stop()
         for pr in self.projects.values():
+            if pr._learner is not None:
+                pr._learner.close()
             pr.store.close()
 
     # ----------------------------------------------------------------------------------------- dispatch
@@ -472,6 +549,8 @@ class EngineCore:
             raise EngineError(f"Unknown method {method}", -32601)
         try:
             return m(self, **params)
+        except LearnError as e:
+            raise EngineError(str(e), -32602)
         except TypeError as e:
             raise EngineError(f"Invalid parameters for {method}: {e}", -32602)
 
@@ -496,4 +575,22 @@ METHODS: dict[str, Callable[..., Any]] = {
     "callees": lambda e, path, key: e.callees(path, key),
     "history.list": lambda e, path, limit=30: e.history(path, limit),
     "answer.get": lambda e, path, id: e.answer_get(path, id),
+    # learning from corrections (verity/learn): per project, stored in learned.db next to the index
+    "answer.correct": lambda e, path, answer_id, pick=None, target=None, note="", author=None:
+        e.answer_correct(path, answer_id, pick, target, note, author),
+    "answer.confirm": lambda e, path, answer_id, note="": e.answer_confirm(path, answer_id, note),
+    "answer.unconfirm": lambda e, path, id: e._learn_changed(path, e.project(path).learner().remove_confirmation(id)),
+    "corrections.list": lambda e, path, status=None: e.project(path).learner().listing(status),
+    "corrections.summary": lambda e, path: e.corrections_summary(path),
+    "corrections.remove": lambda e, path, id: e._learn_changed(path, e.project(path).learner().remove(id)),
+    "corrections.restore": lambda e, path, id: e._learn_changed(path, e.project(path).learner().restore(id)),
+    "corrections.note": lambda e, path, id, note="": e._learn_changed(path, e.project(path).learner().set_note(id, note)),
+    "corrections.export": lambda e, path, format="json", save=False: e.corrections_export(path, format, bool(save)),
+    "corrections.import": lambda e, path, data: e._learn_changed(path, e.project(path).learner().import_(data)),
+    "glossary.list": lambda e, path: e.project(path).learner().glossary_list(),
+    "glossary.accept": lambda e, path, term, identifiers=None:
+        e._learn_changed(path, e.project(path).learner().glossary_accept(term, identifiers)),
+    "glossary.reject": lambda e, path, term: e._learn_changed(path, e.project(path).learner().glossary_reject(term)),
+    "glossary.add": lambda e, path, term, identifiers: e._learn_changed(path, e.project(path).learner().glossary_add(term, identifiers)),
+    "glossary.remove": lambda e, path, term: e._learn_changed(path, e.project(path).learner().glossary_remove(term)),
 }

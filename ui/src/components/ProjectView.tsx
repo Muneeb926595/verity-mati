@@ -13,11 +13,12 @@ import {
   type JobView,
 } from "../api";
 import { goHome, takeOpened } from "../router";
-import type { Answer, HistoryItem, Job, ProjectStatus, SourceTarget } from "../types";
+import type { Answer, CorrectResult, HistoryItem, Job, LearningListing, ProjectStatus, SourceTarget } from "../types";
 import { etaText, languagesLabel, plural, shortPath, timeAgo } from "../util";
-import AnswerView from "./AnswerView";
+import AnswerView, { type LearnHandlers } from "./AnswerView";
 import { Banner, SourceCtx, Spinner } from "./common";
-import SourceViewer from "./SourceViewer";
+import LearningPanel from "./LearningPanel";
+import SourceViewer, { type PickedLine } from "./SourceViewer";
 
 interface Notice {
   kind: "error" | "warn" | "info" | "ok";
@@ -53,6 +54,14 @@ export default function ProjectView(props: { path: string }) {
   const [answer, setAnswer] = createSignal<Answer | null>(null);
   const [history, setHistory] = createSignal<HistoryItem[]>([]);
   const [source, setSource] = createSignal<SourceTarget | null>(null);
+  // learning from corrections
+  const [learnBusy, setLearnBusy] = createSignal("");
+  const [learnDone, setLearnDone] = createSignal<Record<string, { kind: "corrected" | "confirmed"; text: string }>>({});
+  const [learnNotice, setLearnNotice] = createSignal<{ kind: "ok" | "error" | "info"; text: string; undo?: string; question?: string } | null>(null);
+  const [pickError, setPickError] = createSignal<string | null>(null);
+  const [learnCounts, setLearnCounts] = createSignal<LearningListing["counts"] | null>(null);
+  const [learnOpen, setLearnOpen] = createSignal(false);
+  let pickFor: Answer | null = null;
   const [exampleFns, setExampleFns] = createSignal<string[]>([]);
   const [now, setNow] = createSignal(Date.now());
   let askInput: HTMLInputElement | undefined;
@@ -98,6 +107,7 @@ export default function ProjectView(props: { path: string }) {
     }
     loadHistory();
     loadExamples();
+    loadLearnCounts();
   }
 
   async function refreshStatus() {
@@ -150,6 +160,100 @@ export default function ProjectView(props: { path: string }) {
   }
 
   // ---------------------------------------------------------------------------------------- questions
+  // ---------------------------------------------------------------------------------------- learning
+  async function loadLearnCounts() {
+    try {
+      setLearnCounts((await rpc<{ counts: LearningListing["counts"] }>("corrections.summary", { path: path() })).counts);
+    } catch {
+      /* not essential */
+    }
+  }
+
+  /** After a correction or an undo: ask the same question again, so the answer shown is the one Verity now gives. */
+  function reask(q: string) {
+    if (q && canAsk()) ask(q);
+  }
+
+  async function correctAnswer(a: Answer, args: { pick?: number; target?: { file: string; line: number }; note?: string }) {
+    if (!a.id || learnBusy()) return;
+    setLearnBusy("Saving…");
+    setPickError(null);
+    try {
+      const r = await rpc<CorrectResult>("answer.correct", { path: path(), answer_id: a.id, ...args });
+      setLearnDone({ ...learnDone(), [a.id]: { kind: "corrected", text: r.message } });
+      const terms = (r.glossary_suggestions || []).map((t) => `“${t.term}”`);
+      setLearnNotice({
+        kind: "ok",
+        text: r.message + (terms.length ? ` It also suggests the glossary word${terms.length > 1 ? "s" : ""} ${terms.join(", ")} (see Learned).` : ""),
+        undo: r.correction.id,
+        question: a.question,
+      });
+      setSource(null);
+      pickFor = null;
+      loadLearnCounts();
+      reask(a.question);
+    } catch (e) {
+      if (args.target) setPickError(errorText(e));
+      else setLearnNotice({ kind: "error", text: errorText(e) });
+    } finally {
+      setLearnBusy("");
+    }
+  }
+
+  async function confirmAnswer(a: Answer) {
+    if (!a.id || learnBusy()) return;
+    setLearnBusy("Saving…");
+    try {
+      const r = await rpc<{ message: string }>("answer.confirm", { path: path(), answer_id: a.id });
+      setLearnDone({ ...learnDone(), [a.id]: { kind: "confirmed", text: r.message } });
+      loadLearnCounts();
+    } catch (e) {
+      setLearnNotice({ kind: "error", text: errorText(e) });
+    } finally {
+      setLearnBusy("");
+    }
+  }
+
+  async function undoCorrection(id: string, question?: string) {
+    if (learnBusy()) return;
+    setLearnBusy("Undoing…");
+    try {
+      const r = await rpc<{ message: string }>("corrections.remove", { path: path(), id });
+      setLearnNotice({ kind: "info", text: r.message });
+      loadLearnCounts();
+      if (question) reask(question);
+    } catch (e) {
+      setLearnNotice({ kind: "error", text: errorText(e) });
+    } finally {
+      setLearnBusy("");
+    }
+  }
+
+  function openPick(a: Answer) {
+    const c = a.meta?.learning?.candidates?.[0];
+    const ev = (a.evidence || []).find((e) => e.file);
+    const file = c?.file || ev?.file;
+    if (!file || !a.id) return;
+    pickFor = a;
+    setPickError(null);
+    const files = [...new Set([...(a.meta?.learning?.candidates || []).map((x) => x.file), ...(a.evidence || []).map((e) => e.file)]
+      .filter((f): f is string => !!f))];
+    setSource({ file, line: c?.line || ev?.line || 1, pick: { answerId: a.id, question: a.question, files } });
+  }
+
+  function onPicked(sel: PickedLine) {
+    if (pickFor) correctAnswer(pickFor, { target: { file: sel.file, line: sel.line }, note: sel.note });
+  }
+
+  const learnHandlers = (a: Answer): LearnHandlers => ({
+    pick: (rank) => correctAnswer(a, { pick: rank }),
+    confirm: () => confirmAnswer(a),
+    pickLine: () => openPick(a),
+    undo: (id) => undoCorrection(id, a.question),
+    busy: () => learnBusy(),
+    done: () => (a.id ? learnDone()[a.id] || null : null),
+  });
+
   async function loadHistory() {
     try {
       setHistory(await rpc<HistoryItem[]>("history.list", { path: path(), limit: 20 }));
@@ -386,6 +490,16 @@ export default function ProjectView(props: { path: string }) {
                     {status()?.state === "new" ? "Start" : "Update"}
                   </button>
                 </Show>
+                <button class="btn sm subtle learn-btn" onClick={() => setLearnOpen(true)}
+                  title="Corrections and glossary words Verity learned for this project">
+                  Learned
+                  <Show when={learnCounts() && (learnCounts()!.active || learnCounts()!.suggested)}>
+                    <span class="count">{learnCounts()!.active || ""}{learnCounts()!.suggested ? (learnCounts()!.active ? " · " : "") + `${learnCounts()!.suggested} new` : ""}</span>
+                  </Show>
+                  <Show when={learnCounts()?.stale}>
+                    <span class="stale-dot" title={`${learnCounts()!.stale} stale`} aria-label={`${learnCounts()!.stale} stale`} />
+                  </Show>
+                </button>
                 <HistoryMenu items={history()} onPick={showStored} />
               </div>
             </div>
@@ -463,16 +577,37 @@ export default function ProjectView(props: { path: string }) {
 
             {/* ------------------------------------------------------------------ answer */}
             <div ref={answerTop} class="answer-anchor" />
+            <Show when={learnNotice()}>
+              {(n) => (
+                <Banner kind={n().kind} onClose={() => setLearnNotice(null)}
+                  action={n().undo ? (
+                    <button class="btn sm" disabled={!!learnBusy()} onClick={() => { const u = n().undo!; const q = n().question; setLearnNotice(null); undoCorrection(u, q); }}>
+                      Undo
+                    </button>
+                  ) : undefined}>
+                  {n().text}
+                </Banner>
+              )}
+            </Show>
             <div classList={{ "answer-wrap": true, dimmed: !!asking() }} aria-busy={!!asking()}>
               <Show when={answer()} keyed>
-                {(a) => <AnswerView answer={a} />}
+                {(a) => <AnswerView answer={a} learn={a.id ? learnHandlers(a) : undefined} />}
               </Show>
             </div>
           </Show>
         </main>
 
         <Show when={source()} keyed>
-          {(t) => <SourceViewer path={path()} target={t} onClose={() => setSource(null)} />}
+          {(t) => (
+            <SourceViewer path={path()} target={t} onClose={() => { setSource(null); setPickError(null); pickFor = null; }}
+              onPicked={onPicked} pickBusy={learnBusy()} pickError={pickError()} />
+          )}
+        </Show>
+        <Show when={learnOpen()}>
+          <LearningPanel path={path()} name={status()?.name || ""} onClose={() => setLearnOpen(false)}
+            onOpenSource={(t) => { setLearnOpen(false); setSource({ ...t }); }}
+            onAsk={(q) => { setQuestion(q); ask(q); }}
+            onChanged={loadLearnCounts} />
         </Show>
       </div>
     </SourceCtx.Provider>

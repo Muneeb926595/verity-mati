@@ -12,8 +12,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..analysis.graph import CodeGraph
+from ..learn.apply import CORRECTABLE, Learning
+from ..retrieval.cards import STOP, split_ident
 from ..render.render import render
-from ..retrieval.search import Searcher
+from ..retrieval.search import Searcher, reset_project_words, set_project_words
 from ..verify.verifier import Verifier
 from .evidence import PLAIN_STATUS
 from .recipes import note_missing_names, note_variant_build, variant_subjects, RECIPES, Ctx
@@ -45,11 +47,12 @@ def _code_names(text: str) -> set[str]:
 
 
 class Answerer:
-    def __init__(self, store, root: str | Path, runtime=None, runner=None, embedder=None):
+    def __init__(self, store, root: str | Path, runtime=None, runner=None, embedder=None, learner=None):
         self.st = store
         self.root = Path(root)
         self.runtime = runtime
         self.runner = runner
+        self.learner = learner           # this project's corrections and glossary (verity/learn), or None
         self.searcher = Searcher(store, embedder)
         self.searcher_all = Searcher(store, embedder, variant="+ALL_FEATURES")
         self._graph: CodeGraph | None = None
@@ -100,6 +103,29 @@ class Answerer:
 
     def ask(self, question: str, on_progress: Callable[[dict], None] | None = None, cancel: threading.Event | None = None,
             use_llm: bool = True) -> dict[str, Any]:
+        gmap: dict[str, list[str]] = {}
+        if self.learner is not None:
+            try:
+                gmap = self.learner.glossary_map()
+            except Exception:  # noqa: BLE001 — the glossary is a help, never a reason to fail
+                gmap = {}
+        token = set_project_words(_glossary_words(gmap)) if gmap else None
+        try:
+            return self._ask(question, on_progress, cancel, use_llm, gmap)
+        finally:
+            if token is not None:
+                reset_project_words(token)
+
+    def _qvec(self, question: str) -> list[float] | None:
+        emb = getattr(self.searcher, "embedder", None)
+        if emb is None:
+            return None
+        try:
+            return [float(x) for x in emb.embed([question], query=True)[0]]
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _ask(self, question: str, on_progress, cancel, use_llm: bool, gmap: dict[str, list[str]]) -> dict[str, Any]:
         t0 = time.monotonic()
         prog = on_progress or (lambda e: None)
         cancel = cancel or threading.Event()
@@ -124,12 +150,28 @@ class Answerer:
         g = self.graph()
         llm = self._llm() if use_llm else None
         r = route(question, self.searcher, llm if llm and llm.available()[0] else None)
+        learning = Learning(None, r, question)
+        topic_base = list(r.topic)
+        if self.learner is not None:
+            try:
+                emb = getattr(self.searcher, "embedder", None)
+                embed = (lambda q: [float(x) for x in emb.embed([q], query=True)[0]]) if emb is not None else None
+                learning = self.learner.for_question(r, question, self._qvec(question) if self.learner.store.corrections(
+                    "active") else None, embed)
+            except Exception:  # noqa: BLE001
+                learning = Learning(None, r, question)
+            pin = learning.pin_target()
+            if pin and pin.get("intent") in CORRECTABLE and pin["intent"] != r.intent:
+                # the same question in other words was routed to another kind: answer it like the corrected one
+                learning.rerouted = r.intent = learning.intent = pin["intent"]
+            learning.glossary_used = _apply_glossary(r, question, gmap)
         p(1, f"Plan: {r.intent.replace('_', ' ')}")
         variant = self._variant_for(g, r)
         if variant:
             g = self.graph(variant)
         cx = Ctx(g, self.searcher_all if variant else self.searcher, self.st, r, runner=self.runner)
         cx.llm = llm if llm is not None and llm.available()[0] else None      # grounded re-ranking only
+        cx.learn = learning
         if variant:
             note_variant_build(cx, variant)
         note_missing_names(cx)
@@ -154,6 +196,8 @@ class Answerer:
             if subj:
                 cx = Ctx(cx2.g, self.searcher_all, self.st, r, runner=self.runner)
                 cx.llm = llm if llm is not None and llm.available()[0] else None
+                learning.reset_run()
+                cx.learn = learning
                 note_variant_build(cx, "+ALL_FEATURES", subj[0])
                 RECIPES.get(r.intent, RECIPES["search"])(cx)
                 g = cx.g
@@ -195,8 +239,21 @@ class Answerer:
             p(3)
         meta = {"seconds": round(time.monotonic() - t0, 2), "prose": prose_meta, "template": template,
                 "intent": r.intent, "model_choices": getattr(cx, "model_choices", 0), "model": (llm.label if llm is not None and str(prose_meta.get("mode", "")).startswith("model") else None)}
+        # what the corrections did, said openly (the disclosure is not answer text: it goes with the assumptions)
+        meta["learning"] = learning.meta(r.intent in CORRECTABLE)
+        for line in learning.disclosure():
+            cx.pack.assumptions.append(line)
+        if learning.glossary_used:
+            cx.pack.assumptions.append("Words from this project's glossary were used to find the code: " +
+                                       ", ".join(f"“{t}”" for t in learning.glossary_used) + ".")
+        meta["learning"]["topic"] = topic_base           # the question's own words, as corrections are matched on
         ans = render(question, r.as_dict(), cx.pack, paragraphs, report, meta)
         self._store(question, ans, cx)
+        if learning.used and self.learner is not None:
+            try:
+                self.learner.store.mark_used(list(learning.used))
+            except Exception:  # noqa: BLE001
+                pass
         return ans
 
     def _llm(self):
@@ -285,3 +342,43 @@ class Answerer:
                          (aid, question, time.time(), json.dumps(ans, default=str)[:2_000_000], json.dumps(deps)))
         except Exception:
             pass
+
+
+def _glossary_norm(text: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9_]+", " ", (text or "").lower()).split())
+
+
+def _ident_words(identifiers: list[str]) -> set[str]:
+    out: set[str] = set()
+    for ident in identifiers:
+        out |= {w for w in split_ident(ident) if len(w) > 1 and w not in STOP}
+        if "_" in ident or any(c.isupper() for c in ident[1:]):
+            out.add(ident.lower())
+    return out
+
+
+def _glossary_words(gmap: dict[str, list[str]]) -> dict[str, frozenset[str]]:
+    """Single-word glossary terms as word expansions (multi-word terms are matched as phrases in the question)."""
+    out: dict[str, frozenset[str]] = {}
+    for term, ids in gmap.items():
+        t = _glossary_norm(term)
+        if t and " " not in t:
+            out[t] = frozenset(_ident_words(ids))
+    return out
+
+
+def _apply_glossary(r, question: str, gmap: dict[str, list[str]]) -> list[str]:
+    """Accepted glossary terms the question uses: their identifiers' words join the question's topic words."""
+    if not gmap:
+        return []
+    qn = f" {_glossary_norm(question)} "
+    used, extra = [], []
+    for term, ids in gmap.items():
+        t = _glossary_norm(term)
+        if t and f" {t} " in qn:
+            used.append(term)
+            extra += sorted(_ident_words(ids))
+    for w in extra:
+        if w not in r.topic:
+            r.topic.append(w)
+    return used

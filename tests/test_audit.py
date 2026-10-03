@@ -475,3 +475,30 @@ def test_fact_numbers_never_reach_the_reader(core, c_repo):
     ans = _ask_with(core, c_repo, "What happens when the output buffer is full while writing?", m)
     assert ans["meta"]["prose"]["mode"] == "model+facts", ans["meta"]["prose"]
     assert "fact 2" not in ans["answer"][0] and "fact 3" not in ans["answer"][0] and "listed below" in ans["answer"][0]
+
+
+DN_FILES = {
+    "app/after.c": """
+void log_it(int v) { (void)v; }
+void store_it(int v) { (void)v; }
+#define LOG_TWICE(v) do { log_it(v); log_it((v) + 1); } while (0)
+void after_step(int v)
+{
+    LOG_TWICE(v);
+    store_it(v);
+}
+""",
+}
+
+
+@pytest.fixture(scope="module")
+def dn_repo(core, tmp_path_factory):
+    return _make(core, tmp_path_factory, "auditdn", DN_FILES)
+
+
+def test_one_macro_calling_twice_is_listed_once(core, dn_repo):
+    # LOG_TWICE expands to two log_it() calls on one source line: "what does … call" lists that line once
+    ans = ask(core, dn_repo, "What does after_step() call?")
+    text = " ".join(ans["answer"])
+    assert ans["meta"]["intent"] == "downstream", ans["meta"]
+    assert "store_it" in text and text.count("log_it() (line 7") == 1, text
