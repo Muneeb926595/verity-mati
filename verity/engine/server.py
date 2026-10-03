@@ -125,6 +125,18 @@ def make_app(core: EngineCore, token: str) -> web.Application:
     return app
 
 
+def ui_stale() -> bool:
+    """True when ui/dist is older than any UI source file (a pull or branch checkout without rebuilding the UI)."""
+    src, index = UI_DIR.parent / "src", UI_DIR / "index.html"
+    if not src.is_dir() or not index.is_file():
+        return False
+    built = index.stat().st_mtime
+    try:
+        return any(f.stat().st_mtime > built for f in src.rglob("*") if f.is_file())
+    except OSError:
+        return False
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Verity local engine")
     ap.add_argument("--port", type=int, default=0)
@@ -149,6 +161,10 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(ready), flush=True)
         else:
             print(f"Verity engine listening on 127.0.0.1:{port}\nOpen: {url}", flush=True)
+        if ui_stale():
+            print("Note: the UI in ui/dist is older than its sources in ui/src, so the pages may be out of date. "
+                  "Rebuild it with: bash scripts/build_ui.sh (Windows: scripts\\windows\\build_desktop.cmd -BuildUI)",
+                  file=sys.stderr, flush=True)
         if a.open:
             import webbrowser
             webbrowser.open(url)

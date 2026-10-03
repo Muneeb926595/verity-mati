@@ -131,3 +131,21 @@ def test_engine_watching_its_stdin_still_starts_parser_workers(tmp_path, c_repo)
         except subprocess.TimeoutExpired:
             p.kill()
             raise
+
+
+def test_stale_ui_is_reported(tmp_path, monkeypatch):
+    # after a pull or a branch checkout, ui/src is newer than the built ui/dist: the engine says so when it starts
+    import os
+    from verity.engine import server as srv
+    (tmp_path / "src").mkdir()
+    (tmp_path / "dist").mkdir()
+    index, source = tmp_path / "dist" / "index.html", tmp_path / "src" / "App.tsx"
+    index.write_text("<html></html>")
+    source.write_text("export {}")
+    monkeypatch.setattr(srv, "UI_DIR", tmp_path / "dist")
+    os.utime(source, (time.time() - 100, time.time() - 100))
+    assert not srv.ui_stale()
+    os.utime(source, (time.time() + 100, time.time() + 100))
+    assert srv.ui_stale()
+    index.unlink()
+    assert not srv.ui_stale()              # no build at all: nothing to compare (setup builds it)

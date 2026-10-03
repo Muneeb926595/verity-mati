@@ -18,7 +18,7 @@ if [ -z "$APP" ]; then
   bash "$ROOT/scripts/build_desktop.sh"
   APP="$(find_app)"
 fi
-if [ ! -f "$ROOT/ui/dist/index.html" ]; then bash "$ROOT/scripts/build_ui.sh"; fi
+if bash "$ROOT/scripts/build_ui.sh" --check; then bash "$ROOT/scripts/build_ui.sh"; fi
 export VERITY_ROOT="${VERITY_ROOT:-$ROOT}"
 echo "Starting $APP"
 if [ "${1:-}" = "--open" ]; then

@@ -26,8 +26,10 @@ use tauri::{AppHandle, Manager, RunEvent, State, Url};
 
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
 const STOP_GRACE: Duration = Duration::from_secs(8);
+/// desktop/src-tauri at build time: the Verity folder is two levels up (used when the app runs from elsewhere).
+const BUILD_DIR: &str = env!("CARGO_MANIFEST_DIR");
 #[cfg(not(windows))]
-const FALLBACK_ROOT: &str = "/Users/emumba/Desktop/mati";
+const FALLBACK_ROOT: &str = "/opt/verity";
 #[cfg(windows)]
 const FALLBACK_ROOT: &str = r"C:\verity";
 /// Windows: start console programs without a console window (the engine, and taskkill when stopping it).
@@ -81,7 +83,8 @@ fn plain_path(p: PathBuf) -> PathBuf {
     p
 }
 
-/// VERITY_ROOT if set (and valid), else walk up from the executable, else the known install location.
+/// VERITY_ROOT if set (and valid), else walk up from the executable, else the folder it was built from, else the
+/// default install location.
 fn resolve_root() -> (PathBuf, &'static str) {
     if let Ok(v) = std::env::var("VERITY_ROOT") {
         let v = v.trim();
@@ -99,6 +102,11 @@ fn resolve_root() -> (PathBuf, &'static str) {
             if is_root(dir) {
                 return (dir.to_path_buf(), "executable location");
             }
+        }
+    }
+    if let Some(dir) = Path::new(BUILD_DIR).ancestors().nth(2) {
+        if is_root(dir) {
+            return (dir.to_path_buf(), "build location");
         }
     }
     (PathBuf::from(FALLBACK_ROOT), "default location")

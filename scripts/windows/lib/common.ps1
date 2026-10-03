@@ -236,4 +236,18 @@ function Get-FreePort {
     return $p
 }
 
+function Test-UiStale {
+    # True when ui\dist is missing or older than any UI source file (after a git pull or a branch checkout).
+    param([Parameter(Mandatory)] [string]$Ui)
+    $index = Join-Path $Ui 'dist\index.html'
+    if (-not (Test-Path -LiteralPath $index)) { return $true }
+    $built = (Get-Item -LiteralPath $index).LastWriteTimeUtc
+    $sources = @(Get-ChildItem -LiteralPath (Join-Path $Ui 'src') -Recurse -File -ErrorAction SilentlyContinue)
+    foreach ($name in @('index.html', 'package.json', 'package-lock.json', 'vite.config.ts')) {
+        $f = Join-Path $Ui $name
+        if (Test-Path -LiteralPath $f) { $sources += Get-Item -LiteralPath $f }
+    }
+    return [bool]($sources | Where-Object { $_.LastWriteTimeUtc -gt $built } | Select-Object -First 1)
+}
+
 function Get-WarningList { return $script:Warnings }

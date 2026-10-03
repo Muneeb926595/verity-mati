@@ -21,7 +21,7 @@ if [ "${1:-}" = "--debug" ]; then PROFILE=debug; TAURI_ARGS+=(--debug); fi
 command -v cargo >/dev/null || { echo "Rust not found in $ROOT/tools/cargo (run scripts/setup_toolchains.sh)." >&2; exit 1; }
 
 # the app shows the UI served by the engine from ui/dist, so make sure it is built
-if [ "${SKIP_UI:-0}" != "1" ] || [ ! -f "$ROOT/ui/dist/index.html" ]; then
+if [ "${SKIP_UI:-0}" != "1" ] || bash "$ROOT/scripts/build_ui.sh" --check; then
   bash "$ROOT/scripts/build_ui.sh"
 fi
 

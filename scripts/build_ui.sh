@@ -2,8 +2,17 @@
 # Builds the Verity UI into ui/dist/ (index.html + assets/). The engine serves it at "/" in browser mode and the
 # desktop app shows the same pages. Idempotent; uses the project-local npm cache. Network is only needed the first
 # time (to download packages); afterwards it works offline.
+#   bash scripts/build_ui.sh --check   builds nothing; exits 0 when ui/dist is missing or older than the UI sources
+#                                      (after a git pull or a branch checkout), 1 when it is up to date
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ "${1:-}" = "--check" ]; then
+  cd "$ROOT/ui"
+  [ -f dist/index.html ] || exit 0
+  newer="$(find src index.html package.json package-lock.json vite.config.ts -newer dist/index.html -type f 2>/dev/null | head -1)"
+  [ -n "$newer" ] && exit 0
+  exit 1
+fi
 export npm_config_cache="$ROOT/tools/npm-cache"
 export npm_config_update_notifier=false npm_config_fund=false npm_config_audit=false
 cd "$ROOT/ui"

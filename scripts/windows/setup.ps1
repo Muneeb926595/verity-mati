@@ -13,7 +13,7 @@
        6  .NET SDK 10
        7  C# compiler worker (Roslyn)
        8  cppcheck (second C parser for cross-checking; optional)
-       9  User interface (only built when ui\dist is missing)
+       9  User interface (only built when ui\dist is missing or older than ui\src)
       10  Local AI models (verified by SHA256) and models\selection.json
       11  Stress test (optional, -StressTest): measures the candidate models and keeps the best
       12  Verification: capability probe, test suite, a facts-only answer and a model answer
@@ -294,8 +294,8 @@ function Step-Cppcheck {
 function Step-Ui {
     Start-Step 9 $Total 'User interface'
     $ui = Join-Path $Root 'ui'
-    if (Test-Path -LiteralPath (Join-Path $ui 'dist\index.html')) {
-        Write-VrLog OK 'ui\dist is present (the engine serves it; Node.js is not needed)'
+    if (-not (Test-UiStale -Ui $ui)) {
+        Write-VrLog OK 'ui\dist is present and up to date (the engine serves it; Node.js is not needed)'
         Add-Result 'User interface' 'OK' 'prebuilt'
         Complete-Step
         return

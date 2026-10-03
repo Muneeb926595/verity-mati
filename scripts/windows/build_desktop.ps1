@@ -88,12 +88,12 @@ try {
     $env:npm_config_audit = 'false'
     $env:CI = 'true'                                   # no interactive prompts from the Tauri CLI
     $ui = Join-Path $Root 'ui'
-    if ($BuildUI -or -not (Test-Path -LiteralPath (Join-Path $ui 'dist\index.html'))) {
+    if ($BuildUI -or (Test-UiStale -Ui $ui)) {
         [void](Invoke-Native -FilePath $npm.Source -ArgumentList @('ci', '--prefer-offline', '--no-audit', '--no-fund') -WorkingDirectory $ui)
         [void](Invoke-Native -FilePath $npm.Source -ArgumentList @('run', 'build') -WorkingDirectory $ui)
         Complete-Step 'built'
     } else {
-        Complete-Step 'already built (the app shows the UI the engine serves from ui\dist; -BuildUI rebuilds it)'
+        Complete-Step 'already built and up to date (the app shows the UI the engine serves from ui\dist; -BuildUI rebuilds it)'
     }
 
     # ---------------------------------------------------------------------------------------------- 3. Tauri CLI

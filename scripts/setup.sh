@@ -44,7 +44,7 @@ say "C# compiler worker (Roslyn)"
 if [ ! -f workers/roslyn/bin/VerityRoslyn.dll ]; then bash workers/roslyn/build.sh; else echo "already built"; fi
 
 say "User interface"
-if [ -f scripts/build_ui.sh ] && [ ! -f ui/dist/index.html ]; then bash scripts/build_ui.sh; else echo "ui/dist present (or build script missing)"; fi
+if [ -f scripts/build_ui.sh ] && bash scripts/build_ui.sh --check; then bash scripts/build_ui.sh; else echo "ui/dist present and up to date"; fi
 
 say "What this machine can do"
 bin/verity probe
