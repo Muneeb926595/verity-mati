@@ -16,7 +16,10 @@ is `PROGRESS.md`; how to use the product is in `README.md`.
 - **Name:** the product was renamed to Verity on 2026-10-02 because the user found the earlier working name
   unprofessional. Every identifier, file, doc, icon and screenshot was changed and regression-tested (section 6).
   Never reintroduce the earlier name anywhere.
-- **Next feature:** Phase 5, "learning from corrections". The spec is done; implementation has not started (section 7).
+- **Phase 5, "learning from corrections", is built** (2026-10-03) on branch `phase5-learning-from-corrections`, with a
+  PR against `windows-first-run-desktop-app`. The user tests it by hand and merges it. What it does, how it was
+  measured and what falls short: `PROGRESS.md`, "Phase 5"; how to use it: `README.md`, "Teach it when it picks the
+  wrong place".
 
 ## 1. What Verity is
 
@@ -38,7 +41,12 @@ is `PROGRESS.md`; how to use the product is in `README.md`.
   - Desktop app (Tauri 2 + SolidJS): `Verity.app` on macOS, `desktop\target\release\Verity.exe` on Windows
     (`scripts\windows\build_desktop.cmd [-Shortcut]`, `run_desktop.cmd`), id `dev.verity.desktop`.
   - MCP stdio server: `bin/verity mcp`, tools `verity_index`, `verity_status`, `verity_ask`, `verity_search`,
-    `verity_symbol`, `verity_source`.
+    `verity_symbol`, `verity_source`, `verity_correct`.
+- **Learning from corrections (Phase 5):** a person corrects an answer by picking one of its alternatives or the line
+  that answers it. The correction is stored per project in `data/repos/<id>/learned.db`, never in `index.db`. It then
+  pins (same question or same meaning) or hints (similar question) the verified candidate at that line. Every use is
+  disclosed and undoable. Corrections follow their line after each index and turn stale when its code changes. The
+  model is never retrained.
 - **Configuration:**
   - Environment variables: `VERITY_HOME` (data folder, default `data/`), `VERITY_MODELS`, `VERITY_TOOLS`,
     `VERITY_MODEL` (setup's model choice).
@@ -85,6 +93,8 @@ verity/            engine (Python 3.12)
   extract/           recon (build reconstruction), c_clang, csharp (Roslyn adapter), crosscheck (cppcheck),
                      ts_fallback (tree-sitter), pool (workers), packs/ (dialects), shims/ (libc + win32 headers)
   retrieval/         symbol cards, hybrid keyword + meaning search
+  learn/             learning from corrections: store (learned.db), anchor (line anchors, re-anchoring),
+                     apply (pin / hint / alternatives in the recipes), service (correct, confirm, glossary, export)
   runtime_exec/      sandboxed scenario harness (C)
   verify/ render/    verifier; answer rendering
   llm/runtime.py     llama-server lifecycle (orphan reaping by pid files in data/run)
@@ -100,9 +110,11 @@ scripts/           setup.sh, setup_toolchains.sh, download_models.sh, check_prer
                    build_ui.sh, build_desktop.sh, make_windows_bundle.sh, lib/models.sh (model pins + fit rule)
 scripts/windows/   setup.cmd|ps1, analyze.cmd|analyze_system.ps1, check_prereqs.cmd|ps1, catalog.json (pins),
                    lib/ (common, detect, plan, install, preflight.cmd), tests/plan.tests.ps1, README.md
-bench/             suites (suite, heldout, dialects, realworld*.json), gold/, results/ (history)
-samples/           navgps-c, navgps-cs, msvc-telemetry, ti-motor-c2000 (ours); realworld/ (12 open-source projects)
-tests/             pytest (14 test files + conftest.py, 164 tests)
+bench/             suites (suite, heldout, dialects, realworld*.json), gold/, results/ (history),
+                   learning_protocol.py (the Phase 5 proof on cJSON)
+samples/           navgps-c, navgps-cs, msvc-telemetry, ti-motor-c2000 (ours); realworld/ (13 open-source projects;
+                   cJSON is held-out project #10, added for Phase 5)
+tests/             pytest (15 test files + conftest.py, 203 tests)
 docs/              ENGINE_API.md, FACT_SCHEMA.md, DEMOS.md + demos/, screenshots/ (25 images)
 data/              settings.json, repos/<project-id>/ (indexes), logs/, run/   (not in the Windows zip)
 models/, tools/, .venv/   downloaded/built by setup (not in the Windows zip)
@@ -161,8 +173,9 @@ Pinned tool versions:
 ## 5. How to test (and what "unchanged" looks like)
 
 - **Unit tests:** `.venv/bin/python -m pytest tests -q` (Windows: `.venv\Scripts\python -m pytest tests -q`).
-  Always pass `tests`: a bare `pytest` collects cppcheck's own tests under `tools/`. Expect **170 tests** on the
-  Mac (1 skipped where PowerShell is not installed); on Windows **152 passed, 18 skipped** (the sandbox-only ones).
+  Always pass `tests`: a bare `pytest` collects cppcheck's own tests under `tools/`. Expect **203 tests** on the
+  Mac: 202 passed, 1 skipped where PowerShell is not installed. On Windows (before Phase 5) it was **152 passed,
+  18 skipped** (the sandbox-only ones); Phase 5 adds 33 tests that run everywhere.
   To simulate a Windows PC without Visual Studio, load a pytest plugin that sets
   `verity.extract.recon.windows_sdk_include_args = lambda: []` in `pytest_configure` (after conftest has set a private
   `VERITY_HOME`; importing `verity` earlier makes the tests write into the real `data/`).
@@ -211,8 +224,8 @@ Pinned tool versions:
 - **UI end-to-end:**
   1. Start the engine: `.venv/bin/python -m verity.engine.server --port 8765 --token testtoken`.
   2. Start Chrome: `--headless=new --remote-debugging-port=9222 --user-data-dir=<tmp>`.
-  3. Run `node ui/scripts/e2e-cdp.mjs [--shots docs/screenshots]`. Expect **30/30**; it also writes screenshots
-     01-15.
+  3. Run `node ui/scripts/e2e-cdp.mjs [--shots docs/screenshots]`. Expect **42/42**; it also writes screenshots
+     01-15 and 19-21 (the learning journey runs on a temporary copy of navgps-c, so the sample never changes).
 
   Screenshots 16-18 come from `ui/scripts/extra-shots.mjs`; its header shows how to run it:
   - 16: the engine is stopped while the page is open ("Reconnecting...");
@@ -280,17 +293,31 @@ Pinned tool versions:
     UI 30/30; desktop self-test, CLI/MCP and the Windows checks all pass. Every remaining text difference was shown
     to be ordinary run-to-run variation.
 
+- **2026-10-03, review of `windows-first-run-desktop-app`, then Phase 5:**
+  - The Windows branch was reviewed in depth: pass/fail is identical (198/207 Direct), and libmodbus parse errors went
+    from about 200 per file to about 0. The macOS desktop app was rebuilt and self-tested.
+  - Phase 5 was built on `phase5-learning-from-corrections` (P5-0..P5-6, `PROGRESS.md`):
+    - the store, the anchors and the apply logic, with CLI, MCP, RPC and the app;
+    - the proof on cJSON (project #10). Before: 4/14. After one correction per miss: 12–13/14, with every corrected
+      question disclosing its correction. Paraphrases reach 4 of 6 with meaning search, below the spec's 9 of 10.
+  - Fixed on the way: a crash on indirect calls in failure answers, the macro wording, repeated downstream calls, the
+    desktop fallback folder, and stale `ui/dist` after a checkout.
+
 ## 7. Open items, roughly in priority order
 
-1. **On the Mac, rebuild and self-test the desktop app** (`bash scripts/build_desktop.sh`, then the self-test in
-   section 5): `main.rs` was changed on Windows, and the macOS target cannot be type-checked there. Also run pytest and
-   a Direct suite there (the include fallback, CMake copy and libc shim changes run on every platform).
-   Windows follow-ups: a PC without a GPU and one without Visual Studio for real (both were only simulated); a POSIX
+1. **Phase 5 follow-ups:**
+   - The user tests the branch by hand, then merges it.
+   - Run the learning journey on Windows (the desktop app saves exports into Downloads; check the file dialog for
+     import).
+   - Paraphrase matching is below the spec's target (4 of 6 with meaning search, 2 of 6 without). Options to measure
+     on the NEXT never-seen project, not on cJSON: use the corrected line's identifiers as extra meaning context, and
+     let a same-meaning paraphrase routed to a non-correctable intent be re-routed when the relevance guard passes.
+   - The engine never learns from confirmations beyond keeping them as test cases (exported with
+     `verity corrections export --format bench`).
+2. **Windows follow-ups:** a PC without a GPU and one without Visual Studio for real (both were only simulated); a POSIX
    header pack for `sys/socket.h`, `unistd.h`, `termios.h` (POSIX-only code such as libmodbus is F3 on Windows);
    a CMake generator that exports compile commands on Windows (Ninja, inside a VS developer environment); a Windows
    installer for the desktop app (today a plain `Verity.exe` inside the folder, plus shortcuts).
-2. **Phase 5, learning from corrections:** checklist P5-0..P5-6 at the end of `PROGRESS.md`, spec in the one-pager.
-   Start with P5-0, measured on a NEW never-seen project (#10).
 3. Windows sandbox adapter for runtime scenarios (C), and C# scenarios.
 4. Linux: run `check_prereqs.sh` and `setup.sh` on a real Linux machine.
 5. Benchmark gpt-oss-120b (C3) with `-QualityCheck` on a machine that can hold it.
@@ -303,17 +330,25 @@ Pinned tool versions:
 - **Windows speed on POSIX code:** libmodbus indexes in about 75 s on Windows (6.5 s on the Mac): every file is parsed
   five times (default + 4 configuration switches) against the real Windows SDK headers.
 
-- **Traceback in an answer:** in `bench/realworld_heldout9.json` case `nm-wait-negative`, the verification notes
-  contain a Python traceback from an exception in `verity/agent/recipes.py` `Ctx.D` (`self.g.display(key)`).
 - **Stale rows after re-index:** a full re-index into an existing data folder keeps rows from earlier runs: stored
   vectors, and on msvc-telemetry 244 symbols where a fresh index has 111. Benchmark answers were unaffected; fresh
   folders give the numbers above.
+- **Order of some lists follows index write order:** `CodeGraph` loads `fnaddr` with `SELECT * FROM fnaddr` (no ORDER
+  BY), and parser workers write files as they finish. Registration lists such as lwIP's `anon.input_fn` targets
+  ("lowpan6.c:918, lowpan6_ble.c:443") can therefore come out in another order on another machine or folder, with
+  identical index contents. In a before/after comparison this is noise, not a change.
 - Benchmark misses that remain are listed in `bench/results/<suite>/latest-direct.md`. Behavioural "what happens
   when" questions on unfamiliar domains are the weak spot.
 
 ## 9. Gotchas and lessons
 
 - **Code text:** `_code()` strips semicolons, so regexes over code text must not require `;`.
+- **The UI build is not in Git** (`ui/.gitignore` has `dist/`). After a pull or a branch checkout, run
+  `bash scripts/build_ui.sh` (setup, `run_desktop.sh` and the desktop build scripts now do it whenever a UI source is
+  newer than `ui/dist`; `bash scripts/build_ui.sh --check` tells).
+- **Learning thresholds:** pin by meaning at similarity ≥ 0.80 (with the relevance guard), hint at ≥ 0.70. On cJSON
+  the measured ranges were paraphrases 0.60–0.89, neighbours 0.45–0.76 and unrelated questions ≤ 0.63. Change them
+  only with a new held-out measurement (`bench/learning_protocol.py`).
 - **Model servers:** never run two engines with the 20B model on a 24 GB machine at once. The second one falls back
   to Direct mode without saying so loudly.
 - **Long runs:** runs over 2 hours exceed the background-task cap; launch them with `nohup`.

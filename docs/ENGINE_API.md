@@ -39,6 +39,32 @@ Cross-origin requests are rejected unless the Origin is `http://127.0.0.1…`, `
 | `history.list` | `path`, `limit?` | `[{id, question, created}]` |
 | `answer.get` | `path`, `id` | stored answer object |
 
+### Learning from corrections (per project, stored in `data/repos/<project>/learned.db`)
+| method | params | result |
+|---|---|---|
+| `answer.correct` | `path`, `answer_id`, and `pick` (an alternative's `rank`, 2 or 3) or `target: {file, line}`; `note?`, `author?` | `{correction, glossary_suggestions:[term], replaced:[ids], message}` |
+| `answer.confirm` | `path`, `answer_id`, `note?` | `{confirmation, message}` (kept as a test case) |
+| `answer.unconfirm` | `path`, `id` | `{ok}` |
+| `corrections.list` | `path`, `status?: "active"\|"stale"\|"removed"\|"all"` | `{corrections:[correction], confirmations, glossary:[term], counts:{active, stale, removed, suggested, accepted, confirmations}, recovered_from, events}` |
+| `corrections.summary` | `path` | `{counts, recovered_from}` (cheap; for the project bar) |
+| `corrections.remove` / `corrections.restore` | `path`, `id` | `{correction, message}` (Undo / Restore) |
+| `corrections.note` | `path`, `id`, `note` | `{correction}` |
+| `corrections.export` | `path`, `format?: "json"\|"bench"\|"toml"`, `save?` | `{format, filename, data}`; with `save` the engine writes the file into Downloads (never overwriting) and returns `{format, filename, saved}` |
+| `corrections.import` | `path`, `data` (a `json` export) | `{imported, duplicates, skipped:["c-0003 (why)"], stale, glossary, confirmations, message}`. Each correction is checked against this copy of the code first (active where its code is found, stale otherwise); one transaction, so a bad file changes nothing; glossary decisions made on this machine are kept |
+| `glossary.list` | `path` | `[term]` |
+| `glossary.accept` | `path`, `term`, `identifiers?` | `{term, message}` |
+| `glossary.add` | `path`, `term`, `identifiers` | `{term, message}` |
+| `glossary.reject` / `glossary.remove` | `path`, `term` | `{term, message}` / `{ok, message}` |
+
+A correction: `{id:"c-0001", question, intent, kind:"pick"|"line", wrong:{fn, name, file, line, side, label},
+target_fn, target_name, target_file, target_line, branch_line, side:"then"|"else"|"case"|null, target_label, note,
+author, status:"active"|"stale"|"removed", status_reason, conflict:[ids], replaces, uses, last_used, created,
+created_label, source:"local"|"import"}`. A glossary term: `{term, identifiers:[…], status:"suggested"|"accepted"|
+"rejected", source (the correction id, "manual" or "import"; "verity.toml" with read_only:true), created, updated}`.
+Refusals are `-32602` errors with a message for the user: a line outside the project or outside any function, a file
+changed since the last index (or, for an alternative, since the answer), an answer that does not hinge on one place
+(`meta.learning.correctable` false), the place the answer already gave, an unknown id.
+
 `state` of a project: `new` (not indexed), `running`, `complete`, `cancelled`, `failed`. `label` is a ready-to-show
 sentence ("Ready", "Ready — 3 file(s) changed since the last index", "Not indexed yet", "Indexing…"). `ready` = can ask.
 
@@ -54,6 +80,9 @@ A job: `{id, kind:"index"|"ask", project, state:"queued"|"running"|"done"|"faile
   Looking through the code · Checking the answer against the code · Writing the answer.
 - `job.queued`, `job.done`, `job.failed`, `job.cancelled`, `job.cancelling` — `{job: <job object>}`; `job.done` for an
   ask carries `job.result` = the answer object.
+- `learning.changed` — `{project}` after any correction, confirmation, glossary or import change (refresh the
+  Learned panel and counts). After an index, `job.result.learning = {moved, stale, revived}` (correction ids) when
+  any correction followed its line, turned stale or came back.
 
 ## The answer object (see `ui/fixtures/answer_*.json` for real examples)
 ```
@@ -70,7 +99,17 @@ A job: `{id, kind:"index"|"ask", project, state:"queued"|"running"|"done"|"faile
                     notes:[str], rejected:[claims]} },                               // "Show verification"
   run: null | {ok, runs:[{label, inputs, calls:[fn names], branches:[{file,line,cond,taken,evaluated}], state:{k:v},
                hw_calls:[str], seconds}]},
-  meta: {seconds, prose:{mode:"direct"|"model", model?, fallback?}, intent} }
+  id,                                                // pass to answer.correct / answer.confirm
+  meta: {seconds, prose:{mode:"direct"|"model", model?, fallback?}, intent,
+         learning: {correctable,                    // show "Is this the right place?"
+                    candidates:[{rank, fn, file, line, side, span, label}],   // the top places considered (up to 3);
+                                                    // line is null for a function; span = a switch case's lines
+                    alternatives:[…same…],          // the close runners-up a person can pick ("This one")
+                    used:[{id, how:"pin"|"hint", match:"same"|"words"|"meaning"|"similar", changed, created, note,
+                           target, question, conflicts, meaning?}],
+                    glossary_used?, rerouted?, pin_not_applied?, topic}} }
 ```
+An answer that used a correction also says so in `sections.assumptions` ("Uses correction c-0003 (2 Oct 2026),
+recorded for this question: …"). A hint is listed only when its place is still first in the final ranking.
 Status words for users: CONFIRMED "Confirmed in the code", OBSERVED "Observed by running the code",
 INFERENCE "Inferred (likely, not certain)", RUNTIME-DEPENDENT "Depends on runtime values", UNKNOWN "Could not be determined".

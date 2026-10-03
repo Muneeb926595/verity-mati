@@ -259,15 +259,112 @@ After resuming:
   catch, which sits in an `#if DEBUG … #else` pair). pytest 148 passed.
 ALL DONE (phase 4)
 
-## Phase 5 (next): learning from corrections — NOT STARTED
-Spec (one page, start here): `docs/development/VERITY_LEARNING_FROM_CORRECTIONS_ONE_PAGER.html`.
-- [ ] P5-0 Measure top-1 vs top-3 candidates (kept first runs + a NEW never-seen project #10) — decides the rest
-- [ ] P5-1 Alternatives in the answer (CLI, MCP, app)
-- [ ] P5-2 Correction store `data/repos/<id>/learned.db` (NOT index.db) + RPC/CLI/MCP interfaces
-- [ ] P5-3 Apply corrections: pin (same question), hint (similar), glossary (accepted terms), disclosure
-- [ ] P5-4 Anchors: re-anchor after every index, stale corrections never applied
-- [ ] P5-5 App: answer-card buttons, "use this line", Settings → Corrections / Glossary
-- [ ] P5-6 Prove it on project #10 (two numbers: before corrections, after one per miss); docs
+## Phase 5 (2026-10-03): learning from corrections — branch `phase5-learning-from-corrections`
+Spec: `docs/development/VERITY_LEARNING_FROM_CORRECTIONS_ONE_PAGER.html`. Built on `windows-first-run-desktop-app`
+after reviewing it (below). Nothing retrains the model: a correction only changes which verified candidate comes first.
+- [x] P5-0 Measure top-1 vs top-3 (`verity/bench/run.py`: `topk_rank` per case, `summary.within_top3`).
+  - Tuned suites (Direct): top-1 198/207, top-3 200/207. 2 of the 9 misses had the right place among the runners-up.
+  - New never-seen project #10, **cJSON** v1.7.19 (`samples/realworld/cJSON`, 14 questions written from the source
+    before any run, `bench/realworld_heldout10.json`; 10 paraphrases and 6 neighbours written at the same time,
+    `bench/realworld_heldout10_followup.json`). First run, kept: Direct 4/14 (top-3 4/14); model + meaning search
+    4/14 (top-3 5/14). Results: `bench/results/realworld_heldout10/first-run-*`.
+  - Decision: the right place is rarely among the runners-up on first contact, so "pick a line" is the main way to
+    correct; the alternatives are a shortcut shown when they are close (score ≥ 0.6 × the top, at most 2).
+- [x] P5-1 Alternatives: `meta.learning.{candidates, alternatives, correctable}`; in the text answer ("Other places
+  that could be the answer"), the CLI hint under each answer, `verity_ask` (id, alternatives) and the app's
+  "Is this the right place?" card.
+- [x] P5-2 Store `data/repos/<id>/learned.db` (`verity/learn/store.py`), never index.db. WAL; a damaged file is moved
+  aside to `learned.db.corrupt-<time>` (never deleted) and a fresh one starts. RPC `answer.correct|confirm|unconfirm`,
+  `corrections.*`, `glossary.*` (`docs/ENGINE_API.md`); CLI `verity correct|confirm|corrections|glossary`; MCP tool
+  `verity_correct`.
+- [x] P5-3 Apply (`verity/learn/apply.py`, hooks in the recipes failure_invalid, failure_missing, explain,
+  where_computed, which_fn):
+  - **pin**: the same question (normalised), the same intent with the same topic words, or the same meaning
+    (similarity ≥ 0.80, only when the corrected function or line is named by words of the question; then the question
+    is answered with the correction's intent). The corrected candidate comes first.
+  - **hint**: the same intent with topic overlap ≥ 0.5, or similar meaning (≥ 0.70). It gives +50% to the corrected
+    branch and +25% to its function. It can add the corrected candidate, but that candidate still has to win on its own
+    score.
+  - **glossary**: suggested on a correction (from the question's words and the identifiers at the line), applied only
+    once accepted; `verity.toml [glossary]` is read too.
+  - **disclosure**: `meta.learning.used`, an assumption line "Learned: uses correction c-0003 …", and Undo.
+  - Conflicting corrections on one question are flagged; the newest wins and both are named.
+- [x] P5-4 Anchors (`verity/learn/anchor.py`): the line's code hash plus its function and branch.
+  - After every index, lazily: a line that moved follows its code inside its function; changed or deleted code turns
+    the correction **stale** (never applied, listed with the reason); it revives when the exact code returns.
+  - Import re-anchors to the local copy and reports what is stale there.
+- [x] P5-5 App:
+  - Answer card "Is this the right place?" with **This one**, **✓ The answer was right** and **pick a line…**.
+  - Pick mode in the source viewer: click a line, **Look elsewhere** (file chips and a function search), a note,
+    **Use this line**. The question is re-asked at once.
+  - "Learned: …" note with Undo on answers that used a correction.
+  - **Learned** panel (project bar, with counts and a stale dot): Corrections (filter, notes, Undo/Restore, Ask again),
+    Glossary (accept, reject, add, remove), Share (export json / test suite / toml; import).
+  - In the desktop app, export writes into Downloads.
+- [x] P5-6 Proof on cJSON (`bench/learning_protocol.py`, on a private copy; results in
+  `bench/results/realworld_heldout10_learning/`). The two numbers are kept apart:
+
+  | Mode | Before (main · paraphrases · neighbours) | After one correction per miss: main · corrected asked again | Paraphrases of corrected | Neighbours (corrections used) | Stale after edit |
+  |---|---|---|---|---|---|
+  | Direct (no meaning search) | 4/14 · 2/10 · 2/6 | 13/14 · 9/9 (9 disclosed) | 2/6 (0 used one) | 2/6 (0) | OK |
+  | Direct + meaning search | 4/14 · 2/10 · 2/6 | 12/14 · 8/8 (8 disclosed) | 4/6 (4 used one) | 2/6 (0) | OK |
+  | Local model + meaning search | 4/14 · 2/10 · 3/6 | 12/14 · 8/9 (9 disclosed) | 4/7 (5 used one) | 3/6 (0) | OK |
+
+  - Corrections not made: `cj-string-parser-callers` (a structural question with no single deciding line), and in
+    the facts-only runs `cj-patch-unknown-op`: its answer already named the right line (cJSON_Utils.c:828) but not
+    "status = 3", so Verity refused a correction to the same place and suggested confirming instead.
+  - In the model run, the one corrected question still wrong is that same one: the pin was applied and disclosed,
+    but the model's summary left out "status = 3".
+  - **Below the spec's target for paraphrases (9 of 10).** Without meaning search, only word overlap links a
+    paraphrase to a correction, which is not enough for reworded questions. With it, 4 of 6 paraphrases used the
+    correction. The other two were a hint that lost to a stronger wrong candidate (it must win on its own score, by
+    design) and a paraphrase at similarity 0.698 that was routed to a different kind of question.
+  - The thresholds were chosen from the measured similarities on this project: paraphrases 0.60–0.89, neighbours
+    0.45–0.76, unrelated ≤ 0.63. They were not tuned further, to avoid fitting the 6 paraphrases.
+  - No neighbour or unrelated question used a correction in any run.
+- Hardening after an independent read-only code review of the feature (each fix has a test):
+  - picking an alternative that is a function (which_fn, explain, where_computed) failed; it now uses the function's
+    definition line;
+  - switch cases share the switch's line, so they were told apart only by side: candidates now carry the case's lines;
+  - "…cannot be opened" pinned "…is opened" (the topic words drop negation): a negated question and one that names
+    no trouble at all never count as the same question ("the closing quote never comes" and "…is missing" still do);
+  - pins are ranked by how strongly they match (same words, then same topic, then same meaning), newest within each;
+    correcting an answer replaces only a correction recorded for that very question; Undo clears "disagrees with";
+  - import validates every field, checks each correction against this copy of the code before it becomes active,
+    runs in one transaction, keeps glossary decisions made on this machine, and imports confirmed answers;
+  - a hint is disclosed only if its place is still first after the local model's choice;
+  - a locked or unreadable learned.db is refused, never moved aside as "damaged"; an answer never fails because of it;
+  - a line in a file changed since the last index, or an alternative from before an edit, is refused;
+  - re-anchoring also runs after a cancelled index, one at a time, and never overwrites an Undo made meanwhile;
+    correction ids are taken in the same transaction as the insert (the app and the CLI can write at once);
+  - an answer of a kind that does not hinge on one place (callers, flows, …) can no longer be "corrected", while
+    every answer of a kind that does is correctable, also when it fell back to search (that is when pointing at the
+    right place helps most); a correction matched as this question but not used by the recipe is always disclosed
+    ("…could not be used here, so this answer comes from the analysis alone"); vectors from another embedding model
+    are recomputed.
+- Tests: `tests/test_learning.py` (30 tests); full suite 202 passed, 1 skipped (PowerShell not installed). They cover the store and its corruption recovery, pin and hint, an
+  unrelated question left unaffected, every correctable intent, undo/restore, replacing a correction, the refusals,
+  stale and revive, a moved line, an index.db reset, conflicts, the glossary (including verity.toml), an exported
+  suite that passes, export/import round trip, the CLI and MCP.
+- UI end-to-end (`ui/scripts/e2e-cdp.mjs`): the learning journey on a temporary copy of navgps-c. It picks a line in
+  another file, the corrected answer comes back with the disclosure, then Undo, and the Learned panel. Screenshots
+  19–21.
+- Fixed on the way (found by the cJSON first run and the hand reading):
+  - a crash (`TypeError`) when an indirect call had no known target, in failure answers (`nm-wait-negative`; with the
+    crash gone, that answer then described a unit test's helper of the same name, so a function named by the question
+    is now never a unit test's unless the question is about tests);
+  - the wording "calls memset(FD_ZERO…)": it now reads "memset() (inside the macro FD_ZERO)";
+  - repeated calls listed twice in "what happens next" answers;
+  - the desktop app's fallback folder was a stale developer path: it now tries the folder it was built from;
+  - setup and the desktop build scripts rebuilt the UI only when `ui/dist` was missing: after a pull or a branch
+    checkout they served the old UI. They now also rebuild when any UI source is newer
+    (`scripts/build_ui.sh --check`, `Test-UiStale` on Windows).
+- Review of `windows-first-run-desktop-app` (before branching):
+  - The CMake configure now runs in a private copy, with the generated twin mapped back. Shims (`stddef`, `stdint`,
+    posix `pthread.h`, `sys/time.h`) resolve by subpath. Quoted includes fall back to system headers. The engine stops
+    on stdin EOF (Windows desktop app). Plus the Windows desktop port and scripts.
+  - Pass/fail is identical (198/207 Direct). libmodbus parse errors went from about 200 per file to about 0, and index
+    times are unchanged. Verdict: an improvement with no regression.
 
 ## Windows setup (2026-10-02)
 - [x] Engine made Windows-aware (`verity/osutil.py`):

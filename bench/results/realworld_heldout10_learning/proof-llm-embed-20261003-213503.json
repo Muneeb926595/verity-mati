@@ -1,0 +1,812 @@
+{
+ "mode": "llm-embed",
+ "started": "2026-10-03 21:22",
+ "steps": {
+  "first_contact": [
+   {
+    "id": "cj-deep-nesting",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "a07a1189e6d5",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the input contains thousands of nested arrays, `parse_array()` checks `input_buffer->depth >= CJSON_NESTING_LIMIT` and returns `false`, skipping the rest of the function. Consequently, `buffer_skip_whitespace()` is not executed and the previous values remain unchanged. The parsing then falls back to `parse_value()`, which will treat the input as invalid and return `false`. This is handled in parse_array() (cJSON.c:1497): it checks `input_buffer->depth >= CJSON_NESTING_LIMIT`, and when that is true it returns `false`, so the rest of parse_array() is skipped. Because it returns early, these"
+   },
+   {
+    "id": "cj-minus-no-digits",
+    "passed": false,
+    "missing": [
+     "parse_number",
+     "number_c_string == after_end"
+    ],
+    "used": [],
+    "answer_id": "effa36ad248a",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the input contains a minus sign with no following digits, the code never reaches the string parsing logic; it simply returns early from `parse_value()` after setting the item type to `cJSON_True` and value to 1. Consequently, the comparison functions may skip further checks depending on runtime values of the parsed item. This is handled in parse_value() (cJSON.c:1386): it checks `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)`, and when that is true it records it (`item->type = cJSON_True`, `item->valueint = 1`, `input_buffer->offset +="
+   },
+   {
+    "id": "cj-unterminated-string",
+    "passed": false,
+    "missing": [
+     "parse_string",
+     "input_end - input_buffer->content"
+    ],
+    "used": [],
+    "answer_id": "cfde8bc87ab5",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "The code does not describe any special handling for a string that starts with an opening quote but never has a closing quote. No behavior is specified in the provided facts. This is handled in parse_number() (cJSON.c:379): it checks `number_c_string == after_end`, and when that is true it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and returns `false`, so the rest of parse_number() is skipped. Because it returns early, these do not happen in this case: free(), internal_free(), internal_malloc(), failing_malloc() \u2014 the pr"
+   },
+   {
+    "id": "cj-bad-surrogate",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "521d0a00f7cf",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: utf16_literal_to_utf8() (function, cJSON.c:698); skip_utf8_bom() (function, cJSON.c:1111); encode_string_as_pointer() (function, cJSON_Utils.c:173); print_string_ptr() (function, cJSON.c:949); parse_string() (function, cJSON.c:819); parse_hex4() (function, cJSON.c:661). utf16_literal_to_utf8() (cJSON.c:698) \u2014 converts a UTF-16 literal to UTF-8 A literal can be one or two sequences of the form \\uXXXX. Step by step, it sets `const unsigned char *first_sequ"
+   },
+   {
+    "id": "cj-member-alloc-fail",
+    "passed": false,
+    "missing": [
+     "new_item == NULL"
+    ],
+    "used": [],
+    "answer_id": "08664c00641f",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "The capacity check is in `parse_object()` (cJSON.c:1657): `input_buffer->depth >= CJSON_NESTING_LIMIT`. When there is not enough, that condition is false and the block at lines 1658\u20131660 is skipped. The capacity check is in parse_object() (cJSON.c:1657): `input_buffer->depth >= CJSON_NESTING_LIMIT`. When there is not enough, that condition is false and the block at lines 1658\u20131660 is skipped."
+   },
+   {
+    "id": "cj-prealloc-too-small",
+    "passed": false,
+    "missing": [
+     "ensure",
+     "p->noalloc"
+    ],
+    "used": [],
+    "answer_id": "c882faffc41f",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "This is handled in print_preallocated() (test.c:75): it checks `!cJSON_PrintPreallocated(root, buf, (int)len, 1)`, and when that is true it checks `strcmp(out, buf) != 0` (line 77); if true it calls printf(); then it calls free(out) (line 82); then it calls free(buf_fail) (line 83); then it calls free(buf) (line 84); then it returns `-1` (line 85), so the rest of print_preallocated() is skipped. Because it returns early, these do not happen in this case: cJSON_PrintPreallocated(), free() \u2014 the previous values stay in place."
+   },
+   {
+    "id": "cj-trailing-garbage",
+    "passed": false,
+    "missing": [
+     "require_null_terminated"
+    ],
+    "used": [],
+    "answer_id": "1e8bb9cedc18",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When you set the parser to allow only whitespace after the JSON value, `cJSON_ParseWithLengthOpts()` checks `!parse_value(item, buffer_skip_whitespace(skip_utf8_bom(&buffer)))`. If this check is true, it jumps to `fail` (line\u202f1189), records an error, deletes the partially parsed item, and returns early, so the rest of the parsing logic is skipped. This is handled in cJSON_ParseWithLengthOpts() (cJSON.c:1167): it checks `!parse_value(item, buffer_skip_whitespace(skip_utf8_bom(&buffer)))`, and when that is true it jumps to `fail` (line 1189), where it calls cJSON_Delete() and calls cJSON_Delete("
+   },
+   {
+    "id": "cj-key-case",
+    "passed": false,
+    "missing": [
+     "get_object_item",
+     "case_insensitive_strcmp"
+    ],
+    "used": [],
+    "answer_id": "239d215086e8",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "No, looking up \"Name\" will not find a member stored as \"name\". cJSONUtils_FindPointerFromObjectTo() (cJSON_Utils.c:198) \u2014 Given a root object and a target object, construct a pointer from one to the other. Step by step, it checks `(object == NULL) || (target == NULL)` (line 203); if true it returns `NULL` straight away; then it checks `object == target` (line 208); if true it calls cJSONUtils_strdup() and returns `(char*)cJSONUtils_strdup((const unsigned char*)\"\")` straight away; then it repeats while `current_child != NULL` (line 215); then it calls cJSONUtils_FindPointerFromObjectTo(current_"
+   },
+   {
+    "id": "cj-pointer-leading-zero",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "c3f646ba322c",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "decode_array_index_from_pointer() (cJSON_Utils.c:274). Step by step, it checks `(pointer[0] == '0') && ((pointer[1] != '\\0') && (pointer[1] != '/'))` (line 279); if true it returns `0` straight away; then it repeats while `(pointer[position] >= '0') && (pointer[position] <= '9')` (line 285); then it sets `parsed_index = (10 * parsed_index) + (size_t)(pointer[position] - '0')` (line 287); then it checks `(pointer[position] != '\\0') && (pointer[position] != '/')` (line 291); if true it returns `0` straight away; then it sets `*index = parsed_index` (line 296); then it returns `1` (line 298). It "
+   },
+   {
+    "id": "cj-patch-unknown-op",
+    "passed": false,
+    "missing": [
+     "status = 3"
+    ],
+    "used": [],
+    "answer_id": "dd0550de0834",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When a JSON Patch entry has a valid path but an unsupported \"op\" such as \"rename\", the function `decode_patch_operation()` (cJSON_Utils.c:745) checks `!cJSON_IsString(operation)` and returns `INVALID`, skipping the rest of the function. Because it returns early, the subsequent `strcmp()` and other operations are not executed, so the previous values remain unchanged. The caller `apply_patch()` (cJSON_Utils.c:831) then checks `opcode == TEST`; since `decode_patch_operation()` failed, this condition is false and it skips `compare_json()`, `get_item_from_pointer()`, and `get_object_item()`. This i"
+   },
+   {
+    "id": "cj-string-parser-callers",
+    "passed": false,
+    "missing": [
+     "parse_value",
+     "parse_object"
+    ],
+    "used": [],
+    "answer_id": "f1c10b30a901",
+    "correctable": false,
+    "intent": "callers",
+    "answer": "`minify_string()` is called by `cJSON_Minify()`, which in turn is called by `cjson_minify_should_remove_multiline_comments()`. It is called by cJSON_Minify() at cJSON.c:2943, only when `json == NULL` is false, repeatedly inside `while (json[0] != '\\0')`, in the case `json[0] == '\\\"'`; cJSON_Minify() at cJSON.c:2943, only when `json == NULL` is false, repeatedly inside `while (json[0] != '\\0')`, in the case `json[0] == '\\\"'`; cJSON_Minify() at cJSON.c:2943, only when `json == NULL` is false, repeatedly inside `while (json[0] != '\\0')`, in the case `json[0] == '\\\"'`; cJSON_Minify() at cJSON.c:29"
+   },
+   {
+    "id": "cj-custom-allocator",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "ad3aef3fe518",
+    "correctable": true,
+    "intent": "where_computed",
+    "answer": "A program can plug in its own `malloc` and `free` by calling `cJSON_InitHooks` to set the hooks. The library stores the custom allocator in the `global_hooks.allocate` function that is used by `cJSON_malloc()` (see cJSON.c:3182). It is stored in cJSON_malloc(): cJSON_malloc() (cJSON.c:3182) \u2014 malloc/free objects using the malloc/free functions that have been set with cJSON_InitHooks. Step by step, it calls one of malloc(), internal_free(), internal_malloc(), failing_malloc(), normal_free() through internal_hooks.allocate \u2014 which one depends on the data at run time (line 3184); then it returns "
+   },
+   {
+    "id": "cj-object-indent",
+    "passed": false,
+    "missing": [
+     "output_buffer->depth"
+    ],
+    "used": [],
+    "answer_id": "09bae0af2032",
+    "correctable": true,
+    "intent": "which_fn",
+    "answer": "The function that writes the tab characters for indenting each member of an object when pretty\u2011printing is `print_object()` (cJSON.c:1770). The best match is cJSONUtils_SortObject() (cJSON_Utils.c:1311). cJSONUtils_SortObject() (cJSON_Utils.c:1311) \u2014 Sorts the members of the object into alphabetical order. Step by step, it calls sort_object(object, false) (line 1313). It is called by cjson_utils_functions_shouldnt_crash_with_null_pointers() at tests/misc_utils_tests.c:67 with (`NULL`); sort_tests() at tests/old_utils_tests.c:155 with (`sortme`) \u2014 `cJSON *sortme = NULL` (line 143). The full cha"
+   },
+   {
+    "id": "cj-generate-patches",
+    "passed": false,
+    "missing": [
+     "create_patches",
+     "compose_patch"
+    ],
+    "used": [],
+    "answer_id": "a22aa2a8c12b",
+    "correctable": true,
+    "intent": "which_fn",
+    "answer": "The function that works out the list of operations that turns one JSON document into another is `apply_patch()` (cJSON_Utils.c:825). The helper that builds each operation entry is `decode_patch_operation()` (cJSON_Utils.c:742). The best match is decode_patch_operation() (cJSON_Utils.c:742). decode_patch_operation() (cJSON_Utils.c:742). Step by step, it calls get_object_item(patch, \"op\", case_sensitive) (line 744); then it checks `!cJSON_IsString(operation)` (line 745); if true it returns `INVALID` straight away; then it checks `strcmp(operation->valuestring, \"add\") == 0` (line 750); if true it"
+   }
+  ],
+  "follow_before": [
+   {
+    "id": "cj-deep-nesting-p",
+    "passed": false,
+    "missing": [
+     "CJSON_NESTING_LIMIT"
+    ],
+    "used": [],
+    "answer_id": "bf092474e3f7",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "The parser will keep descending; there is no depth limit in the code. The `parse_buffer.depth` field is simply incremented when `parse_array()` or `parse_object()` starts a new level and decremented when they finish, and it is read only to track the current nesting depth. No check stops the descent at a particular depth. parse_buffer.depth is a field of type `size_t`, defined in cJSON.c:294 \u2014 the code describes it as: \"How deeply nested (in arrays/objects) is the input at the current offset.\". It is set by parse_array() (`input_buffer->depth++`, line 1501); parse_array() (`input_buffer->depth-"
+   },
+   {
+    "id": "cj-deep-nesting-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "fdfaaf1af989",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the depth reaches or exceeds `CJSON_CIRCULAR_LIMIT`, the function jumps to the `fail` label, calls `cJSON_Delete()` repeatedly, and skips the rest of the duplication process. Because it returns early, the previous values remain unchanged. This is handled in cJSON_Duplicate_rec() (cJSON.c:2821): it checks `depth >= CJSON_CIRCULAR_LIMIT`, and when that is true it jumps to `fail` (line 2851), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete"
+   },
+   {
+    "id": "cj-minus-no-digits-p",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "ff588fb9b18a",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "Parsing fails in `parse_number()` when a lone '-' is encountered because `number_c_string == after_end` becomes true, triggering an early return after calling `free()` and related cleanup functions. This early exit prevents the rest of the number parsing logic from executing, so the lone '-' is not interpreted as a valid number. Invalid data is caught in parse_number() (cJSON.c:379): it checks `number_c_string == after_end`, and when that is true it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and returns `false`, so the "
+   },
+   {
+    "id": "cj-minus-no-digits-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "c97fdaeb9bf8",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "When `print_number()` encounters a value where `isnan(d) || isinf(d)` is true, it writes the string \"null\" to the output buffer. print_number() (cJSON.c:591) \u2014 Render the number nicely from the given item into a string. Step by step, it sets `double d = item->valuedouble` (line 594); then it calls get_decimal_point() and stores the result in `decimal_point` (line 598); then it checks `output_buffer == NULL` (line 601); if true it returns `false` straight away; then it checks `isnan(d) || isinf(d)` (line 607); if true it calls sprintf() and sets `length = sprintf((char*)number_buffer, \"null\")`;"
+   },
+   {
+    "id": "cj-unterminated-string-p",
+    "passed": false,
+    "missing": [
+     "input_end - input_buffer->content"
+    ],
+    "used": [],
+    "answer_id": "2a45adb59bf4",
+    "correctable": true,
+    "intent": "failure_missing",
+    "answer": "I could not find any code that detects the data stopping (no timeout or last-update check). If the data stops, the last received values would simply stay in place. parse_string() would simply stop being called. It is called by parse_value() at cJSON.c:1396, only when `can_read(input_buffer, 5) && (strncmp((const char*)buffer_at_offset(input_buffer), \"false\", 5) == 0)` is false, only when `can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), \"true\", 4) == 0)` is false, only when `can_access_at_index(input_buffer, 0) && (buffer_at_offset(input_buffer)[0] == '\\\"')` i"
+   },
+   {
+    "id": "cj-bad-surrogate-p",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "3602fd9c86f4",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: utf16_literal_to_utf8() (function, cJSON.c:698); skip_utf8_bom() (function, cJSON.c:1111); parse_hex4() (function, cJSON.c:661); INVALID (enum value, cJSON_Utils.c:740); parse_string() (function, cJSON.c:819); static_strlen (constant, cJSON.c:184). utf16_literal_to_utf8() (cJSON.c:698) \u2014 converts a UTF-16 literal to UTF-8 A literal can be one or two sequences of the form \\uXXXX. Step by step, it sets `const unsigned char *first_sequence = input_pointer` "
+   },
+   {
+    "id": "cj-bad-surrogate-n",
+    "passed": false,
+    "missing": [
+     "u%04x"
+    ],
+    "used": [],
+    "answer_id": "ff0e5b5b9dbc",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "The facts do not indicate what the printer writes when a string value contains a control byte such as 0x01. print_string() (cJSON.c:1071) \u2014 Invoke print_string_ptr (which is useful) on an item. Step by step, it calls print_string_ptr((unsigned char*)item->valuestring, p) (line 1073); then it returns `print_string_ptr((unsigned char*)item->valuestring, p)` (line 1073). It is called by print_value() at cJSON.c:1478, only when `output == NULL` is false, only when `output == NULL` is false, in the case `(item->type) & 0xFF == cJSON_String`; print_value() at cJSON.c:1478, only when `output == NULL`"
+   },
+   {
+    "id": "cj-member-alloc-fail-p",
+    "passed": false,
+    "missing": [
+     "new_item == NULL"
+    ],
+    "used": [],
+    "answer_id": "1c002f42ff85",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When `parse_object()` fails after parsing some members, it jumps to the `fail` label, which calls `cJSON_Delete()` on the partially built object, freeing all members that were already parsed. The remaining parsing steps, such as `buffer_skip_whitespace()`, are skipped. Invalid data is caught in parse_object() (cJSON.c:1734): it checks `!parse_value(current_item, input_buffer)`, and when that is true it jumps to `fail` (line 1760), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls "
+   },
+   {
+    "id": "cj-prealloc-too-small-p",
+    "passed": false,
+    "missing": [
+     "p->noalloc"
+    ],
+    "used": [],
+    "answer_id": "1bf9a271b0ec",
+    "correctable": false,
+    "intent": "downstream",
+    "answer": "When the supplied buffer is too short, `print()` attempts to grow it by calling `realloc()` if `hooks->reallocate != NULL`; otherwise it allocates a new buffer with `malloc()`. The call then proceeds to copy the printed data into the new buffer and returns the number of bytes written (the exact return value is not specified in the facts). Inside print(), these calls happen in this order: memset() (line 1240); malloc() (line 1243); internal_free() (line 1243); internal_malloc() (line 1243); failing_malloc() (line 1243); normal_free() (line 1243); print_value() (line 1253, only if `buffer->buffe"
+   },
+   {
+    "id": "cj-trailing-garbage-p",
+    "passed": false,
+    "missing": [
+     "cJSON_ParseWithLengthOpts",
+     "require_null_terminated"
+    ],
+    "used": [],
+    "answer_id": "29f501658fee",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "It cannot be determined from the given facts. cJSON_Parse() (cJSON.c:1222) \u2014 Default options for cJSON_Parse. Step by step, it calls cJSON_ParseWithOpts(value, 0, 0) (line 1224); then it returns `cJSON_ParseWithOpts(value, 0, 0)` (line 1224). It is called by compare_from_string() at tests/compare_tests.c:33; compare_from_string() at tests/compare_tests.c:35; cjson_compare_should_compare_raw() at tests/compare_tests.c:126; cjson_compare_should_compare_raw() at tests/compare_tests.c:128. The full chain from the program's start is: merge_tests() \u2192 cJSON_Parse()."
+   },
+   {
+    "id": "cj-trailing-garbage-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "136295387a05",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: skip_utf8_bom() (function, cJSON.c:1111); utf16_literal_to_utf8() (function, cJSON.c:698); parse_string() (function, cJSON.c:819); parse_buffer.offset (field, cJSON.c:293); parse_hex4() (function, cJSON.c:661); parse_value() (function, cJSON.c:1363). skip_utf8_bom() (cJSON.c:1111) \u2014 skip the UTF-8 BOM (byte order mark) if it is at the beginning of a buffer. Step by step, it checks `(buffer == NULL) || (buffer->content == NULL) || (buffer->offset != 0)` ("
+   },
+   {
+    "id": "cj-key-case-p",
+    "passed": false,
+    "missing": [
+     "case_insensitive_strcmp"
+    ],
+    "used": [],
+    "answer_id": "36229d0551bf",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "Yes, ordinary object member lookup is case-sensitive. Looking up \"ID\" will not match a member called \"id\". cJSON_GetObjectItemCaseSensitive() (cJSON.c:1973). Step by step, it calls get_object_item(object, string, true) (line 1975); then it returns `get_object_item(object, string, true)` (line 1975). It is called by get_object_item() at cJSON_Utils.c:734, only when `case_sensitive` is true; cJSON_DetachItemFromObjectCaseSensitive() at cJSON.c:2303; cJSON_DetachItemFromObjectCaseSensitive() at cJSON.c:2303; cJSON_DetachItemFromObjectCaseSensitive() at cJSON.c:2303. It is also called by cJSON_Det"
+   },
+   {
+    "id": "cj-key-case-n",
+    "passed": false,
+    "missing": [
+     "compare_pointers",
+     "tolower(*name) != tolower(*pointer)"
+    ],
+    "used": [],
+    "answer_id": "f2835f7033dc",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "cJSONUtils_FindPointerFromObjectTo() (cJSON_Utils.c:198) \u2014 Given a root object and a target object, construct a pointer from one to the other. Step by step, it checks `(object == NULL) || (target == NULL)` (line 203); if true it returns `NULL` straight away; then it checks `object == target` (line 208); if true it calls cJSONUtils_strdup() and returns `(char*)cJSONUtils_strdup((const unsigned char*)\"\")` straight away; then it repeats while `current_child != NULL` (line 215); then it calls cJSONUtils_FindPointerFromObjectTo(current_child, target) (line 217); then it checks `target_pointer != NU"
+   },
+   {
+    "id": "cj-pointer-leading-zero-p",
+    "passed": false,
+    "missing": [
+     "pointer[0] == '0'"
+    ],
+    "used": [],
+    "answer_id": "b694a6f5550b",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: encode_string_as_pointer() (function, cJSON_Utils.c:173); get_item_from_pointer() (function, cJSON_Utils.c:301); pointer_encoded_length() (function, cJSON_Utils.c:157); cJSON_DetachItemViaPointer() (function, cJSON.c:2243); cJSON.child (field, cJSON.h:109); decode_array_index_from_pointer() (function, cJSON_Utils.c:274). encode_string_as_pointer() (cJSON_Utils.c:173) \u2014 copy a string while escaping '~' and '/' with ~0 and ~1 JSON pointer escape codes. Ste"
+   },
+   {
+    "id": "cj-patch-unknown-op-p",
+    "passed": false,
+    "missing": [
+     "status = 3"
+    ],
+    "used": [],
+    "answer_id": "5fb8c2617c8f",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "It is not handled by the code and the test will fail. test_apply_patch() (tests/json_patch_tests.c:49). Step by step, it calls cJSON_GetObjectItemCaseSensitive(test, \"comment\") and stores the result in `comment` (line 62); then it checks `cJSON_IsString(comment)` (line 63); if true it calls printf(); then it calls cJSON_GetObjectItemCaseSensitive(test, \"disabled\") and stores the result in `disabled` (line 72); then it checks `cJSON_IsTrue(disabled)` (line 73); if true it calls printf() and returns `true` straight away; then it calls cJSON_GetObjectItemCaseSensitive(test, \"doc\") and stores the "
+   },
+   {
+    "id": "cj-patch-unknown-op-n",
+    "passed": false,
+    "missing": [
+     "insert_item_in_array",
+     "which > 0"
+    ],
+    "used": [],
+    "answer_id": "affafb923817",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "When the add operation targets an array index past the end of the array, the code will call `cJSON_GetArrayItem()` with that index. The fact that `index < 0` is false for these values is an inference, so the behavior for an index beyond the array length is not specified in the facts and depends on runtime. Reading cJSON_GetArrayItem() with these values: `index < 0` (line 1928) is false."
+   }
+  ],
+  "corrections": {
+   "cj-minus-no-digits": "c-0001",
+   "cj-unterminated-string": "c-0002",
+   "cj-member-alloc-fail": "c-0003",
+   "cj-prealloc-too-small": "c-0004",
+   "cj-trailing-garbage": "c-0005",
+   "cj-key-case": "c-0006",
+   "cj-patch-unknown-op": "c-0007",
+   "cj-object-indent": "c-0008",
+   "cj-generate-patches": "c-0009"
+  },
+  "not_corrected": {
+   "cj-string-parser-callers": "no single deciding line (a structural question)"
+  },
+  "asked_again": [
+   {
+    "id": "cj-minus-no-digits",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0001",
+      "pin"
+     ]
+    ],
+    "answer_id": "ed420e286c5b",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the input starts with a minus sign but no digits follow, `parse_number()` checks `number_c_string == after_end`. If that condition is true, it calls `free()`, `internal_free()`, `internal_malloc()`, `failing_malloc()`, and `normal_free()`, then returns `false`, skipping the rest of the function. Because it returns early, the previous values remain unchanged. This is handled in parse_number() (cJSON.c:379): it checks `number_c_string == after_end`, and when that is true it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() "
+   },
+   {
+    "id": "cj-unterminated-string",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0002",
+      "pin"
+     ]
+    ],
+    "answer_id": "fb14ea12a17b",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "This is handled in parse_string() (cJSON.c:851): it checks `((size_t)(input_end - input_buffer->content) >= input_buffer->length) || (*input_end != '\\\"')`, and when that is true it jumps to `fail` (line 933), where it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and records it (`input_buffer->offset = (size_t)(input_pointer - input_buffer->content)`), skipping the rest of parse_string(). Because it returns early, these do not happen in this case: malloc(), internal_free(), internal_malloc(), failing_malloc() \u2014 the previou"
+   },
+   {
+    "id": "cj-member-alloc-fail",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0003",
+      "pin"
+     ]
+    ],
+    "answer_id": "b18617e1cc37",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "If `new_item` is `NULL` while creating the next member of an object, the code jumps to the `fail` label (line 1760) in `parse_object()`. It then calls `cJSON_Delete()` repeatedly to clean up and skips the rest of `parse_object()`. Consequently, `buffer_skip_whitespace()` is not executed and the previous values remain unchanged. This is handled in parse_object() (cJSON.c:1689): it checks `new_item == NULL`, and when that is true it jumps to `fail` (line 1760), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and ca"
+   },
+   {
+    "id": "cj-prealloc-too-small",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0004",
+      "pin"
+     ]
+    ],
+    "answer_id": "3696357e4605",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the buffer is too small, `ensure()` returns `NULL` immediately. The caller functions (`print_number`, `print_string_ptr`, `print_value`) detect this `NULL` and return `false`. Finally, `cJSON_PrintBuffered` sees the failure, returns `NULL`, sets `p.buffer` to `NULL`, frees the buffer, and allocates a new one. This is handled in ensure() (cJSON.c:513): it checks `p->noalloc`, and when that is true it returns `NULL`, so the rest of ensure() is skipped. Because it returns early, these do not happen in this case: realloc(), internal_realloc(), failing_realloc(), free() \u2014 the previous values s"
+   },
+   {
+    "id": "cj-trailing-garbage",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0005",
+      "pin"
+     ]
+    ],
+    "answer_id": "d6627bb221de",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "This is handled in cJSON_ParseWithLengthOpts() (cJSON.c:1174): it checks `require_null_terminated`, and when that is true it calls buffer_skip_whitespace(&buffer) (line 1176); then it checks `(buffer.offset >= buffer.length) || buffer_at_offset(&buffer)[0] != '\\0'` (line 1177); if true it jumps to `fail`. When it does not return there, cJSON_ParseWithLengthOpts() goes on to call cJSON_Delete() with (`item`) (line 1192); cJSON_Delete() with (`item`) (line 1192); cJSON_Delete() with (`item`) (line 1192); cJSON_Delete() with (`item`) (line 1192); cJSON_Delete() with (`item`) (line 1192). buffer_s"
+   },
+   {
+    "id": "cj-key-case",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0006",
+      "pin"
+     ]
+    ],
+    "answer_id": "cb272524917e",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "Yes, looking up \"Name\" will find a member stored as \"name\" because the lookup first checks for an exact match and then, if not found, performs a case\u2011insensitive comparison. get_object_item() (cJSON.c:1936). Step by step, it checks `(object == NULL) || (name == NULL)` (line 1940); if true it returns `NULL` straight away; then it sets `current_element = object->child` (line 1945); then it checks `case_sensitive` (line 1946); then it repeats while `(current_element != NULL) && (current_element->string != NULL) && (strcmp(name, current_element->string) != 0)` (line 1948); then it sets `current_el"
+   },
+   {
+    "id": "cj-patch-unknown-op",
+    "passed": false,
+    "missing": [
+     "status = 3"
+    ],
+    "used": [
+     [
+      "c-0007",
+      "pin"
+     ]
+    ],
+    "answer_id": "182ffade97ca",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When a JSON Patch entry has a valid path but an unsupported \"op\" such as \"rename\", `apply_patch()` sees `opcode == INVALID` and jumps to `cleanup`, deleting the patch item and freeing memory, then returns early. The original values remain unchanged because `overwrite_item()`, `get_object_item()`, and `cJSON_Duplicate()` are not executed. The caller `cJSONUtils_ApplyPatches()` (and `cJSONUtils_ApplyPatchesCaseSensitive()`) then sees a non\u2011zero status and returns that status. This is handled in apply_patch() (cJSON_Utils.c:826): it checks `opcode == INVALID`, and when that is true it jumps to `c"
+   },
+   {
+    "id": "cj-object-indent",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0008",
+      "pin"
+     ]
+    ],
+    "answer_id": "289e3b5733d8",
+    "correctable": true,
+    "intent": "which_fn",
+    "answer": "The function that writes the tab characters that indent each member of an object when pretty\u2011printing is `print_object()`. The best match is print_object() (cJSON.c:1770). print_object() (cJSON.c:1770) \u2014 Render an object to text. Step by step, it sets `cJSON *current_item = item->child` (line 1774); then it checks `output_buffer == NULL` (line 1776); if true it returns `false` straight away; then it sets `length = (size_t) (output_buffer->format ? 2 : 1)` (line 1782); then it calls ensure(output_buffer, length + 1) and stores the result in `output_pointer` (line 1783); then it checks `output_p"
+   },
+   {
+    "id": "cj-generate-patches",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0009",
+      "pin"
+     ]
+    ],
+    "answer_id": "682691d9b109",
+    "correctable": true,
+    "intent": "which_fn",
+    "answer": "The function that computes the list of operations is `create_patches()` (cJSON_Utils.c:1141). The helper that builds each individual operation entry is `compose_patch()`. The best match is create_patches() (cJSON_Utils.c:1141). create_patches() (cJSON_Utils.c:1141). Step by step, it checks `(from == NULL) || (to == NULL)` (line 1143); if true it stops there (returns); then it checks `(from->type & 0xFF) != (to->type & 0xFF)` (line 1148); if true it calls compose_patch() and stops there (returns); then it chooses a case based on `from->type & 0xFF` (line 1154); then it checks `(from->valueint !"
+   }
+  ],
+  "follow_after": [
+   {
+    "id": "cj-deep-nesting-p",
+    "passed": false,
+    "missing": [
+     "CJSON_NESTING_LIMIT"
+    ],
+    "used": [],
+    "answer_id": "cf16f9615671",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "The parser will keep descending; there is no depth limit in the code. The `parse_buffer.depth` field is simply incremented when `parse_array()` or `parse_object()` starts a new level and decremented when they finish, and it is read only to track the current nesting depth. No check stops the descent at a particular depth. parse_buffer.depth is a field of type `size_t`, defined in cJSON.c:294 \u2014 the code describes it as: \"How deeply nested (in arrays/objects) is the input at the current offset.\". It is set by parse_array() (`input_buffer->depth++`, line 1501); parse_array() (`input_buffer->depth-"
+   },
+   {
+    "id": "cj-deep-nesting-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "3bf19fc98099",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When the depth reaches or exceeds `CJSON_CIRCULAR_LIMIT`, the function jumps to the `fail` label, calls `cJSON_Delete()` repeatedly, and skips the rest of the duplication process. Because it returns early, the previous values remain unchanged. This is handled in cJSON_Duplicate_rec() (cJSON.c:2821): it checks `depth >= CJSON_CIRCULAR_LIMIT`, and when that is true it jumps to `fail` (line 2851), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete"
+   },
+   {
+    "id": "cj-minus-no-digits-p",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0001",
+      "hint"
+     ]
+    ],
+    "answer_id": "4e0e460235a4",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "Parsing fails in `parse_number()` when a lone '-' is encountered because `number_c_string == after_end` becomes true, triggering an early return after calling `free()` and related cleanup functions. This early exit prevents the rest of the number parsing logic from executing, so the lone '-' is not interpreted as a valid number. Invalid data is caught in parse_number() (cJSON.c:379): it checks `number_c_string == after_end`, and when that is true it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and returns `false`, so the "
+   },
+   {
+    "id": "cj-minus-no-digits-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "8a5d25c6dad6",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "When `print_number()` encounters a value where `isnan(d) || isinf(d)` is true, it writes the string \"null\" to the output buffer. print_number() (cJSON.c:591) \u2014 Render the number nicely from the given item into a string. Step by step, it sets `double d = item->valuedouble` (line 594); then it calls get_decimal_point() and stores the result in `decimal_point` (line 598); then it checks `output_buffer == NULL` (line 601); if true it returns `false` straight away; then it checks `isnan(d) || isinf(d)` (line 607); if true it calls sprintf() and sets `length = sprintf((char*)number_buffer, \"null\")`;"
+   },
+   {
+    "id": "cj-unterminated-string-p",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0002",
+      "pin"
+     ]
+    ],
+    "answer_id": "469245c8706d",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "This is handled in parse_string() (cJSON.c:851): it checks `((size_t)(input_end - input_buffer->content) >= input_buffer->length) || (*input_end != '\\\"')`, and when that is true it jumps to `fail` (line 933), where it calls free() and calls internal_free() and calls internal_malloc() and calls failing_malloc() and calls normal_free() and records it (`input_buffer->offset = (size_t)(input_pointer - input_buffer->content)`), skipping the rest of parse_string(). Because it returns early, these do not happen in this case: malloc(), internal_free(), internal_malloc(), failing_malloc() \u2014 the previou"
+   },
+   {
+    "id": "cj-bad-surrogate-p",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "39900c6e1de5",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: utf16_literal_to_utf8() (function, cJSON.c:698); skip_utf8_bom() (function, cJSON.c:1111); parse_hex4() (function, cJSON.c:661); INVALID (enum value, cJSON_Utils.c:740); parse_string() (function, cJSON.c:819); static_strlen (constant, cJSON.c:184). utf16_literal_to_utf8() (cJSON.c:698) \u2014 converts a UTF-16 literal to UTF-8 A literal can be one or two sequences of the form \\uXXXX. Step by step, it sets `const unsigned char *first_sequence = input_pointer` "
+   },
+   {
+    "id": "cj-bad-surrogate-n",
+    "passed": false,
+    "missing": [
+     "u%04x"
+    ],
+    "used": [],
+    "answer_id": "68d28b657f90",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "The facts do not indicate what the printer writes when a string value contains a control byte such as 0x01. print_string() (cJSON.c:1071) \u2014 Invoke print_string_ptr (which is useful) on an item. Step by step, it calls print_string_ptr((unsigned char*)item->valuestring, p) (line 1073); then it returns `print_string_ptr((unsigned char*)item->valuestring, p)` (line 1073). It is called by print_value() at cJSON.c:1478, only when `output == NULL` is false, only when `output == NULL` is false, in the case `(item->type) & 0xFF == cJSON_String`; print_value() at cJSON.c:1478, only when `output == NULL`"
+   },
+   {
+    "id": "cj-member-alloc-fail-p",
+    "passed": false,
+    "missing": [
+     "new_item == NULL"
+    ],
+    "used": [],
+    "answer_id": "3c512d55447b",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "If a node allocation fails while parsing an object, the code jumps to the `fail` label, which calls `cJSON_Delete()` to remove all already parsed members, and then skips the rest of `parse_object()`. Invalid data is caught in parse_object() (cJSON.c:1716): it checks `!parse_string(current_item, input_buffer)`, and when that is true it jumps to `fail` (line 1760), where it calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and calls cJSON_Delete() and "
+   },
+   {
+    "id": "cj-prealloc-too-small-p",
+    "passed": false,
+    "missing": [
+     "p->noalloc"
+    ],
+    "used": [],
+    "answer_id": "9ce7551e87dc",
+    "correctable": false,
+    "intent": "downstream",
+    "answer": "When the supplied buffer is too short, `print()` attempts to grow it by calling `realloc()` if `hooks->reallocate != NULL`; otherwise it allocates a new buffer with `malloc()`. The call then proceeds to copy the printed data into the new buffer and returns the number of bytes written (the exact return value is not specified in the facts). Inside print(), these calls happen in this order: memset() (line 1240); malloc() (line 1243); internal_free() (line 1243); internal_malloc() (line 1243); failing_malloc() (line 1243); normal_free() (line 1243); print_value() (line 1253, only if `buffer->buffe"
+   },
+   {
+    "id": "cj-trailing-garbage-p",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0005",
+      "pin"
+     ]
+    ],
+    "answer_id": "b6304ddbb8de",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "The parser fails: after parsing the object it checks that the next character is the string terminator; since it is not, it jumps to `fail`. The partially\u2011parsed item is then deleted via `cJSON_Delete()`. This is handled in cJSON_ParseWithLengthOpts() (cJSON.c:1174): it checks `require_null_terminated`, and when that is true it calls buffer_skip_whitespace(&buffer) (line 1176); then it checks `(buffer.offset >= buffer.length) || buffer_at_offset(&buffer)[0] != '\\0'` (line 1177); if true it jumps to `fail`. When it does not return there, cJSON_ParseWithLengthOpts() goes on to call cJSON_Delete()"
+   },
+   {
+    "id": "cj-trailing-garbage-n",
+    "passed": true,
+    "missing": [],
+    "used": [],
+    "answer_id": "9a41b814ed2c",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: skip_utf8_bom() (function, cJSON.c:1111); utf16_literal_to_utf8() (function, cJSON.c:698); parse_string() (function, cJSON.c:819); parse_buffer.offset (field, cJSON.c:293); parse_hex4() (function, cJSON.c:661); parse_value() (function, cJSON.c:1363). skip_utf8_bom() (cJSON.c:1111) \u2014 skip the UTF-8 BOM (byte order mark) if it is at the beginning of a buffer. Step by step, it checks `(buffer == NULL) || (buffer->content == NULL) || (buffer->offset != 0)` ("
+   },
+   {
+    "id": "cj-key-case-p",
+    "passed": true,
+    "missing": [],
+    "used": [
+     [
+      "c-0006",
+      "pin"
+     ]
+    ],
+    "answer_id": "c3093b824699",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "The lookup is case\u2011sensitive only when the `case_sensitive` flag is true; otherwise it falls back to a case\u2011insensitive comparison. If `case_sensitive` is true, `strcmp(name, current_element->string)` is used, so looking up \"ID\" will not match a member called \"id\". If `case_sensitive` is false, the code uses `case_insensitive_strcmp`, which would match \"ID\" to \"id\". get_object_item() (cJSON.c:1936). Step by step, it checks `(object == NULL) || (name == NULL)` (line 1940); if true it returns `NULL` straight away; then it sets `current_element = object->child` (line 1945); then it checks `case_s"
+   },
+   {
+    "id": "cj-key-case-n",
+    "passed": false,
+    "missing": [
+     "compare_pointers",
+     "tolower(*name) != tolower(*pointer)"
+    ],
+    "used": [],
+    "answer_id": "f5a83a4534b6",
+    "correctable": true,
+    "intent": "explain",
+    "answer": "cJSONUtils_FindPointerFromObjectTo() (cJSON_Utils.c:198) \u2014 Given a root object and a target object, construct a pointer from one to the other. Step by step, it checks `(object == NULL) || (target == NULL)` (line 203); if true it returns `NULL` straight away; then it checks `object == target` (line 208); if true it calls cJSONUtils_strdup() and returns `(char*)cJSONUtils_strdup((const unsigned char*)\"\")` straight away; then it repeats while `current_child != NULL` (line 215); then it calls cJSONUtils_FindPointerFromObjectTo(current_child, target) (line 217); then it checks `target_pointer != NU"
+   },
+   {
+    "id": "cj-pointer-leading-zero-p",
+    "passed": false,
+    "missing": [
+     "pointer[0] == '0'"
+    ],
+    "used": [],
+    "answer_id": "5f3ca15bc4b2",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "I could not find a function that takes these values as input, so I cannot simulate this scenario. These parts of the code look most relevant: encode_string_as_pointer() (function, cJSON_Utils.c:173); get_item_from_pointer() (function, cJSON_Utils.c:301); pointer_encoded_length() (function, cJSON_Utils.c:157); cJSON_DetachItemViaPointer() (function, cJSON.c:2243); cJSON.child (field, cJSON.h:109); decode_array_index_from_pointer() (function, cJSON_Utils.c:274). encode_string_as_pointer() (cJSON_Utils.c:173) \u2014 copy a string while escaping '~' and '/' with ~0 and ~1 JSON pointer escape codes. Ste"
+   },
+   {
+    "id": "cj-patch-unknown-op-p",
+    "passed": false,
+    "missing": [
+     "status = 3"
+    ],
+    "used": [
+     [
+      "c-0007",
+      "pin"
+     ]
+    ],
+    "answer_id": "ee1b83211f62",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "When an operation has an op name that is not one of the six standard ones, `apply_patch()` sees `opcode == INVALID` and jumps to `cleanup`, where it deletes the patch object and frees memory, then returns early. The original JSON values are left unchanged, and the caller receives a non\u2011zero status. This is handled in apply_patch() (cJSON_Utils.c:826): it checks `opcode == INVALID`, and when that is true it jumps to `cleanup` (line 1025), where it calls cJSON_Delete() and calls cJSON_free(), skipping the rest of apply_patch(). Because it returns early, these do not happen in this case: overwrit"
+   },
+   {
+    "id": "cj-patch-unknown-op-n",
+    "passed": false,
+    "missing": [
+     "insert_item_in_array",
+     "which > 0"
+    ],
+    "used": [],
+    "answer_id": "67970e3ee4bc",
+    "correctable": false,
+    "intent": "scenario",
+    "answer": "When the add operation targets an array index past the end of the array, the code will call `cJSON_GetArrayItem()` with that index. The fact that `index < 0` is false for these values is an inference, so the behavior for an index beyond the array length is not specified in the facts and depends on runtime. Reading cJSON_GetArrayItem() with these values: `index < 0` (line 1928) is false."
+   }
+  ],
+  "stale_check": {
+   "correction": {
+    "id": "c-0004",
+    "seq": 4,
+    "created": 1791044949.746378,
+    "updated": 1791045290.6405592,
+    "author": "emumba",
+    "note": "a preallocated buffer never grows",
+    "answer_id": "c882faffc41f",
+    "question": "What happens when I print JSON into a buffer I allocated myself and the output turns out to be bigger than that buffer?",
+    "qnorm": "what happens when i print json into a buffer i allocated myself and the output turns out to be bigger than that buffer",
+    "intent": "failure_invalid",
+    "topic": [
+     "print",
+     "json",
+     "buffer",
+     "allocated",
+     "myself",
+     "output",
+     "turns",
+     "turn",
+     "out",
+     "bigger",
+     "than"
+    ],
+    "wrong": {
+     "fn": "c:test.c@F@print_preallocated",
+     "file": "test.c",
+     "line": 75,
+     "side": "then",
+     "label": "print_preallocated() checks `!cJSON_PrintPreallocated(root, buf, (int)len, 1)` (test.c:75)"
+    },
+    "kind": "line",
+    "target_fn": "c:cJSON.c@F@ensure",
+    "target_name": "ensure",
+    "target_file": "cJSON.c",
+    "target_line": 513,
+    "branch_line": 513,
+    "side": "then",
+    "target_cond": "p->noalloc",
+    "target_label": "ensure() checks `p->noalloc` (cJSON.c:513)",
+    "anchor": "c408f3cab331d508",
+    "branch_anchor": "c408f3cab331d508",
+    "rel_line": 28,
+    "status": "stale",
+    "status_reason": "the code at cJSON.c:513 changed or was removed",
+    "conflict": [],
+    "replaces": null,
+    "uses": 1,
+    "last_used": 1791045026.7086751,
+    "source": "local",
+    "created_label": "3 Oct 2026"
+   },
+   "ok": true,
+   "answer": {
+    "id": "cj-prealloc-too-small",
+    "passed": false,
+    "missing": [
+     "ensure",
+     "p->noalloc"
+    ],
+    "used": [],
+    "answer_id": "816719d0cf49",
+    "correctable": true,
+    "intent": "failure_invalid",
+    "answer": "This is handled in print_preallocated() (test.c:75): it checks `!cJSON_PrintPreallocated(root, buf, (int)len, 1)`, and when that is true it checks `strcmp(out, buf) != 0` (line 77); if true it calls printf(); then it calls free(out) (line 82); then it calls free(buf_fail) (line 83); then it calls free(buf) (line 84); then it returns `-1` (line 85), so the rest of print_preallocated() is skipped. Because it returns early, these do not happen in this case: cJSON_PrintPreallocated(), free() \u2014 the previous values stay in place."
+   }
+  }
+ },
+ "numbers": {
+  "before": {
+   "main": "4/14",
+   "paraphrases": "2/10",
+   "neighbours": "3/6"
+  },
+  "after_one_correction_per_miss": {
+   "main": "12/14",
+   "corrected_questions": "8/9",
+   "paraphrases_of_corrected": "4/7",
+   "paraphrases_needing_none": "1/3",
+   "neighbours": "3/6"
+  },
+  "stale_after_edit": true
+ },
+ "log": [
+  "1. first contact: 4/14",
+  "   paraphrases before corrections: 2/10; neighbours: 3/6",
+  "2. corrections: 9 made, 1 not possible: {'cj-string-parser-callers': 'no single deciding line (a structural question)'}",
+  "3. corrected questions asked again: 8/9 right, 9/9 disclosed the correction",
+  "   paraphrases of corrected questions: 4/7 right (5 used a correction)",
+  "   paraphrases of questions that needed no correction: 1/3",
+  "   neighbours (no target): 3/6 right; 0 used a correction",
+  "4. edited cJSON.c:513 and re-indexed: correction c-0004 is stale (the code at cJSON.c:513 changed or was removed); used afterwards: False -> OK"
+ ]
+}

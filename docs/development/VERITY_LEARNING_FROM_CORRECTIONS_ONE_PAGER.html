@@ -297,6 +297,7 @@ details .dc p:first-child{margin-top:0}
     <a class="nl" href="#guardrails">Guardrails</a>
     <a class="nl" href="#plan">Build plan</a>
     <a class="nl" href="#proof">Proof</a>
+    <a class="nl" href="#status">Status</a>
   </div>
   <div class="tn-tool">
     <span class="searchbox">
@@ -317,7 +318,7 @@ details .dc p:first-child{margin-top:0}
       <div class="ichip" style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></div>
       <div>
         <div style="font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F3B8D3">Verity · Phase 5 · feature spec</div>
-        <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.65)">One page to pick up in the next session · written 1 Oct 2026 against v0.5.0</div>
+        <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.65)">One page to pick up in the next session · written 1 Oct 2026 against v0.5.0 · <a href="#status" style="color:#fff">built 3 Oct 2026, see Status</a></div>
       </div>
     </div>
     <h1 style="font-size:35px;font-weight:800;letter-spacing:-1.2px;line-height:1.1;margin:0 0 14px;max-width:26ch">Make each project's answers better every time someone corrects them</h1>
@@ -605,6 +606,36 @@ flowchart TB
   </ul></div>
 
   <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Provenance: written 1 Oct 2026 against <code>~/Desktop/mati</code> v0.5.0 (final regression: <code>logs/final14.status</code>, re-checks in <code>logs/final15.status</code>). File and line references were verified that day; re-check them before editing. The thresholds, bonuses, interfaces and effort sizes are proposals.</p>
+</section>
+
+<section id="status">
+  <div class="sechead"><div class="ichip" style="background:#E7F5EC;color:#2B7D4F"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <div><p class="eyebrow" style="color:#2B7D4F">STATUS · 08</p><h2 class="big">Built on 3 Oct 2026, measured on cJSON</h2></div></div>
+  <p class="lede">All seven steps are built on branch <code>phase5-learning-from-corrections</code>, which branched from <code>windows-first-run-desktop-app</code>. Never-seen project #10 is cJSON v1.7.19: 14 questions, plus 10 paraphrases and 6 neighbours, all written from the source before the first run. The build log is in <code>PROGRESS.md</code> under "Phase 5", and the results are in <code>bench/results/realworld_heldout10_learning/</code>.</p>
+
+  <h3 class="mid">The two numbers, kept apart</h3>
+  <div class="tbl"><table>
+    <tr><th>Mode</th><th>Before any correction</th><th>After one correction per miss</th><th>Corrected question asked again</th><th>Paraphrases of corrected questions</th><th>Neighbours (used a correction)</th></tr>
+    <tr><td>Facts only</td><td>4/14</td><td>13/14</td><td>9/9, all disclosed</td><td>2/6</td><td>2/6 (0)</td></tr>
+    <tr><td>Facts + meaning search</td><td>4/14</td><td>12/14</td><td>8/8, all disclosed</td><td>4/6</td><td>2/6 (0)</td></tr>
+    <tr><td>Local model + meaning search</td><td>4/14</td><td>12/14</td><td>8/9, 9 disclosed</td><td>4/7</td><td>3/6 (0)</td></tr>
+  </table></div>
+
+  <h3 class="mid">Against the acceptance list</h3>
+  <div class="tbl"><table>
+    <tr><th>Acceptance</th><th>Result</th></tr>
+    <tr><td>The corrected question asked again: right every time, with the correction disclosed</td><td><b>Met</b> in facts-only mode. With the model, 8/9: the pin was applied and disclosed, but the summary left out the expected value ("status = 3").</td></tr>
+    <tr><td>A paraphrase of a corrected question: right in at least 9 of 10</td><td><b>Not met.</b> 4 of 6 with meaning search, 2 of 6 with word overlap alone. One paraphrase got a hint that lost to a stronger candidate, which is by design. Another, at similarity 0.698, was routed to a different kind of question.</td></tr>
+    <tr><td>A neighbouring question: reported honestly, with no target</td><td><b>Met:</b> 2–3 of 6 right, and no neighbour used a correction.</td></tr>
+    <tr><td>Every existing suite, facts-only and with the model: no score drops</td><td><b>Met:</b> 198/207 before and after, per question (two captures on each side, compared).</td></tr>
+    <tr><td>A target line edited, then re-indexed: never applied, listed as stale</td><td><b>Met</b> in every mode.</td></tr>
+    <tr><td><code>learned.db</code> survives an <code>index.db</code> reset</td><td><b>Met</b> (<code>tests/test_learning.py</code>).</td></tr>
+  </table></div>
+
+  <div class="cal tip"><span class="t">What P5-0 decided</span>On first contact the right place was rarely among the runners-up: cJSON top-3 was 4/14 facts-only and 5/14 with the model, against 4/14 top-1. That made <b>pick a line</b> the main way to correct. The alternatives are a shortcut, shown only when they score at least 0.6 × the top.</div>
+  <div class="cal mistake"><span class="t">Thresholds came from this project</span>Meaning-pin is ≥ 0.80 (with a relevance guard) and hint is ≥ 0.70. They were set from cJSON's measured similarities: paraphrases 0.60–0.89, neighbours 0.45–0.76, unrelated ≤ 0.63. Re-check them on the next never-seen project before changing anything.</div>
+
+  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Status written 3 Oct 2026. The pull request goes against <code>windows-first-run-desktop-app</code>; it is merged after a manual test.</p>
 </section>
 
 </main>

@@ -30,11 +30,48 @@ bin/verity probe                                   # what this machine can do (m
 
 In the app: **Open Project**, wait for "● Ready" (progress is shown as "Understanding your C project… 4 of 7 parts complete"), then ask. The answer shows **Your question · Answer · How the data flows · Evidence**, followed by five collapsed sections: reasoning/evidence, execution path, related code, assumptions and verification. Click any evidence row to see the source. Everything can be cancelled.
 
+### Teach it when it picks the wrong place
+
+Some answers hinge on one place in the code: "what happens if…", "where is X decided", "which function…". Under those
+answers the app asks **Is this the right place?**
+- **This one** picks one of the other places it considered. They are shown when they scored close to its choice.
+- **pick a line…** opens the source. You click the line that really answers the question; **Look elsewhere** jumps to
+  another file or function. Then add an optional note and choose **Use this line**.
+- **✓ The answer was right** keeps the answer as a test case.
+
+The question is answered again at once. From then on:
+- **The same question, or the same question in other words** (matched by meaning search when it is on), goes straight
+  to that line.
+- **Similar questions** give that line a head start. It still has to win on its own evidence.
+
+Every answer that used a correction says so ("Uses correction c-0003 (2 Oct 2026), recorded for this question …")
+and offers **Undo**. **Learned** in
+the project bar lists every correction, glossary word and confirmed answer. There you can add notes, undo and restore,
+and export them or import them on another machine. When the code at a corrected line changes, the correction turns
+**stale** and is no longer used. It comes back by itself if that code returns, and it follows the line when code above
+it moves. Corrections live in `data/repos/<project>/learned.db`, next to the index, so a full re-index keeps them.
+
+```bash
+bin/verity ask         samples/navgps-c "What happens if the input data is invalid?"   # prints the answer id
+bin/verity correct     samples/navgps-c <answer-id> --line gps/nmea_parser.c:26 --note "the checksum decides"
+bin/verity correct     samples/navgps-c <answer-id> --pick 2                 # or one of the listed alternatives
+bin/verity confirm     samples/navgps-c <answer-id>                         # right as it is: keep it as a test case
+bin/verity corrections samples/navgps-c [list|undo c-0001|restore c-0001|note c-0001 "…"]
+bin/verity corrections samples/navgps-c export --format bench -o my-cases.json   # json | bench | toml
+bin/verity corrections samples/navgps-c import corrections.json
+bin/verity glossary    samples/navgps-c [list|accept TERM|reject TERM|add TERM IDENT…|remove TERM]
+```
+
+When you correct an answer, Verity may suggest a **glossary** word: a word from your question tied to the
+identifiers at the corrected line (for example "fix" → `valid`, `gps_fix_t`). Once you accept it, later questions
+that use the word also search for those identifiers. A `[glossary]` table in `verity.toml` at the project root
+works the same way and is read-only.
+
 **MCP** (for AI assistants that speak the Model Context Protocol, stdio):
 ```json
-{ "mcpServers": { "verity": { "command": "/Users/emumba/Desktop/mati/bin/verity", "args": ["mcp"] } } }
+{ "mcpServers": { "verity": { "command": "<Verity folder>/bin/verity", "args": ["mcp"] } } }
 ```
-Tools: `verity_index`, `verity_status`, `verity_ask`, `verity_search`, `verity_symbol`, `verity_source`. They run on the same engine as the app and the CLI.
+Tools: `verity_index`, `verity_status`, `verity_ask`, `verity_search`, `verity_symbol`, `verity_source`, `verity_correct`. They run on the same engine as the app and the CLI. `verity_ask` returns the answer id; `verity_correct` corrects that answer (an alternative or `file` + `line`), confirms it, or undoes a correction.
 
 **On Windows:** `bash scripts/make_windows_bundle.sh` packs the code into one zip, about 65 MB (no models or toolchains). On the PC, extract it to `C:\` and double-click `scripts\windows\setup.cmd`. It installs everything inside the folder without administrator rights: Python, llama.cpp (CUDA, Vulkan or CPU, chosen for the hardware), .NET, cppcheck and the models. It then verifies the result, logging every step. `scripts\windows\analyze.cmd` says which model fits the machine, and `-StressTest` measures the candidates and keeps the best. Then use `bin\verity.cmd` the same way as `bin/verity`, or the desktop app (`scripts\windows\build_desktop.cmd`, which needs Rust and the Visual Studio C++ Build Tools to build it). Details and limits: `scripts/windows/README.md`.
 
