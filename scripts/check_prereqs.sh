@@ -272,7 +272,7 @@ if [ "$OS" = Darwin ]; then
 elif [ "$OS" = Linux ]; then
   dist=$( (. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME") || echo Linux)
   if [ -n "$LLAMA_BUILD" ]; then
-    add platform machine warn "$dist ($ARCH): should work but not tested yet; models use the CPU build of llama.cpp; the desktop app is macOS only"
+    add platform machine warn "$dist ($ARCH): should work but not tested yet; models use the CPU build of llama.cpp; the desktop app is built for macOS and Windows only"
   else
     add platform machine warn "$dist ($ARCH): not tested and no llama.cpp build for $ARCH; Direct mode only"
   fi

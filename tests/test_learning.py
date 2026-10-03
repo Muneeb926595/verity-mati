@@ -415,6 +415,10 @@ def test_cli_correct_confirm_corrections_glossary(core, tmp_path):
     assert p.returncode == 0 and "c-0001" in p.stdout and "nmea_parser.c:26" in p.stdout
     p = _cli("ask", str(repo), Q, "--direct", "--no-embed")
     assert p.returncode == 0 and "Learned: uses correction c-0001" in p.stdout and "Answer " in p.stdout
+    import re
+    aid = re.search(r"^Answer ([0-9a-f]{12})$", p.stdout, re.M).group(1)
+    # the command to copy stays on one line, however long the path (rich would wrap it at 80 columns)
+    assert len(f"verity confirm {repo} {aid}") > 80 and f"verity confirm {repo} {aid}" in p.stdout.splitlines()[-1]
     p = _cli("correct", str(repo), a["id"], "--pick", "1")
     assert p.returncode == 2 and "confirm" in p.stdout + p.stderr
     p = _cli("corrections", str(repo), "undo", "c-0001")

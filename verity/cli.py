@@ -146,13 +146,15 @@ def _print_correct_hint(path: str, ans: dict) -> None:
     if not aid:
         return
     lm = (ans.get("meta") or {}).get("learning") or {}
-    parts = [f"Answer {aid}"]
+    lines = [f"Answer {aid}"]
     if lm.get("alternatives"):
-        parts.append(f"correct it: verity correct {_q(path)} {aid} --pick {lm['alternatives'][0]['rank']}")
+        lines.append(f"  correct it:  verity correct {_q(path)} {aid} --pick {lm['alternatives'][0]['rank']}")
     elif lm.get("correctable"):
-        parts.append(f"correct it: verity correct {_q(path)} {aid} --line FILE:LINE")
-    parts.append(f"right? verity confirm {_q(path)} {aid}")
-    con.print("[dim]" + " · ".join(parts) + "[/]", markup=True, highlight=False)
+        lines.append(f"  correct it:  verity correct {_q(path)} {aid} --line FILE:LINE")
+    lines.append(f"  right?       verity confirm {_q(path)} {aid}")
+    for ln in lines:
+        # one command per line and never wrapped by rich: a wrapped command breaks when it is copied
+        con.print(ln, style="dim", markup=False, highlight=False, soft_wrap=True)
 
 
 def _learner_core(a):

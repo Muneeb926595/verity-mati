@@ -383,7 +383,7 @@ if ($Specs.LongPaths) { Add-Item 'long-paths' 'optional' 'ok' 'Long paths are en
 else { Add-Item 'long-paths' 'optional' 'absent' 'Long paths are off: fine as long as the folder path is short, such as C:\verity' }
 
 Add-Item 'sandbox' 'optional' 'info' "Not on Windows yet: Verity does not run project code here (no Windows sandbox adapter); questions about runtime behaviour are answered from the code"
-Add-Item 'desktop-app' 'optional' 'info' 'The desktop app is macOS only; bin\verity.cmd ui shows the same pages in the browser'
+Add-Item 'desktop-app' 'optional' 'info' 'The desktop app is built on this PC with scripts\windows\build_desktop.cmd (needs Rust and the Visual Studio C++ Build Tools); bin\verity.cmd ui shows the same pages in the browser without building anything'
 
 # ------------------------------------------------------------------------------------------------ 5. not needed
 $ollama = (Get-Command ollama.exe -ErrorAction SilentlyContinue) -or ($env:LOCALAPPDATA -and (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Programs\Ollama')))

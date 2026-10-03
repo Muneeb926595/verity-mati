@@ -411,7 +411,7 @@ function Show-Summary {
         Write-VrLog OK 'Verity is ready. Try:'
         Write-VrLog DATA '  bin\verity.cmd ask samples\navgps-c "Explain how GPS data travels through this application."'
         Write-VrLog DATA '  bin\verity.cmd ask C:\path\to\your\project "What happens when the CRC check fails?"'
-        Write-VrLog DATA '  bin\verity.cmd ui            (the app in your browser; the native desktop app is not ported to Windows yet)'
+        Write-VrLog DATA '  bin\verity.cmd ui            (the app in your browser; the desktop app: scripts\windows\build_desktop.cmd -Shortcut)'
         Write-VrLog DATA '  bin\verity.cmd mcp           (MCP server for AI assistants)'
         Write-VrLog DATA '  scripts\windows\analyze.cmd -StressTest -Apply    (measure and re-pick the model on this machine)'
     }

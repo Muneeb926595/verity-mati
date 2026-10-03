@@ -4,8 +4,8 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 MODE="${1:---llm}"
-S="$ROOT/bin/verity"; P="$ROOT/samples/navgps-c"; OUT="$ROOT/docs/demos"; mkdir -p "$OUT"
-"$S" index "$P" > "$OUT/0-index.txt" 2>&1
+S="$ROOT/bin/verity"; P="samples/navgps-c"; OUT="$ROOT/docs/demos"; mkdir -p "$OUT"   # P relative: no local path in transcripts
+"$S" index "$P" --full > "$OUT/0-index.txt" 2>&1      # --full: the transcript shows every indexing phase
 qs=("Explain how GPS data travels through this application."
     "What does ProcessGpsData() do?"
     "What is the purpose of currentHeading?"
