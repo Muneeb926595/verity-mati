@@ -1,7 +1,7 @@
 # Verity: handoff for the next Claude Code session
 
-Written 2026-10-02 at the end of a long session on the original Mac (folder `~/Desktop/mati`). Read all of this
-before acting. It replaces the previous session's memory, which does not travel to another machine. The full build log
+First written 2026-10-02 on the original Mac; last updated 2026-10-03 after Phase 5 (folder `~/Desktop/verity-mati`).
+Read all of this before acting. It replaces the previous session's memory, which does not travel to another machine. The full build log
 is `PROGRESS.md`; how to use the product is in `README.md`.
 
 ## 0. Where things stand
@@ -16,10 +16,12 @@ is `PROGRESS.md`; how to use the product is in `README.md`.
 - **Name:** the product was renamed to Verity on 2026-10-02 because the user found the earlier working name
   unprofessional. Every identifier, file, doc, icon and screenshot was changed and regression-tested (section 6).
   Never reintroduce the earlier name anywhere.
-- **Phase 5, "learning from corrections", is built** (2026-10-03) on branch `phase5-learning-from-corrections`, with a
-  PR against `windows-first-run-desktop-app`. The user tests it by hand and merges it. What it does, how it was
-  measured and what falls short: `PROGRESS.md`, "Phase 5"; how to use it: `README.md`, "Teach it when it picks the
-  wrong place".
+- **Branches:** `main` (up to the regression tools, 2026-10-02) ← `windows-first-run-desktop-app` (the first real
+  Windows run and the Windows desktop app; not merged into `main` yet) ← `phase5-learning-from-corrections`.
+- **Phase 5, "learning from corrections", is built** (2026-10-03) on `phase5-learning-from-corrections`, pushed for a
+  pull request against `windows-first-run-desktop-app`. The user tests it by hand and merges it. What it does, how it
+  was measured and what falls short: `PROGRESS.md`, "Phase 5"; the before/after record: `logs/phase5-regression.status`;
+  how to use it: `README.md`, "Teach it when it picks the wrong place".
 
 ## 1. What Verity is
 
@@ -104,7 +106,7 @@ verity/            engine (Python 3.12)
   bench/run.py       known-answer benchmark runner
 workers/roslyn/    C# worker (VerityRoslyn); build.sh restores (locked) and publishes to bin/
 ui/                SolidJS UI (prebuilt in ui/dist); ui/scripts/e2e-cdp.mjs = end-to-end check + screenshots
-desktop/           Tauri 2 shell (macOS); src-tauri/src/main.rs has a self-test mode
+desktop/           Tauri 2 shell (macOS and Windows); src-tauri/src/main.rs has a self-test mode
 bin/               verity, verity.cmd, verity.ps1 launchers
 scripts/           setup.sh, setup_toolchains.sh, download_models.sh, check_prereqs.sh, verify.sh, run_demos.sh,
                    build_ui.sh, build_desktop.sh, make_windows_bundle.sh, lib/models.sh (model pins + fit rule)
@@ -115,7 +117,8 @@ bench/             suites (suite, heldout, dialects, realworld*.json), gold/, re
 samples/           navgps-c, navgps-cs, msvc-telemetry, ti-motor-c2000 (ours); realworld/ (13 open-source projects;
                    cJSON is held-out project #10, added for Phase 5)
 tests/             pytest (15 test files + conftest.py, 203 tests)
-docs/              ENGINE_API.md, FACT_SCHEMA.md, DEMOS.md + demos/, screenshots/ (25 images)
+docs/              ENGINE_API.md, FACT_SCHEMA.md, DEMOS.md + demos/, screenshots/ (28 images; 19-21 = learning)
+logs/              regression records: final14.status (v0.5.0), phase5-regression.status (Phase 5)
 data/              settings.json, repos/<project-id>/ (indexes), logs/, run/   (not in the Windows zip)
 models/, tools/, .venv/   downloaded/built by setup (not in the Windows zip)
 ```
@@ -203,9 +206,14 @@ Pinned tool versions:
   | NModbus (C#) | 10/12 |
   | lwIP | 15/15 |
 
-- **Baseline: with gpt-oss-20b and meaning search, 96/99** (95/99 before Phase 5; NModbus `nm-wait-negative` is now
-  right) on suite, heldout, dialects, M2Mqtt, nanopb and NModbus
-  (31, 15, 17, 11, 11, 10). There were 0 invented names and 11 rejected claims in every run.
+- **Baseline: with gpt-oss-20b and meaning search, 96/99** on suite, heldout, dialects, M2Mqtt, nanopb and NModbus
+  (31, 15, 17, 11, 11, 11). It was 95/99 before Phase 5 (NModbus 10/12); `nm-wait-negative` is now right. 0 invented
+  names; 12 rejected claims (11 before; the extra one is in that answer, a call cited one line off and removed by the
+  verifier).
+- **Learning proof (Phase 5):** `python bench/learning_protocol.py [--embed | --llm]` runs on a private copy of cJSON
+  (1, 2 and 12 minutes). Expect before 4/14; after one correction per miss 13/14 (facts only) or 12/14; every corrected
+  question discloses its correction; no neighbour uses one; "stale after edit" OK. Results go to
+  `bench/results/realworld_heldout10_learning/`.
 - **Results vary between runs. Compare pass/fail per question, not raw text.**
   - Even unchanged code differs in about 35 of 207 Direct answers between runs. The causes are the order of tied
     candidates, memory addresses (ASLR) in scenario output, and internal ids.
@@ -221,7 +229,11 @@ Pinned tool versions:
   2. Make the change, then capture `../caps/after` the same way.
   3. `python scripts/regress/compare.py ../caps/after ../caps/before-1 ../caps/before-2` (add `--text-only` for
      model runs). It reports pass/fail changes, index differences, and answers that differ beyond the normal
-     run-to-run variation.
+     run-to-run variation. `--map OLD=NEW` rewrites paths in the baselines (a baseline captured in another folder),
+     and `--ignore FIELD` leaves out a field the change adds (Phase 5 used `--ignore learning --ignore topk_rank`).
+  4. To capture the old code without touching your checkout, use a worktree:
+     `git worktree add /tmp/wt-base <branch> --detach`, then symlink the git-ignored `models`, `tools`, `.venv`,
+     `vendor` and `workers/roslyn/bin` into it from the main folder (without the worker, C# falls back).
 - **UI end-to-end:**
   1. Start the engine: `.venv/bin/python -m verity.engine.server --port 8765 --token testtoken`.
   2. Start Chrome: `--headless=new --remote-debugging-port=9222 --user-data-dir=<tmp>`.
@@ -294,20 +306,32 @@ Pinned tool versions:
     UI 30/30; desktop self-test, CLI/MCP and the Windows checks all pass. Every remaining text difference was shown
     to be ordinary run-to-run variation.
 
-- **2026-10-03, review of `windows-first-run-desktop-app`, then Phase 5:**
+- **2026-10-03, review of `windows-first-run-desktop-app`, then Phase 5** (details in `PROGRESS.md`):
   - The Windows branch was reviewed in depth: pass/fail is identical (198/207 Direct), and libmodbus parse errors went
     from about 200 per file to about 0. The macOS desktop app was rebuilt and self-tested.
   - Phase 5 was built on `phase5-learning-from-corrections` (P5-0..P5-6, `PROGRESS.md`):
     - the store, the anchors and the apply logic, with CLI, MCP, RPC and the app;
     - the proof on cJSON (project #10). Before: 4/14. After one correction per miss: 12–13/14, with every corrected
       question disclosing its correction. Paraphrases reach 4 of 6 with meaning search, below the spec's 9 of 10.
-  - Fixed on the way: a crash on indirect calls in failure answers, the macro wording, repeated downstream calls, the
-    desktop fallback folder, and stale `ui/dist` after a checkout.
+  - Fixed on the way: a crash on indirect calls in failure answers, the macro wording, repeated downstream calls, a
+    unit test's helper answering for the program, the desktop fallback folder, stale `ui/dist` after a checkout, and
+    three messages that still said the desktop app was macOS only.
+  - An independent read-only review of the feature found 15 issues (function and switch-case picks, negation, import
+    atomicity, a locked file treated as damaged, …); all are fixed, each with a test.
+  - Regression against the base branch: pytest 202 passed + 1 skipped; Direct 198/207 with no pass/fail change (two
+    captures per side); model 95/99 → 96/99; UI end-to-end 42/42; desktop self-test OK
+    (`logs/phase5-regression.status`).
 
 ## 7. Open items, roughly in priority order
 
 1. **Phase 5 follow-ups:**
-   - The user tests the branch by hand, then merges it.
+   - Open the pull request (`phase5-learning-from-corrections` → `windows-first-run-desktop-app`) if it is not open
+     yet: the `gh` CLI on the Mac is logged in to a work account that cannot see the personal repository (section 9).
+     The drafted description is in `/tmp/verity-phase5-pr-body.md` while that file lasts; `PROGRESS.md` ("Phase 5")
+     and `logs/phase5-regression.status` hold everything it summarises.
+   - The user tests the branch by hand, then merges it. Then consider merging `windows-first-run-desktop-app` into
+     `main`, and a version bump to 0.6.0 (`verity/__init__.py`, `ui/package.json`, `desktop/package.json`,
+     `desktop/src-tauri/tauri.conf.json`); neither was done without the user.
    - Run the learning journey on Windows (the desktop app saves exports into Downloads; check the file dialog for
      import).
    - Paraphrase matching is below the spec's target (4 of 6 with meaning search, 2 of 6 without). Options to measure
@@ -315,6 +339,10 @@ Pinned tool versions:
      let a same-meaning paraphrase routed to a non-correctable intent be re-routed when the relevance guard passes.
    - The engine never learns from confirmations beyond keeping them as test cases (exported with
      `verity corrections export --format bench`).
+   - Facts-only `nm-wait-negative` (NModbus) still picks a retry handler: the failure ranking does not reach the C#
+     property setter that throws. The local model picks the right one.
+   - `CodeGraph` loads `fnaddr` without ORDER BY (section 8); adding one would make those lists deterministic, at the
+     cost of one-time wording changes in a regression run.
 2. **Windows follow-ups:** a PC without a GPU and one without Visual Studio for real (both were only simulated); a POSIX
    header pack for `sys/socket.h`, `unistd.h`, `termios.h` (POSIX-only code such as libmodbus is F3 on Windows);
    a CMake generator that exports compile commands on Windows (Ninja, inside a VS developer environment); a Windows
@@ -324,7 +352,7 @@ Pinned tool versions:
 5. Benchmark gpt-oss-120b (C3) with `-QualityCheck` on a machine that can hold it.
 6. Validation on a customer's industrial codebase. This has not been done yet.
 
-## 8. Known issues (pre-existing, not caused by the rename)
+## 8. Known issues (pre-existing)
 
 - **Windows wording:** answers name `_InterlockedExchange()` (what the SDK's `InterlockedExchange` macro expands to)
   where the Mac says `InterlockedExchange()`. Left as it is: the name check only accepts indexed names.
@@ -352,10 +380,17 @@ Pinned tool versions:
   only with a new held-out measurement (`bench/learning_protocol.py`).
 - **Model servers:** never run two engines with the 20B model on a 24 GB machine at once. The second one falls back
   to Direct mode without saying so loudly.
-- **Long runs:** runs over 2 hours exceed the background-task cap; launch them with `nohup`.
+- **Long runs:** the background-task cap is 2 hours, and any job started from a Claude Code session, with `nohup` or
+  not, loses access to `~/Desktop` (macOS privacy protection) when that session ends: it then fails with "Operation
+  not permitted" on `.venv/pyvenv.cfg`. Keep the session alive until runs finish, split long chains into parts, and
+  re-run anything that ran past a session end.
+- **GitHub CLI:** `gh` on the Mac is logged in to a work account that cannot see `Muneeb926595/verity-mati`; `git push`
+  works through the `github-personal` SSH alias. To open a pull request, use the web page
+  (`…/compare/<base>...<branch>?expand=1`) or `gh auth login` with the personal account.
 - **Benchmarks under load:** never run several captures, or a capture and pytest, at once: overloaded parser workers
-  hit the 180 s per-file timeout and the indexes (and answers) change. One at a time, and a baseline must be a full
-  copy of the install (a git worktree lacks the git-ignored C# worker in `workers/roslyn/bin`, so C# falls back).
+  hit the 180 s per-file timeout and the indexes (and answers) change. One at a time. A baseline needs a full install:
+  a plain git worktree lacks the git-ignored C# worker in `workers/roslyn/bin` (C# falls back), so symlink the
+  ignored folders into it (section 5).
 - **Windows processes:** `.venv\Scripts\python.exe` is a launcher that starts the real interpreter as a child; kill
   the tree, not the launcher. A thread blocked reading a pipe stalls child-process start on Windows: poll instead.
 - **PowerShell 5.1:**
@@ -384,9 +419,11 @@ Pinned tool versions:
 
 ## 11. Suggested way to resume
 
-Start the new session in this folder and say, for example: "Read HANDOFF.md and PROGRESS.md, then run the
-prerequisites check and tell me what this PC needs." Then:
-1. run `check_prereqs`;
-2. run setup;
+Start the new session in this folder and say, for example: "Read HANDOFF.md and PROGRESS.md, then tell me where
+Phase 5 stands." Then:
+1. `git fetch` and check out the branch to work on (section 0); run `bash scripts/build_ui.sh --check` and rebuild
+   the UI if it says so (setup and the desktop scripts do this on their own);
+2. on a new machine: run `check_prereqs`, then setup;
 3. run pytest and a Direct suite (expect section 5's numbers);
-4. report back with time estimates before long steps.
+4. for Phase 5 on Windows: pytest, `python bench/learning_protocol.py`, and the UI end-to-end check (section 5);
+5. report back with time estimates before long steps.

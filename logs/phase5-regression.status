@@ -1,0 +1,73 @@
+Phase 5 regression record — 2026-10-03, Apple M3 / 24 GB, macOS 26.2
+before: windows-first-run-desktop-app @ 73972e7 (git worktree; models, tools, .venv, vendor, workers/roslyn/bin symlinked)
+after:  phase5-learning-from-corrections @ 3a19831 (+ b8d272e from the second Direct capture on; it only changes
+        how a damaged learned.db is closed before recovery)
+tools:  scripts/regress/capture.py (fresh data folder per run), scripts/regress/compare.py --ignore learning --ignore topk_rank
+
+pytest exit=0 202 passed, 1 skipped (PowerShell not installed)
+
+direct before #1: 198/207  suite=31/31 heldout=15/15 dialects=17/17 realworld=14/14 realworld_heldout=14/14 realworld_heldout2=11/12 realworld_heldout3=13/13 realworld_heldout4=12/12 realworld_heldout5=14/14 realworld_heldout6=12/14 realworld_heldout7=11/12 realworld_heldout8=9/12 realworld_heldout9=10/12 realworld_lwip=15/15
+direct before #2: 198/207  suite=31/31 heldout=15/15 dialects=17/17 realworld=14/14 realworld_heldout=14/14 realworld_heldout2=11/12 realworld_heldout3=13/13 realworld_heldout4=12/12 realworld_heldout5=14/14 realworld_heldout6=12/14 realworld_heldout7=11/12 realworld_heldout8=9/12 realworld_heldout9=10/12 realworld_lwip=15/15
+direct after #1: 198/207  suite=31/31 heldout=15/15 dialects=17/17 realworld=14/14 realworld_heldout=14/14 realworld_heldout2=11/12 realworld_heldout3=13/13 realworld_heldout4=12/12 realworld_heldout5=14/14 realworld_heldout6=12/14 realworld_heldout7=11/12 realworld_heldout8=9/12 realworld_heldout9=10/12 realworld_lwip=15/15
+direct after #2: 198/207  suite=31/31 heldout=15/15 dialects=17/17 realworld=14/14 realworld_heldout=14/14 realworld_heldout2=11/12 realworld_heldout3=13/13 realworld_heldout4=12/12 realworld_heldout5=14/14 realworld_heldout6=12/14 realworld_heldout7=11/12 realworld_heldout8=9/12 realworld_heldout9=10/12 realworld_lwip=15/15
+
+compare direct after #1 vs before #1 + #2:
+  DIFFERENT realworld/rw-rtos-isrs at /result/answer[1]
+  DIFFERENT realworld_heldout2/lfs-sync at /result/answer[1]
+  DIFFERENT realworld_heldout5/ucos-mutex-pcp at /result/evidence[9]/id
+  DIFFERENT realworld_heldout9/nm-wait-negative at /grade/checks/_citation_precision/total
+  DIFFERENT realworld_lwip/lw-ip-checksum at /result/answer[2]
+  DIFFERENT realworld_lwip/lw-threads at /result/answer[1]
+  DIFFERENT realworld_lwip/lw-path-eth-tcp at /result/answer[2]
+  DIFFERENT realworld_lwip/lw-input-fn at /result/answer[3]
+  unchanged: 189; varies between the baselines too: 10; different: 8
+  pass/fail changes: none
+  index differences beyond the baselines: none
+compare direct after #2 vs before #1 + #2:
+  DIFFERENT realworld/rw-rtos-isrs at /result/answer[1]
+  DIFFERENT realworld_heldout2/lfs-sync at /result/answer[1]
+  DIFFERENT realworld_heldout9/nm-wait-negative at /grade/checks/_citation_precision/total
+  DIFFERENT realworld_lwip/lw-ip-checksum at /result/answer[2]
+  DIFFERENT realworld_lwip/lw-threads at /result/answer[1]
+  DIFFERENT suite/c-origin-lat at /result/flow[7]/detail
+  unchanged: 191; varies between the baselines too: 10; different: 6
+  pass/fail changes: none
+  index differences beyond the baselines: none
+  read by hand: rw-rtos-isrs, lfs-sync, lw-ip-checksum, lw-threads = intended macro wording; nm-wait-negative = failing
+  before and after (before: search fallback hiding the indirect-call crash; after: a wrong but visible place);
+  c-origin-lat = hash seed (same output on both branches with fixed PYTHONHASHSEED); lw-input-fn, lw-path-eth-tcp =
+  index write order (unordered SELECT * FROM fnaddr); ucos-mutex-pcp = evidence id renumbered
+
+model (gpt-oss-20b + meaning search) before: 95/99  suite=31/31 heldout=15/15 dialects=17/17 realworld_heldout7=11/12 realworld_heldout8=11/12 realworld_heldout9=10/12
+  (realworld_heldout9 re-run: the first attempt lost access to the project folder when the Claude session ended)
+model (gpt-oss-20b + meaning search) after:  96/99  suite=31/31 heldout=15/15 dialects=17/17 realworld_heldout7=11/12 realworld_heldout8=11/12 realworld_heldout9=11/12
+  (after: the last three suites were captured separately, the first attempt was stopped by the session end)
+  invented names: 0 before, 0 after; rejected claims: 11 before, 12 after (the extra one is in nm-wait-negative's new
+  answer: a constructor call cited one line off, removed by the verifier)
+compare model after vs before (--text-only):
+  DIFFERENT dialects/msvc-scenario-85 at /answer[0]
+  DIFFERENT realworld_heldout7/m2-send-fail at /answer[len]
+  DIFFERENT realworld_heldout7/m2-connect-fail at /answer[0]
+  DIFFERENT realworld_heldout7/m2-varbyte at /answer[0]
+  DIFFERENT realworld_heldout8/np-stream-full at /answer[0]
+  DIFFERENT realworld_heldout8/np-missing-required at /answer[0]
+  DIFFERENT realworld_heldout8/np-read-callers at /answer[0]
+  DIFFERENT realworld_heldout8/np-bytes-written at /answer[0]
+  DIFFERENT realworld_heldout9/nm-wrong-slave at /answer[0]
+  DIFFERENT realworld_heldout9/nm-checksum at /answer[0]
+  DIFFERENT realworld_heldout9/nm-wait-negative at /answer[len]
+  DIFFERENT realworld_heldout9/nm-exception-detect at /answer[0]
+  DIFFERENT suite/c-trap-nonexistent-var at /answer[0]
+  unchanged: 86; varies between the baselines too: 0; different: 13
+  pass/fail changes: ['realworld_heldout9/nm-wait-negative: False -> True']
+  index differences beyond the baselines: none
+  read by hand: nm-wait-negative is now right (the setter checks value < 0 and throws ArgumentException,
+  NModbus/IO/ModbusTransport.cs:70); the other answers differ only in the model's summary paragraph
+
+learning proof direct: before main 4/14, paraphrases 2/10, neighbours 2/6 | after main 13/14, corrected 9/9, paraphrases of corrected 2/6, neighbours 2/6 | stale after edit OK
+learning proof direct-embed: before main 4/14, paraphrases 2/10, neighbours 2/6 | after main 12/14, corrected 8/8, paraphrases of corrected 4/6, neighbours 2/6 | stale after edit OK
+learning proof llm-embed: before main 4/14, paraphrases 2/10, neighbours 3/6 | after main 12/14, corrected 8/9, paraphrases of corrected 4/7, neighbours 3/6 | stale after edit OK
+
+ui e2e (ui/scripts/e2e-cdp.mjs, headless Chrome, facts-only engine) exit=0 42/42
+desktop self-test (Verity.app, VERITY_DESKTOP_SELFTEST=quit) exit=0 home + answer stages; no engine or model server left
+design docs (headless Chrome) one-pager 2/2 Mermaid rendered, design doc 23/23, 0 errors, no horizontal overflow

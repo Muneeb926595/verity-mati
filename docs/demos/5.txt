@@ -3,11 +3,10 @@ Your question
 
 Answer
   When GPS data stops arriving, NavigationTick() detects the loss after 2000 ms and sets `g_nav.mode
-  = NAV_MODE_HOLD`, then calls VehicleController_Hold() which sets `s_last_command_deg = 0.0`, calls
-  `motor_set_steering(0)`, and calls `led_set_status(0)`. This stops bearing_deg() and
-  VehicleController_SetDirection() from running, so the vehicle holds its current position. If
-  ENABLE_DEAD_RECKONING is defined, NavigationTick() would instead set `g_nav.mode =
-  NAV_MODE_DEAD_RECKONING` and continue processing.
+  = NAV_MODE_HOLD`; it then calls VehicleController_Hold(), which sets `s_last_command_deg = 0.0`,
+  calls `motor_set_steering(0)`, and calls `led_set_status(0)`. This stops bearing_deg() and
+  VehicleController_SetDirection() from running, so the vehicle holds its last heading and stops
+  steering.
 
   Losing the data is detected in NavigationTick() (nav/navigation.c:68), which checks `g_nav.has_fix
   && (now_ms - g_nav.last_fix_ms) > GPS_TIMEOUT_MS` (GPS_TIMEOUT_MS = 2000).
@@ -71,6 +70,9 @@ Evidence
 
 Certainty: Depends on runtime values  confirmed: 5, runtime-dependent: 1, observed: 11
 
+Other places that could be the answer
+  [2] main() checks (now - last_tick) >= NAV_TICK_MS (app/main.c:23)
+
 Execution path
   → ProcessGpsData()  (nav/navigation.c:45)
   → gps_validate_fix()  (gps/gps_validation.c:5)
@@ -117,4 +119,7 @@ Verification
   ✓ [OBSERVED] Call sequence observed: ProcessGpsData → gps_validate_fix → CalculateHeading → wrap180 → wrap360 → NavigationTick → bearing_deg → wrap360 → VehicleController_SetDirection → wrap180 → wrap360 → clamp → NavigationTick → VehicleController_Hold  — recorded by instrumentation during the run
   ✓ [OBSERVED] Final values: g_nav.mode = 3 (NAV_MODE_HOLD), g_nav.has_fix = 1, g_nav.speed_knots = 4.0000  — printed by the harness after the run
   ✓ [OBSERVED] Hardware/OS calls: motor_set_steering(50); motor_set_steering(0); led_set_status(0)  — recorded by the stand-in (stub) functions during the run
-30.8 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+14.4 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+Answer a11b9c37583c
+  correct it:  verity correct samples/navgps-c a11b9c37583c --pick 2
+  right?       verity confirm samples/navgps-c a11b9c37583c

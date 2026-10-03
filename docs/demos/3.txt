@@ -2,10 +2,8 @@ Your question
   What is the purpose of currentHeading?
 
 Answer
-  `currentHeading` holds the vehicle’s filtered heading in degrees true. It is initialized to 0.0 by
-  `navigation_init()` and updated by `ProcessGpsData()` using `CalculateHeading()`. The value is
-  then read by `CalculateHeading()` and `NavigationTick()`, which ultimately passes it to
-  `VehicleController_SetDirection()` and `motor_set_steering()` to control the steering hardware.
+  currentHeading holds the vehicle’s filtered heading in degrees true, set during initialization and
+  updated by GPS data, and is used by navigation functions to drive the steering motor.
 
   currentHeading is a global variable of type `double`, defined in nav/navigation.c:7 — the code
   describes it as: "filtered vehicle heading, degrees true [0, 360)".
@@ -45,4 +43,7 @@ Verification
   ✓ [CONFIRMED] CalculateHeading() reads currentHeading at nav/navigation.c:38.
   ✓ [CONFIRMED] NavigationTick() reads currentHeading at nav/navigation.c:81.
   ✓ [CONFIRMED] The value of currentHeading reaches motor_set_steering() (hardware/OS output (by name)).
-12.6 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+5.1 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+Answer 9f96e526dc09
+  correct it:  verity correct samples/navgps-c 9f96e526dc09 --line FILE:LINE
+  right?       verity confirm samples/navgps-c 9f96e526dc09

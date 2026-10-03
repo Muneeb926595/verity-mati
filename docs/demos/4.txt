@@ -3,8 +3,8 @@ Your question
 
 Answer
   When GPS sends heading 270, the code processes it through `ProcessGpsData()` and validates the
-  fix. The heading is used to calculate a new `currentHeading` of 337.5000, which leads to
-  `motor_set_steering(50)` being called.
+  fix. The heading is used to set `currentHeading` to 337.5000, and the vehicle controller receives
+  a steering command of 50 via `motor_set_steering(50)`.
 
   I ran the real code in a sandbox with heading = 270.
 
@@ -76,4 +76,6 @@ Verification
   ✓ [OBSERVED] Call sequence observed: ProcessGpsData → gps_validate_fix → CalculateHeading → wrap180 → wrap360 → NavigationTick → bearing_deg → wrap360 → VehicleController_SetDirection → wrap180 → wrap360 → clamp  — recorded by instrumentation during the run
   ✓ [OBSERVED] Final values: g_nav.mode = 1 (NAV_MODE_TRACKING), g_nav.has_fix = 1, currentHeading = 337.5000, g_nav.speed_knots = 4.0000  — printed by the harness after the run
   ✓ [OBSERVED] Hardware/OS calls: motor_set_steering(50)  — recorded by the stand-in (stub) functions during the run
-16.0 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+8.3 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+Answer 0af0bd1a13a3
+  right?       verity confirm samples/navgps-c 0af0bd1a13a3

@@ -325,9 +325,9 @@ details .dc p:first-child{margin-top:0}
     <p style="font-size:16px;line-height:1.55;font-weight:500;color:rgba(255,255,255,.86);margin:0 0 22px;max-width:72ch">Today Verity answers the same question the same way until an engineer changes its code. This feature lets the people using it <b style="color:#fff">point at the right place</b> when an answer is wrong. The correction is kept for that project, <b style="color:#fff">shown in every answer it affects</b> and can be undone. It becomes ranking hints, glossary words and test cases, with <b style="color:#fff">no model retraining and nothing leaving the machine</b>.</p>
     <div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:4px">
       <div class="stat"><b style="color:#F9C6DD">9 → 14 / 24</b><span>first contact, final round (facts → model)</span></div>
-      <div class="stat"><b style="color:#FBD9A8">0</b><span>learning from use today</span></div>
+      <div class="stat"><b style="color:#FBD9A8">4 → 13 / 14</b><span>cJSON, before → after one correction per miss (built 3 Oct)</span></div>
       <div class="stat"><b style="color:#A8E3D3">4</b><span>ways each correction is used</span></div>
-      <div class="stat"><b style="color:#C9D8F5">7</b><span>build steps, P5-0 first</span></div>
+      <div class="stat"><b style="color:#C9D8F5">7 / 7</b><span>build steps done, P5-0 first</span></div>
     </div>
   </div>
 </header>
@@ -528,7 +528,7 @@ CREATE TABLE confirmation (answer_id TEXT, created REAL, question TEXT);  -- "th
 <section id="plan">
   <div class="sechead"><div class="ichip" style="background:#ECEEF2;color:#4A5568"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M16 16l2 2 4-4"/></svg></div>
     <div><p class="eyebrow" style="color:#4A5568">BUILD PLAN · 06</p><h2 class="big">Pick-up plan for the next session</h2></div></div>
-  <p class="lede">Seven steps, each with its own tests. P5-0 comes first, because it decides how much the rest is worth. The sizes are rough estimates.</p>
+  <p class="lede">Seven steps, each with its own tests. P5-0 comes first, because it decides how much the rest is worth. The sizes are rough estimates. <b>All seven are done (3 Oct 2026); section 08 has the results and the differences from this plan.</b></p>
 
   <div class="timeline">
     <div class="tl"><h5>P5-0 · Measure first (≈½ day)</h5><p>Return the top 3 candidates in the answer's <code>meta</code>. Add <code>--topk 3</code> to the benchmark grader (expected names in any of the top 3). Run it on the kept first-run questions (optimistic: that code is tuned now) and on a new never-seen project #10 (the honest number). <b>Gate:</b> show alternatives only if top-3 is clearly above top-1.</p></div>
@@ -598,14 +598,14 @@ flowchart TB
   </div>
 
   <div class="recap"><h4>🧭 Start here next session</h4><ul>
-    <li>Read this page, then §39 of the design doc (<code>LOCAL_CODE_INTELLIGENCE_SYSTEM_DESIGN.html</code>) and <code>PROGRESS.md</code> in <code>~/Desktop/mati</code>.</li>
-    <li>Run <code>bash scripts/verify.sh</code> and pytest; 148 tests should pass.</li>
-    <li>Do P5-0 before writing any UI: measure top-1 against top-3.</li>
-    <li>Pick never-seen project #10 now, and write its questions (with paraphrase pairs) before running anything on it.</li>
+    <li><b>Built (3 Oct 2026).</b> Read section 08 first, then <code>PROGRESS.md</code> ("Phase 5") and <code>HANDOFF.md</code> in <code>~/Desktop/verity-mati</code>.</li>
+    <li>The code is on branch <code>phase5-learning-from-corrections</code> (from <code>windows-first-run-desktop-app</code>). Run <code>python -m pytest tests</code>: 202 pass, 1 skips without PowerShell.</li>
+    <li>Reproduce the proof with <code>python bench/learning_protocol.py [--embed | --llm]</code>. It runs on a private copy of cJSON.</li>
+    <li>Next: measure paraphrase matching (below target) on never-seen project #11, with its questions and paraphrases written before the first run.</li>
     <li>Keep corrections out of <code>index.db</code>, and keep every correction visible and undoable.</li>
   </ul></div>
 
-  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Provenance: written 1 Oct 2026 against <code>~/Desktop/mati</code> v0.5.0 (final regression: <code>logs/final14.status</code>, re-checks in <code>logs/final15.status</code>). File and line references were verified that day; re-check them before editing. The thresholds, bonuses, interfaces and effort sizes are proposals.</p>
+  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Provenance: written 1 Oct 2026 against <code>~/Desktop/mati</code> v0.5.0 (final regression: <code>logs/final14.status</code>, re-checks in <code>logs/final15.status</code>). File and line references were verified that day; re-check them before editing. The thresholds, bonuses, interfaces and effort sizes are proposals. Section 08 (Status) was added on 3 Oct 2026, after the build.</p>
 </section>
 
 <section id="status">
@@ -635,7 +635,23 @@ flowchart TB
   <div class="cal tip"><span class="t">What P5-0 decided</span>On first contact the right place was rarely among the runners-up: cJSON top-3 was 4/14 facts-only and 5/14 with the model, against 4/14 top-1. That made <b>pick a line</b> the main way to correct. The alternatives are a shortcut, shown only when they score at least 0.6 × the top.</div>
   <div class="cal mistake"><span class="t">Thresholds came from this project</span>Meaning-pin is ≥ 0.80 (with a relevance guard) and hint is ≥ 0.70. They were set from cJSON's measured similarities: paraphrases 0.60–0.89, neighbours 0.45–0.76, unrelated ≤ 0.63. Re-check them on the next never-seen project before changing anything.</div>
 
-  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Status written 3 Oct 2026. The pull request goes against <code>windows-first-run-desktop-app</code>; it is merged after a manual test.</p>
+  <h3 class="mid">Where the build differs from this spec</h3>
+  <div class="tbl"><table>
+    <tr><th>Spec (sections 02–06)</th><th>As built</th><th>Why</th></tr>
+    <tr><td>Pin when the intent and the topic words are the same</td><td>Also the same question word for word, and the same meaning (similarity ≥ 0.80) when the question names a word of the corrected code. A meaning match answers with the correction's kind of question. The strongest match wins (same words, then same topic, then same meaning). A question and its opposite ("cannot be opened" / "is opened") never match.</td><td>Paraphrases rarely keep the topic words. Negation is dropped from the topic words.</td></tr>
+    <tr><td>Hint at meaning similarity ≥ 0.85</td><td>≥ 0.70</td><td>Measured on cJSON: 0.85 caught 1 paraphrase in 10.</td></tr>
+    <tr><td>Show alternatives "when the top candidates are close"</td><td>Score ≥ 0.6 × the top, at most two. "Pick a line" is the main control, with <b>Look elsewhere</b> (file chips and a function search).</td><td>P5-0: the right place was rarely a runner-up on first contact.</td></tr>
+    <tr><td>Settings → Corrections / Glossary</td><td>A <b>Learned</b> panel opened from the project bar (Corrections, Glossary, Share), with counts and a stale dot</td><td>Corrections belong to a project, not to the app's settings.</td></tr>
+    <tr><td>Correctable: the failure recipes, explain, where_computed</td><td>Also which_fn and purpose. Every answer of these kinds is correctable, also when it fell back to search.</td><td>That is when pointing at the right place helps most.</td></tr>
+    <tr><td>Schema in section 04</td><td>Adds the question's normal form and meaning vector, the branch line and side, a second anchor for the branch, the line's offset in its function, conflicts, replaces, uses, and the source (local / import). Also confirmation, event and meta tables.</td><td>Re-anchoring, switch cases, conflicts and an audit trail need them.</td></tr>
+    <tr><td>Export json · bench</td><td>json · bench · toml (accepted glossary terms for <code>verity.toml</code>). Import checks every correction against the local code first and is all-or-nothing.</td><td>Sharing a glossary through the repository.</td></tr>
+    <tr><td>MCP <code>verity_correct</code> with <code>project</code></td><td><code>path</code> (like the other six tools), plus <code>confirm</code> and <code>undo</code></td><td>Consistency.</td></tr>
+    <tr><td>RPC: correct, confirm, corrections list/remove/export/import, glossary list/accept/remove</td><td>Also <code>answer.unconfirm</code>, <code>corrections.summary|restore|note</code>, <code>glossary.add|reject</code> and the event <code>learning.changed</code> (<code>docs/ENGINE_API.md</code>)</td><td>The app's panel needs them.</td></tr>
+    <tr><td>CLI <code>verity correct</code>, <code>verity corrections</code></td><td>Also <code>verity confirm</code> and <code>verity glossary</code>; <code>corrections</code> has list, undo, restore, note, export and import</td><td>Same reach as the app.</td></tr>
+    <tr><td>(not in the spec)</td><td>Refused: correcting to the place the answer already gave (confirm instead), a line in a file changed since the last index, an alternative from before an edit, and an answer of a kind that does not hinge on one place. A correction that matched but could not be used is still disclosed. A locked <code>learned.db</code> is refused, never treated as damaged.</td><td>Found by an independent review and the cJSON runs. Each has a test.</td></tr>
+  </table></div>
+
+  <p style="font-size:12px;color:var(--ink-4);margin-top:18px">Status written 3 Oct 2026. The code is on branch <code>phase5-learning-from-corrections</code>, for a pull request against <code>windows-first-run-desktop-app</code>. It is merged after a manual test.</p>
 </section>
 
 </main>

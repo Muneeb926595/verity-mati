@@ -52,7 +52,7 @@ scripts do not try to get around such a policy.
 | 6 | .NET SDK 10 | Microsoft's `dotnet-install.ps1` (signature checked) into `tools\dotnet` | Stops |
 | 7 | C# worker | Uses the prebuilt worker if it runs; otherwise restores (locked) and publishes it | Stops |
 | 8 | cppcheck | 2.22.0 MSI unpacked into `tools\cppcheck` (nothing installed system-wide) | Warns and continues: it is an optional cross-check |
-| 9 | UI | Uses `ui\dist` when present; otherwise portable Node.js 22 builds it | Stops |
+| 9 | UI | Uses `ui\dist` when present and up to date; when it is missing or older than `ui\src` (after a pull), portable Node.js 22 builds it | Stops |
 | 10 | Models | The embedding model and the chosen chat model, resumable, SHA256-checked; writes `models\selection.json` | Stops (disk space is checked first) |
 | 11 | Stress test | Only with `-StressTest` (see below) | Warns, keeps the estimate |
 | 12 | Verification | `verity probe`, the test suite, a facts-only answer, a model answer; `-QualityCheck` adds a benchmark run | Reported in the summary |
@@ -134,6 +134,8 @@ scripts\windows\run_desktop.cmd               starts the app (builds it first wh
   development with C++"; on a managed PC usually installed by IT), WebView2 (part of Windows 11) and Node.js
   (setup's `tools\node`). The script checks each one and says what is missing. The first build downloads the Rust
   crates and the Tauri CLI and takes a few minutes; later builds take under a minute. The finished app is offline.
+- **After a `git pull` or a branch checkout:** run `build_desktop.cmd` again. It rebuilds `ui\dist` when any UI source
+  is newer (`-BuildUI` forces it), so the app never shows an old UI.
 - **Keep `Verity.exe` inside the Verity folder** (where the build puts it): it finds the engine by walking up from its
   own location. A shortcut can live anywhere. `VERITY_ROOT` overrides the folder.
 - **Stopping:** closing the window, or the app being killed (Task Manager, a crash), stops the engine and any model
@@ -156,7 +158,8 @@ scripts\windows\run_desktop.cmd               starts the app (builds it first wh
 
 **First real run (2026-10-02, Windows 11, RTX 5070, VS 2022 Build Tools):** setup, the system analysis, pytest
 (152 passed, 18 skipped: sandbox-only), every benchmark suite and the desktop app were run on a real PC; the
-findings and fixes are in `PROGRESS.md` (Windows section).
+findings and fixes are in `PROGRESS.md` (Windows section). Phase 5 (learning from corrections, 3 Oct 2026) has not
+been run on Windows yet: run pytest, `.venv\Scripts\python bench\learning_protocol.py` and the UI check there.
 
 ## Troubleshooting
 

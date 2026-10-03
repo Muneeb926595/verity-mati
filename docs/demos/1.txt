@@ -71,5 +71,7 @@ Verification
   ✓ [CONFIRMED] back in ProcessGpsData(): `currentHeading = CalculateHeading(fix->heading_deg, fix->speed_knots)`.
   ✓ [CONFIRMED] NavigationTick(): passes currentHeading to VehicleController_SetDirection().
   ✓ [CONFIRMED] VehicleController_SetDirection() (uses wrap180(), clamp()): uses wrap180().
-16.1 s · Direct mode (built from facts only) · the model quoted code that is not
+9.9 s · Direct mode (built from facts only) · the model quoted code that is not 
 in the checked facts, so the checked template answer is shown
+Answer 223dbff20148
+  right?       verity confirm samples/navgps-c 223dbff20148

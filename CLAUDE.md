@@ -10,3 +10,11 @@ steps. The build log is `PROGRESS.md`.
 - **Security policy:** never help bypass company security controls (device control, Group Policy); point the user
   to IT.
 - **Progress:** record progress in `PROGRESS.md`. Give time estimates before long runs.
+- **Current work:** Phase 5, learning from corrections, is on branch `phase5-learning-from-corrections` (based on
+  `windows-first-run-desktop-app`); the user merges it after a manual test. State and open items: HANDOFF.md sections
+  0 and 7.
+- **Learning guardrails:** corrections live in `learned.db`, never in `index.db`; they only reorder or pin verified
+  candidates; every use is disclosed and undoable; a correction whose code changed is stale and never applied. Change
+  the matching thresholds only with a new held-out measurement (`bench/learning_protocol.py`).
+- **Long runs:** background jobs lose access to `~/Desktop` when the Claude session that started them ends; keep the
+  session alive until they finish, and re-run anything that ran past a session end.

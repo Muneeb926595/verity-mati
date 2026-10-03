@@ -56,7 +56,7 @@ Cross-origin requests are rejected unless the Origin is `http://127.0.0.1…`, `
 | `glossary.add` | `path`, `term`, `identifiers` | `{term, message}` |
 | `glossary.reject` / `glossary.remove` | `path`, `term` | `{term, message}` / `{ok, message}` |
 
-A correction: `{id:"c-0001", question, intent, kind:"pick"|"line", wrong:{fn, name, file, line, side, label},
+A correction: `{id:"c-0001", question, intent, kind:"pick"|"line", wrong:{fn, file, line, side, label},
 target_fn, target_name, target_file, target_line, branch_line, side:"then"|"else"|"case"|null, target_label, note,
 author, status:"active"|"stale"|"removed", status_reason, conflict:[ids], replaces, uses, last_used, created,
 created_label, source:"local"|"import"}`. A glossary term: `{term, identifiers:[…], status:"suggested"|"accepted"|
@@ -100,16 +100,25 @@ A job: `{id, kind:"index"|"ask", project, state:"queued"|"running"|"done"|"faile
   run: null | {ok, runs:[{label, inputs, calls:[fn names], branches:[{file,line,cond,taken,evaluated}], state:{k:v},
                hw_calls:[str], seconds}]},
   id,                                                // pass to answer.correct / answer.confirm
-  meta: {seconds, prose:{mode:"direct"|"model", model?, fallback?}, intent,
-         learning: {correctable,                    // show "Is this the right place?"
-                    candidates:[{rank, fn, file, line, side, span, label}],   // the top places considered (up to 3);
-                                                    // line is null for a function; span = a switch case's lines
-                    alternatives:[…same…],          // the close runners-up a person can pick ("This one")
+  meta: {seconds, prose:{mode:"direct"|"model"|"model+facts", model?, fallback?}, intent,
+         learning: {correctable,                    // show "Is this the right place?" (true for every answer of a
+                                                    // kind that uses corrections: failure_invalid, failure_missing,
+                                                    // explain, purpose, where_computed, which_fn)
+                    candidates:[{rank, fn, file, line, side, span, label, text, score, what}],
+                                                    // the top places considered (up to 3); line is null for a
+                                                    // function; span = a switch case's lines; what = check | function | symbol | assignment
+                    alternatives:[{rank, fn, file, line, side, span, label}],  // close runners-up ("This one")
                     used:[{id, how:"pin"|"hint", match:"same"|"words"|"meaning"|"similar", changed, created, note,
                            target, question, conflicts, meaning?}],
-                    glossary_used?, rerouted?, pin_not_applied?, topic}} }
+                    glossary_used?,                 // accepted glossary terms the question used
+                    rerouted?,                      // the kind of question taken from a same-meaning correction
+                    pin_not_applied?: {id, target, why},   // a correction recorded for this question that this
+                                                    // answer could not use (it comes from the analysis alone)
+                    topic}} }                       // the question's topic words, as corrections are matched
 ```
 An answer that used a correction also says so in `sections.assumptions` ("Uses correction c-0003 (2 Oct 2026),
-recorded for this question: …"). A hint is listed only when its place is still first in the final ranking.
+recorded for this question: <note>"; for a match other than the same question, the recorded question is quoted). A
+hint is listed only when its place is still first in the final ranking. A correction that matched but could not be
+used adds "Correction c-0003 was recorded for this question, but … this answer comes from the analysis alone".
 Status words for users: CONFIRMED "Confirmed in the code", OBSERVED "Observed by running the code",
 INFERENCE "Inferred (likely, not certain)", RUNTIME-DEPENDENT "Depends on runtime values", UNKNOWN "Could not be determined".

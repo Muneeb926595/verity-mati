@@ -61,4 +61,6 @@ Verification
   ✓ [INFERENCE] wrap360() uses data derived from CalculateHeading() (nav/geo_math.c:9).  — follows the data forward; whether a change matters depends on what the change is
   ✓ [INFERENCE] Data derived from CalculateHeading() reaches motor_set_steering().  — found by following the data forward
   • No tests in this project call CalculateHeading(), so a change would not be caught automatically.
-17.9 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+8.7 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+Answer d5cd8d702bb2
+  right?       verity confirm samples/navgps-c d5cd8d702bb2

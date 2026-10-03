@@ -24,15 +24,17 @@ setup's `tools\node`; the build is `tauri build --no-bundle`, so `Verity.exe` st
 
 On macOS the scripts use the Rust toolchain inside the project (`tools/cargo`, `tools/rustup`), the project npm cache
 (`tools/npm-cache`), and `CARGO_TARGET_DIR=desktop/target`. The Tauri CLI is the prebuilt npm package
-`@tauri-apps/cli`. `build_desktop.sh` also rebuilds `ui/dist` first (skip that with `SKIP_UI=1`). The network is
+`@tauri-apps/cli`. `build_desktop.sh` also rebuilds `ui/dist` first (`SKIP_UI=1` skips that only while `ui/dist` is
+up to date with the UI sources). On Windows, `build_desktop.ps1` rebuilds it when it is missing or stale, and
+`-BuildUI` forces it. The network is
 needed only for the first build, to download crates and packages. The finished app is fully offline.
 
 ## How it works
 
 1. **Find the Verity folder (ROOT).** The shell uses `VERITY_ROOT` if it is set and valid. Otherwise it walks up
    from the executable until it finds a folder that contains both `verity/` and `.venv/` (on Windows without the
-   `\\?\` prefix that path resolution adds, so the engine sees ordinary `C:\...` paths). As a last resort it uses
-   `/Users/emumba/Desktop/mati` (Windows: `C:\verity`).
+   `\\?\` prefix that path resolution adds, so the engine sees ordinary `C:\...` paths). Then it tries the folder it
+   was built from (two levels above `desktop/src-tauri`), and as a last resort `/opt/verity` (Windows: `C:\verity`).
 2. **Start the engine.** It runs `ROOT/.venv/bin/python -m verity.engine.server --port 0 --print-ready` with
    `VERITY_EXIT_WITH_PARENT=1` in its own process group, then reads the one-line ready JSON (`{port, token, …}`)
    from the engine's stdout, waiting at most 60 s. A bundled start-up page (`desktop/splash/`) says "Starting the
@@ -63,8 +65,10 @@ Engine output goes to `data/logs/desktop-engine.log`.
 
 `VERITY_DESKTOP_SELFTEST=1|close|quit` makes the shell run a small script in the loaded UI. The script reports
 whether the UI rendered, whether the Tauri bridge is present, and whether the folder-picker permission is granted.
-The report is printed as a `SELFTEST {...}` line. With `close` or `quit`, the app then closes its window or quits,
-which exercises the shutdown path.
+The report is printed as a `SELFTEST {...}` line. With `VERITY_DESKTOP_SELFTEST_PROJECT=<folder>` it also opens that
+project, asks a question and reports the answer's sections (including **Is this the right place?**);
+`VERITY_DESKTOP_SNAPSHOT_DIR=<dir>` saves a picture of each stage (macOS). With `close` or `quit`, the app then closes
+its window or quits, which exercises the shutdown path.
 
 ```bash
 VERITY_DESKTOP_SELFTEST=close desktop/target/release/bundle/macos/Verity.app/Contents/MacOS/Verity

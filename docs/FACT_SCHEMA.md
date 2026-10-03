@@ -1,5 +1,8 @@
 # Verity fact schema (extractor → engine contract)
 
+These facts go into `index.db`, which can always be rebuilt from the code. People's corrections are not facts: they
+live in `learned.db` next to it and survive re-indexing (`docs/ENGINE_API.md`, "Learning from corrections").
+
 Every extractor (C via libclang, C# via the Roslyn worker, tree-sitter / cppcheck fallbacks) emits **JSON Lines**:
 one JSON object per line, each with a `"t"` (type) field. Paths are **relative to the repository root, using `/`**.
 Lines are **1-based**. Unknown fields are ignored by the ingester; missing optional fields are fine.

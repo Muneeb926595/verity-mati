@@ -1,6 +1,8 @@
 # Verity build — durable progress log & checklist
 
 This file is the resume point for the overnight autonomous build. Each session appends to the log at the bottom and ticks items here.
+Order of the sections: Phases 1–5 first (Phase 5, learning from corrections, is the latest work: 2026-10-03), then the
+2026-10-02 sections (Windows setup and first run, prerequisites, the rename to Verity, the move to Git).
 Spec: `docs/development/LOCAL_CODE_INTELLIGENCE_SYSTEM_DESIGN.html` (v0.3, 39 sections, read in full on 2026-09-30).
 
 ## Environment (probed 2026-09-30)
@@ -287,7 +289,8 @@ after reviewing it (below). Nothing retrains the model: a correction only change
     score.
   - **glossary**: suggested on a correction (from the question's words and the identifiers at the line), applied only
     once accepted; `verity.toml [glossary]` is read too.
-  - **disclosure**: `meta.learning.used`, an assumption line "Learned: uses correction c-0003 …", and Undo.
+  - **disclosure**: `meta.learning.used`, an assumption line "Uses correction c-0003 (3 Oct 2026), recorded for this
+    question …" (the text answer prints "Learned: uses correction c-0003 …"), and Undo.
   - Conflicting corrections on one question are flagged; the newest wins and both are named.
 - [x] P5-4 Anchors (`verity/learn/anchor.py`): the line's code hash plus its function and branch.
   - After every index, lazily: a line that moved follows its code inside its function; changed or deleted code turns
@@ -297,7 +300,7 @@ after reviewing it (below). Nothing retrains the model: a correction only change
   - Answer card "Is this the right place?" with **This one**, **✓ The answer was right** and **pick a line…**.
   - Pick mode in the source viewer: click a line, **Look elsewhere** (file chips and a function search), a note,
     **Use this line**. The question is re-asked at once.
-  - "Learned: …" note with Undo on answers that used a correction.
+  - A "learned" note with Undo at the top of answers that used a correction.
   - **Learned** panel (project bar, with counts and a stale dot): Corrections (filter, notes, Undo/Restore, Ask again),
     Glossary (accept, reject, add, remove), Share (export json / test suite / toml; import).
   - In the desktop app, export writes into Downloads.
@@ -342,7 +345,12 @@ after reviewing it (below). Nothing retrains the model: a correction only change
     right place helps most); a correction matched as this question but not used by the recipe is always disclosed
     ("…could not be used here, so this answer comes from the analysis alone"); vectors from another embedding model
     are recomputed.
-- Tests: `tests/test_learning.py` (30 tests); full suite 202 passed, 1 skipped (PowerShell not installed).
+- Tests: `tests/test_learning.py` (30 tests), plus two in `tests/test_audit.py` (a macro's repeated call listed once;
+  a unit test's helper never answering for the program) and one in `tests/test_engine_http.py` (a stale `ui/dist` is
+  reported). They cover the store and its corruption recovery, pin and hint, an unrelated question left unaffected,
+  every correctable intent, undo/restore, replacing a correction, the refusals, stale and revive, a moved line, an
+  index.db reset, conflicts, the glossary (including verity.toml), an exported suite that passes, export/import round
+  trip, the CLI and MCP, and every hardening fix above. Full suite: 202 passed, 1 skipped (PowerShell not installed).
 - **Regression against `windows-first-run-desktop-app` (73972e7)** (`scripts/regress/capture.py`; each run indexes from
   scratch in its own data folder; the base branch ran from a worktree):
   - Direct, all 207 questions, two captures per side: 198/207 on both, **no pass/fail change**, and no index
@@ -355,13 +363,15 @@ after reviewing it (below). Nothing retrains the model: a correction only change
   - Local model + meaning search, the six suites of the model baseline: **95/99 → 96/99**. The one change is
     `nm-wait-negative`, now right (read by hand: the setter's `value < 0` → `ArgumentException`, ModbusTransport.cs:70).
     The other 12 differing answers differ only in the model's summary paragraph; the checked facts are identical.
+    0 invented names on both sides; rejected claims 11 → 12 (the extra one is in that answer: a call cited one line
+    off, removed by the verifier).
+  - The full record, with every compare output: `logs/phase5-regression.status`.
   - UI end-to-end 42/42 (screenshots regenerated; 19–21 new). Desktop self-test passes with no process left
     behind. Both design docs render (2/2 and 23/23 Mermaid diagrams).
 - Note for long runs: background jobs started from a Claude Code session lose access to `~/Desktop` (macOS privacy)
-  when the session ends ("Operation not permitted" on `.venv/pyvenv.cfg`). Rerun anything that ran past that point. They cover the store and its corruption recovery, pin and hint, an
-  unrelated question left unaffected, every correctable intent, undo/restore, replacing a correction, the refusals,
-  stale and revive, a moved line, an index.db reset, conflicts, the glossary (including verity.toml), an exported
-  suite that passes, export/import round trip, the CLI and MCP.
+  when the session ends ("Operation not permitted" on `.venv/pyvenv.cfg`). Two runs were hit this way (the base
+  branch's NModbus model suite, and this branch's last three model suites); both were re-run, and only complete runs
+  are reported.
 - UI end-to-end (`ui/scripts/e2e-cdp.mjs`): the learning journey on a temporary copy of navgps-c. It picks a line in
   another file, the corrected answer comes back with the disclosure, then Undo, and the Learned panel. Screenshots
   19–21.
@@ -374,7 +384,17 @@ after reviewing it (below). Nothing retrains the model: a correction only change
   - the desktop app's fallback folder was a stale developer path: it now tries the folder it was built from;
   - setup and the desktop build scripts rebuilt the UI only when `ui/dist` was missing: after a pull or a branch
     checkout they served the old UI. They now also rebuild when any UI source is newer
-    (`scripts/build_ui.sh --check`, `Test-UiStale` on Windows).
+    (`scripts/build_ui.sh --check`, `Test-UiStale` on Windows), and the engine prints a note when it serves a stale UI;
+  - three messages still said the desktop app was macOS only or not ported to Windows (`setup.ps1`'s final summary,
+    `check_prereqs.ps1`, and `check_prereqs.sh` on Linux);
+  - the commands printed under each CLI answer ("correct it", "right?") were wrapped at the terminal width (80 columns
+    in a file), which breaks them when copied: each is now one unwrapped line. The demo transcripts (`docs/DEMOS.md`)
+    were regenerated with the local model; `run_demos.sh` now indexes with `--full` (every indexing phase is shown)
+    and passes a relative project path (no local path in the transcripts).
+- Open (Phase 5):
+  - [ ] the pull request into `windows-first-run-desktop-app`, the user's manual test, and the merge;
+  - [ ] Phase 5 on Windows: pytest, `bench/learning_protocol.py`, the UI end-to-end check (and inside the desktop app);
+  - [ ] paraphrase matching below the spec's 9 of 10: measure any change on never-seen project #11, not on cJSON.
 - Review of `windows-first-run-desktop-app` (before branching):
   - The CMake configure now runs in a private copy, with the generated twin mapped back. Shims (`stddef`, `stdint`,
     posix `pthread.h`, `sys/time.h`) resolve by subpath. Quoted includes fall back to system headers. The engine stops
@@ -545,7 +565,7 @@ CPUs, Visual Studio 2022 Build Tools with Windows SDK 10.0.26100, cmake 4.2.1 on
   - A full re-index on an existing data folder keeps some rows from earlier runs: stored vectors, and on one sample
     244 symbols where a fresh index has 111. Answers were unaffected in the benchmark.
   - For nm-wait-negative, the verification notes contain a Python traceback (an exception in `recipes.py`
-    `Ctx.D`).
+    `Ctx.D`). Fixed in Phase 5 (an indirect call with no known target).
 
 ## Moved to Git (2026-10-02)
 - [x] The project now lives in the Git repository `verity-mati` (folder `~/Desktop/verity-mati` on the Mac), so work can

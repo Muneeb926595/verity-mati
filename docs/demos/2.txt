@@ -67,4 +67,7 @@ Verification
   ✓ [CONFIRMED] NavigationTick() reads nav_state_t.has_fix (line 68).
   ✓ [CONFIRMED] nav_handle_invalid_fix() reads nav_state_t.consecutive_invalid (line 24).
   ✓ [CONFIRMED] CalculateHeading() reads currentHeading (line 38).
-12.2 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+6.2 s · summary by gpt-oss-20b (MXFP4), followed by the complete checked facts
+Answer e9d51a3d14bd
+  correct it:  verity correct samples/navgps-c e9d51a3d14bd --line FILE:LINE
+  right?       verity confirm samples/navgps-c e9d51a3d14bd
