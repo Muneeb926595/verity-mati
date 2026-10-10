@@ -169,8 +169,24 @@ function Step-Python {
     }
     Write-VrLog INFO (Get-NativeOutput $Py @('--version'))
     [void](Invoke-Native -FilePath $script:Uv -ArgumentList @('pip', 'install', '--python', $Py, '-r', (Join-Path $Root 'requirements.lock')) -WorkingDirectory $Root)
-    $check = 'import clang.cindex as ci, numpy, aiohttp, mcp, tree_sitter, tree_sitter_c, tree_sitter_c_sharp; ci.Index.create(); import verity.cli; print("imports ok, libclang loads")'
-    [void](Invoke-Native -FilePath $Py -ArgumentList @('-c', $check) -WorkingDirectory $Root -Label 'python: import check')
+    # Run the import check from a temp script file, not `python -c '...'`: PowerShell 5.1 mangles the double quotes
+    # in the embedded print() when handing the argument to a native exe (the quotes are stripped or the space splits
+    # the argument), which turns the one-liner into a SyntaxError. A script file passes through untouched. It is
+    # written into $Root so the file's own directory (which Python puts on sys.path) is the project root, keeping
+    # `import verity.cli` resolvable just as `-c` did via the working directory.
+    $check = @(
+        'import clang.cindex as ci, numpy, aiohttp, mcp, tree_sitter, tree_sitter_c, tree_sitter_c_sharp'
+        'ci.Index.create()'
+        'import verity.cli'
+        "print('imports ok, libclang loads')"
+    ) -join "`r`n"
+    $checkFile = Join-Path $Root '.vr-import-check.py'
+    [System.IO.File]::WriteAllText($checkFile, $check, (New-Object System.Text.UTF8Encoding($false)))
+    try {
+        [void](Invoke-Native -FilePath $Py -ArgumentList @($checkFile) -WorkingDirectory $Root -Label 'python: import check')
+    } finally {
+        Remove-Item -LiteralPath $checkFile -Force -ErrorAction SilentlyContinue
+    }
     Add-Result 'Python + packages' 'OK' (Get-NativeOutput $Py @('--version'))
     Complete-Step
 }

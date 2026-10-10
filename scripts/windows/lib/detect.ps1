@@ -62,7 +62,9 @@ function Get-GpuList {
     $smi = Find-NvidiaSmi
     if ($smi) {
         $head = Get-NativeOutput $smi @()
-        $cuda = ([regex]::Match($head, 'CUDA Version:\s*([\d.]+)')).Groups[1].Value
+        # Newer NVIDIA drivers (R610+) renamed this header field from "CUDA Version:" to "CUDA UMD Version:".
+        # Accept both so the CUDA build is still selected (otherwise the version is blank and we fall back to Vulkan).
+        $cuda = ([regex]::Match($head, 'CUDA(?:\s+UMD)?\s+Version:\s*([\d.]+)')).Groups[1].Value
         $rows = (Get-NativeOutput $smi @('--query-gpu=name,memory.total,driver_version', '--format=csv,noheader,nounits')) -split "`n"
         foreach ($r in $rows) {
             $f = $r -split ','

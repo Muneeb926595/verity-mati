@@ -196,7 +196,14 @@ if ((Test-Path -LiteralPath $uv) -and ((Get-NativeOutput $uv @('--version')) -ma
 $py = Join-Path $Root '.venv\Scripts\python.exe'
 $venvOk = $false
 if (Test-Path -LiteralPath $py) {
-    $venvOk = (Get-NativeOutput $py @('-c', 'import clang.cindex as c; c.Index.create(); import numpy, mcp; print("vr-ok")')) -match 'vr-ok'
+    # Use a temp script file, not `python -c '...'`: PowerShell 5.1 strips the double quotes around "vr-ok" when
+    # passing the argument to a native exe, so `python -c` sees print(vr-ok) (a NameError, no output) and this check
+    # would always report the venv as missing. A script file passes through untouched.
+    $checkFile = Join-Path $Root '.vr-prereq-check.py'
+    $checkCode = "import clang.cindex as c`r`nc.Index.create()`r`nimport numpy, mcp`r`nprint('vr-ok')"
+    [System.IO.File]::WriteAllText($checkFile, $checkCode, (New-Object System.Text.UTF8Encoding($false)))
+    try { $venvOk = (Get-NativeOutput $py @($checkFile)) -match 'vr-ok' }
+    finally { Remove-Item -LiteralPath $checkFile -Force -ErrorAction SilentlyContinue }
 }
 if ($venvOk) {
     Add-Item 'python-env' 'auto' 'done' 'Python environment (.venv) with the pinned packages; libclang (the C parser) loads'
